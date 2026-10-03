@@ -1,120 +1,123 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CHOZ — Choose without the noise</title>
-    <meta name="description" content="Blind decision platform. Compare without brand bias.">
-    <link rel="manifest" href="/manifest.json">
-    <meta name="theme-color" content="#0a0a0a">
-    <link rel="stylesheet" href="/css/style.css">
-    <!-- Supabase JS -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CHOZ — Choose without the noise</title>
+<meta name="description" content="Blind decision platform. Compare without brand bias.">
+<meta name="theme-color" content="#3A3FD9">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+<link rel="manifest" href="/manifest.json">
+<link rel="stylesheet" href="/css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
-    <div id="app">
-        <!-- NAVBAR -->
-        <nav class="navbar">
-            <div class="nav-container">
-                <a href="/" class="logo">CHOZ</a>
-                <div class="nav-links">
-                    <a href="#explore">Explore</a>
-                    <a href="#how-it-works">How it Works</a>
-                    <a href="#guides">Guides</a>
-                    <button id="theme-toggle" class="theme-btn">🌙</button>
-                    <button id="auth-btn" class="btn btn-primary">Sign In</button>
-                </div>
-            </div>
-        </nav>
 
-        <!-- HERO -->
-        <section class="hero">
-            <h1>Choose without the noise.</h1>
-            <p>Blind comparison. Real priorities. No brand bias.</p>
-            <div class="hero-actions">
-                <button class="btn btn-primary" onclick="startComparison()">Start Comparing</button>
-                <a href="#how-it-works" class="btn btn-outline">How it Works</a>
-            </div>
-        </section>
+<nav><div class="w">
+<a class="logo" href="/">CHOZ</a>
+<div class="l">
+<a href="#cats">Categories</a>
+<a href="#how">How it works</a>
+<a href="#features">Features</a>
+<a href="#trust">Trust</a>
+</div>
+<div class="sp"></div>
+<button class="btn" id="themeBtn" aria-label="Toggle theme">🌙</button>
+<button class="btn" id="authBtn">Sign in</button>
+<button class="btn p" id="dashBtn" style="display:none">Dashboard</button>
+</div></nav>
 
-        <!-- CATEGORIES -->
-        <section id="explore" class="categories">
-            <h2>Explore Categories</h2>
-            <div id="category-grid" class="category-grid"></div>
-        </section>
+<header class="hero" id="top"><div class="w">
+<div>
+<h1>Choose without the noise.</h1>
+<p class="s">Compare on what matters to you. Brands stay hidden until you lock your choice.</p>
+<div class="cta">
+<button class="btn p lg" id="startBtn">Start a blind comparison</button>
+<a class="btn lg" href="#how">How CHOZ works</a>
+</div>
+</div>
+<div class="card" id="heroCard">
+<div class="top"><span>Live Demo</span><span>Blind mode</span></div>
+<div class="pri"><span>Battery</span><span>Camera</span><span>Price</span></div>
+<div class="o"><b>A</b><div><span class="rd">Demo Nova One</span><br><small>Battery 5000 mAh • Camera 50 MP</small></div><em>₨ 300k</em></div>
+<div class="o"><b>B</b><div><span class="rd">Demo Orbit Pro</span><br><small>Battery 4500 mAh • Camera 48 MP</small></div><em>₨ 450k</em></div>
+<div class="o"><b>C</b><div><span class="rd">Demo Apex Max</span><br><small>Battery 4200 mAh • Camera 50 MP</small></div><em>₨ 600k</em></div>
+<div class="lock"><button class="btn p" id="revealBtn" style="flex:1">Lock choice &amp; reveal</button></div>
+</div>
+</div></header>
 
-        <!-- COMPARISON FLOW -->
-        <section id="comparison-flow" class="comparison-section hidden">
-            <div class="comparison-header">
-                <h2 id="comparison-title">Comparison</h2>
-                <span id="session-status" class="badge">Session Active</span>
-            </div>
-            <div id="options-grid" class="options-grid"></div>
-            <div class="priority-section">
-                <h3>Set Your Priorities</h3>
-                <p>Drag to rank what matters most to you.</p>
-                <div id="priority-list" class="priority-list"></div>
-                <button class="btn btn-primary" onclick="lockChoice()">Lock My Choice</button>
-            </div>
-        </section>
+<section id="how"><div class="w">
+<h2>From first look to final choice</h2>
+<p class="sub">Every comparison follows the same ten steps, so you always know where you are.</p>
+<div class="fl">
+<div><i>1</i>Choose category</div><div><i>2</i>Set priorities</div><div><i>3</i>Meet anonymous options</div><div><i>4</i>Compare</div><div><i>5</i>Make your choice</div>
+<div class="k"><i>6</i>Lock choice</div><div class="k"><i>7</i>Reveal</div><div><i>8</i>Why I chose</div><div><i>9</i>Save</div><div><i>10</i>Share</div>
+</div></div></section>
 
-        <!-- REVEAL -->
-        <section id="reveal-section" class="reveal-section hidden">
-            <div class="reveal-card">
-                <h2>🎉 Reveal</h2>
-                <div id="reveal-content"></div>
-                <div id="why-i-chose" class="why-section"></div>
-                <div class="reveal-actions">
-                    <button class="btn btn-primary" onclick="saveDecision()">Save Decision Memory</button>
-                    <button class="btn btn-outline" onclick="shareResult()">Share Result</button>
-                </div>
-            </div>
-        </section>
+<section id="cats"><div class="w">
+<h2>Explore Categories</h2>
+<p class="sub">Each category has its own attributes. Nothing is forced into one template.</p>
+<div class="cats" id="catGrid"><p style="color:var(--mute)">Loading categories...</p></div>
+</div></section>
 
-        <!-- DASHBOARD -->
-        <section id="dashboard" class="dashboard hidden">
-            <h2>My Dashboard</h2>
-            <div class="dashboard-tabs">
-                <button class="tab active" data-tab="overview">Overview</button>
-                <button class="tab" data-tab="history">History</button>
-                <button class="tab" data-tab="memories">Decision Memory</button>
-                <button class="tab" data-tab="favorites">Favorites</button>
-                <button class="tab" data-tab="profile">Profile</button>
-            </div>
-            <div id="dashboard-content"></div>
-        </section>
+<section id="features"><div class="w">
+<h2>Understand your choice, then keep it</h2>
+<p class="sub">After the reveal, CHOZ shows why the result matched your priorities, using stored data only.</p>
+<div class="g3">
+<div class="card"><h3>Decision Memory</h3><p>Save what you chose, why, and when. Search and revisit it later.</p></div>
+<div class="card"><h3>Choice Profile</h3><p>See patterns from your own CHOZ activity. Reset any time.</p></div>
+<div class="card"><h3>CHOZ Pulse</h3><p>Anonymous community trends, shown only above a minimum sample size.</p></div>
+<div class="card"><h3>Explain my result</h3><p>Simple, detailed, or technical. Pick how much of the scoring you want to see.</p></div>
+<div class="card"><h3>Share cards</h3><p>"I chose this." A clean result card with your priorities and no private data.</p></div>
+<div class="card"><span class="tg">Coming soon</span><h3>CHOZ Test Lab</h3><p>Blind studies for brands, with consent and aggregate-only reports.</p></div>
+</div></div></section>
 
-        <!-- FOOTER -->
-        <footer class="footer">
-            <p>CHOZ — "Choose without the noise."</p>
-            <p>Web owned and created by <strong>Salahuddin Ranu</strong>.</p>
-            <div class="footer-links">
-                <a href="/privacy">Privacy Policy</a>
-                <a href="/terms">Terms</a>
-                <a href="/contact">Contact</a>
-            </div>
-        </footer>
-    </div>
+<section id="trust"><div class="w"><div class="tr">
+<h2>No hidden favorites</h2>
+<p style="margin:0;color:var(--line);max-width:560px">Results come from the published scoring method. Money never changes the outcome.</p>
+<ul>
+<li>Brand mapping stays on the server until reveal</li>
+<li>Affiliate links never affect scoring</li>
+<li>Ads are labeled and kept apart from controls</li>
+<li>Missing data says "Data unavailable"</li>
+<li>User reviews are marked as user reviews</li>
+<li>Delete your account and data any time</li>
+</ul></div></div></section>
 
-    <!-- AUTH MODAL -->
-    <div id="auth-modal" class="modal hidden">
-        <div class="modal-content">
-            <button class="modal-close" onclick="closeAuthModal()">×</button>
-            <h3 id="auth-title">Sign In</h3>
-            <form id="auth-form">
-                <input type="email" id="auth-email" placeholder="Email" required>
-                <input type="password" id="auth-password" placeholder="Password" required>
-                <button type="submit" class="btn btn-primary" id="auth-submit">Sign In</button>
-            </form>
-            <button onclick="signInWithGoogle()" class="btn btn-google">Continue with Google</button>
-            <p id="auth-switch">Don't have an account? <a href="#" onclick="toggleAuthMode()">Sign Up</a></p>
-        </div>
-    </div>
+<footer><div class="w">
+<div><span class="logo">CHOZ</span><br>"Choose without the noise."<br>Web owned and created by Salahuddin Ranu.</div>
+<div class="ln"><a href="#how">How CHOZ works</a><a href="#top">About</a><a href="#top">Contact</a><a href="#top">Privacy</a><a href="#top">Terms</a></div>
+</div></footer>
 
-    <script src="/js/config.js"></script>
-    <script src="/js/auth.js"></script>
-    <script src="/js/comparison.js"></script>
-    <script src="/js/dashboard.js"></script>
-    <script src="/js/app.js"></script>
+<!-- COMPARISON MODAL -->
+<div id="compModal" class="modal hidden">
+<div class="modal-content">
+<button class="modal-close" id="closeComp">×</button>
+<div id="compContent"></div>
+</div>
+</div>
+
+<!-- AUTH MODAL -->
+<div id="authModal" class="modal hidden">
+<div class="modal-content" style="max-width:420px">
+<button class="modal-close" id="closeAuth">×</button>
+<h3 id="authTitle" style="margin-bottom:1rem">Sign in</h3>
+<input type="email" id="authEmail" placeholder="Email">
+<input type="password" id="authPass" placeholder="Password">
+<button class="btn p" style="width:100%" id="authSubmit">Sign in</button>
+<div class="divider">OR</div>
+<button class="btn" style="width:100%" id="googleBtn">Continue with Google</button>
+<p id="authError" style="color:#ef4444;margin-top:1rem;text-align:center;font-size:13px"></p>
+<p style="text-align:center;font-size:13px;color:var(--mute);margin-top:1rem">
+<span id="authSwitchText">No account?</span> <a href="#" id="authSwitch" style="color:var(--ac)">Sign up</a>
+</p>
+</div>
+</div>
+
+<script src="/js/config.js"></script>
+<script src="/js/app.js"></script>
+<script src="/js/comparison.js"></script>
 </body>
 </html>
