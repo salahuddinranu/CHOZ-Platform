@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dashboard — CHOZ</title>
+<meta name="description" content="Your CHOZ dashboard — decisions, memories, favorites.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+.dash-nav{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:24px;overflow-x:auto;padding-bottom:0}
+.dash-nav button{background:none;border:none;padding:12px 18px;cursor:pointer;color:var(--mute);font-size:14px;font-weight:500;border-bottom:2px solid transparent;white-space:nowrap;transition:all 0.15s}
+.dash-nav button:hover{color:var(--ink)}
+.dash-nav button.active{color:var(--ac);border-bottom-color:var(--ac)}
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:24px}
+.stat{background:var(--sf);border:1px solid var(--line);border-radius:14px;padding:20px}
+.stat h3{font-size:32px;color:var(--ac);font-family:'Bricolage Grotesque';font-weight:700}
+.stat p{color:var(--mute);font-size:13px;margin-top:4px}
+.tab-content{min-height:300px}
+.list-item{background:var(--sf);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:flex-start;gap:16px}
+.list-item:hover{border-color:var(--ac)}
+.list-item h4{margin:0 0 6px;font-family:'Bricolage Grotesque';font-size:16px}
+.list-item .meta{color:var(--mute);font-size:13px}
+.list-item .time{color:var(--mute);font-size:12px;white-space:nowrap}
+.empty{text-align:center;padding:60px 20px;color:var(--mute)}
+.empty svg{margin-bottom:16px;opacity:0.4}
+.empty h3{font-family:'Bricolage Grotesque';font-size:20px;margin-bottom:8px;color:var(--ink)}
+.loading{text-align:center;padding:40px;color:var(--mute)}
+.user-head{display:flex;align-items:center;gap:16px;margin-bottom:24px;padding:20px;background:var(--sf);border:1px solid var(--line);border-radius:14px}
+.avatar{width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,var(--ac),#8b5cf6);display:grid;place-items:center;color:white;font-family:'Bricolage Grotesque';font-size:22px;font-weight:700}
+.user-info h2{font-size:20px;margin:0 0 4px}
+.user-info p{color:var(--mute);font-size:14px;margin:0}
+.setting-row{background:var(--sf);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
+.setting-row h4{margin:0 0 4px;font-size:15px}
+.setting-row p{color:var(--mute);font-size:13px;margin:0}
+.btn.danger{background:#ef4444;border-color:#ef4444;color:white}
+.btn.danger:hover{opacity:0.9}
+</style>
+</head>
+<body>
+
+<nav><div class="w">
+<a class="logo" href="/">CHOZ</a>
+<div class="l">
+<a href="/#cats">Categories</a>
+<a href="/#how">How it works</a>
+<a href="/#features">Features</a>
+</div>
+<div class="sp"></div>
+<button class="btn" id="themeBtn" aria-label="Toggle theme">🌙</button>
+<button class="btn" id="signOutBtn">Sign out</button>
+</div></nav>
+
+<div class="w" style="padding:32px 20px 60px;max-width:900px">
+
+<div class="user-head" id="userHead">
+<div class="avatar" id="avatar">?</div>
+<div class="user-info">
+<h2 id="userName">Loading...</h2>
+<p id="userEmail"></p>
+</div>
+</div>
+
+<div class="dash-nav">
+<button class="active" data-tab="overview">Overview</button>
+<button data-tab="history">History</button>
+<button data-tab="memories">Decision Memory</button>
+<button data-tab="favorites">Favorites</button>
+<button data-tab="settings">Settings</button>
+</div>
+
+<div class="tab-content" id="tabContent">
+<div class="loading">Loading dashboard...</div>
+</div>
+
+</div>
+
+<footer><div class="w" style="max-width:900px">
+<div><span class="logo">CHOZ</span><br>"Choose without the noise."<br>Web owned and created by Salahuddin Ranu.</div>
+</div></footer>
+
+<script src="/js/config.js"></script>
+<script src="/js/dashboard.js"></script>
+</body>
+</html>
