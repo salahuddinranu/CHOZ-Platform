@@ -127,13 +127,40 @@
 <!-- HERO -->
 <header class="hero" id="top"><div class="w">
 <div>
+<div style="display:inline-block;padding:6px 14px;background:var(--acbg);color:var(--ac);border-radius:20px;font-size:12px;font-weight:600;letter-spacing:0.5px;margin-bottom:20px">
+    🎯 BLIND COMPARISON PLATFORM
+</div>
 <h1>Choose without the noise.</h1>
-<p class="s">Compare on what matters to you. Brands stay hidden until you lock your choice.</p>
-<div class="cta">
-<button class="btn p lg" id="startBtn">Start a blind comparison</button>
-<a class="btn lg" href="#how">How CHOZ works</a>
+<p class="s">
+    Brand names stay hidden until you decide.<br>
+    Compare based on what actually matters to you.
+</p>
+<div class="cta" style="margin-bottom:32px">
+    <button class="btn p lg" id="startBtn">Start a blind comparison →</button>
+    <button class="btn lg" onclick="startOnboardingFromHero()">How it works</button>
+</div>
+
+<!-- Quick 3-step explainer -->
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;max-width:520px">
+    <div style="text-align:left">
+        <div style="font-family:'Bricolage Grotesque';font-size:24px;color:var(--ac);font-weight:700;line-height:1">1</div>
+        <div style="font-size:13px;color:var(--ink);font-weight:600;margin:6px 0 2px">Pick a category</div>
+        <div style="font-size:12px;color:var(--mute);line-height:1.4">Phones, bikes, hotels...</div>
+    </div>
+    <div style="text-align:left">
+        <div style="font-family:'Bricolage Grotesque';font-size:24px;color:var(--ac);font-weight:700;line-height:1">2</div>
+        <div style="font-size:13px;color:var(--ink);font-weight:600;margin:6px 0 2px">Set priorities</div>
+        <div style="font-size:12px;color:var(--mute);line-height:1.4">What matters most?</div>
+    </div>
+    <div style="text-align:left">
+        <div style="font-family:'Bricolage Grotesque';font-size:24px;color:var(--ac);font-weight:700;line-height:1">3</div>
+        <div style="font-size:13px;color:var(--ink);font-weight:600;margin:6px 0 2px">Choose & reveal</div>
+        <div style="font-size:12px;color:var(--mute);line-height:1.4">See who won.</div>
+    </div>
 </div>
 </div>
+
+<!-- Right side demo card -->
 <div class="card" id="heroCard">
 <div class="top"><span>Live Demo</span><span>Blind mode</span></div>
 <div class="pri"><span>Battery</span><span>Camera</span><span>Price</span></div>
@@ -141,6 +168,9 @@
 <div class="o"><b>B</b><div><span class="rd">Demo Orbit Pro</span><br><small>Battery 4500 mAh • Camera 48 MP</small></div><em>₨ 450k</em></div>
 <div class="o"><b>C</b><div><span class="rd">Demo Apex Max</span><br><small>Battery 4200 mAh • Camera 50 MP</small></div><em>₨ 600k</em></div>
 <div class="lock"><button class="btn p" id="revealBtn" style="flex:1">Lock choice &amp; reveal</button></div>
+<p style="font-size:11px;color:var(--mute);text-align:center;margin-top:10px;line-height:1.4">
+    Click reveal to see how brand names appear after your choice
+</p>
 </div>
 </div></header>
 
