@@ -1,206 +1,386 @@
 // ============================================================
-// CHOZ BLIND COMPARISON ENGINE
+// CHOZ BLIND COMPARISON ENGINE — Priority Aware
 // ============================================================
 
-let currentComparison = { categoryId: null, options: [], labels: [], priorities: [], choice: null };
+let currentComparison = {
+    categoryId: null,
+    options: [],
+    labels: [],
+    priorities: [],
+    choice: null,
+    step: 'select' // 'select' | 'priorities' | 'revealed'
+};
 
 async function startComparison(categoryId) {
-  const { data: { session } } = await sb.auth.getSession();
-  if (!session) { openAuth(); return; }
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) { openAuth(); return; }
 
-  currentComparison.categoryId = categoryId;
+    currentComparison.categoryId = categoryId;
+    currentComparison.step = 'select';
+    currentComparison.choice = null;
 
-  // Fetch items with attributes
-  const { data: items, error } = await sb
-    .from('items')
-    .select('*, brands(name), item_attributes(*, attribute_definitions(name, slug, unit))')
-    .eq('category_id', categoryId)
-    .eq('is_active', true);
+    const { data: items, error } = await sb
+        .from('items')
+        .select('*, brands(name), item_attributes(*, attribute_definitions(id, name, slug, unit, is_priority_eligible))')
+        .eq('category_id', categoryId)
+        .eq('is_active', true);
 
-  if (error || !items || items.length < 2) {
-    alert('Not enough items in this category yet.');
-    return;
-  }
+    if (error || !items || items.length < 2) {
+        alert('Not enough items in this category yet.');
+        return;
+    }
 
-  // Shuffle and pick 3
-  const shuffled = [...items].sort(() => Math.random() - 0.5).slice(0, 3);
-  const labels = ['A', 'B', 'C'];
-  currentComparison.options = shuffled;
-  currentComparison.labels = labels;
-  currentComparison.choice = null;
-  currentComparison.priorities = [];
+    // Filter items that have at least 2 attributes
+    const validItems = items.filter(i => (i.item_attributes || []).length >= 2);
+    if (validItems.length < 2) {
+        alert('Not enough items with complete data in this category.');
+        return;
+    }
 
-  renderComparisonModal();
+    const shuffled = [...validItems].sort(() => Math.random() - 0.5).slice(0, 3);
+    currentComparison.options = shuffled;
+    currentComparison.labels = ['A', 'B', 'C'].slice(0, shuffled.length);
+
+    renderComparisonModal();
 }
 
 function renderComparisonModal() {
-  const modal = document.getElementById('compModal');
-  const content = document.getElementById('compContent');
-  const { options, labels } = currentComparison;
-  const categoryName = options[0]?.category_id?.replace('cat-', '') || 'Comparison';
+    const modal = document.getElementById('compModal');
+    const content = document.getElementById('compContent');
+    const { options, labels } = currentComparison;
 
-  content.innerHTML = `
-    <div class="comp-header">
-      <h3 style="font-family:'Bricolage Grotesque';font-size:22px">Blind Comparison</h3>
-      <span class="badge">${options.length} anonymous options</span>
-    </div>
-    <p style="color:var(--mute);font-size:14px;margin-bottom:16px">
-      Brand names are hidden. Pick the option that matches your priorities.
-    </p>
-    <div class="options-grid" id="optionsGrid">
-      ${options.map((item, i) => {
-        const attrs = (item.item_attributes || []).slice(0, 5);
-        return `
-          <div class="option-card" data-idx="${i}" onclick="selectOption(${i})">
-            <h3>Option ${labels[i]}</h3>
-            ${attrs.map(a => `
-              <div class="attr-row">
-                <span class="label">${a.attribute_definitions?.name || ''}</span>
-                <span class="value">${a.value || a.numeric_value || '—'}${a.attribute_definitions?.unit ? ' ' + a.attribute_definitions.unit : ''}</span>
-              </div>
-            `).join('') || '<p style="color:var(--mute);font-size:13px">No attributes available</p>'}
-          </div>
-        `;
-      }).join('')}
-    </div>
-    <button class="btn p" style="width:100%;padding:14px" id="lockBtn" onclick="lockChoice()" disabled>
-      Select an option first
-    </button>
-  `;
-  modal.classList.remove('hidden');
+    content.innerHTML = `
+        <div class="comp-header">
+            <h3 style="font-family:'Bricolage Grotesque';font-size:22px">Blind Comparison</h3>
+            <span class="badge">Step 1 of 2: Pick an option</span>
+        </div>
+        <p style="color:var(--mute);font-size:14px;margin-bottom:16px">
+            Brand names are hidden. Review the specs and pick the option that feels right.
+        </p>
+        <div class="options-grid" id="optionsGrid">
+            ${options.map((item, i) => {
+                const attrs = (item.item_attributes || []).slice(0, 6);
+                return `
+                    <div class="option-card" data-idx="${i}" onclick="selectOption(${i})">
+                        <h3>Option ${labels[i]}</h3>
+                        ${attrs.map(a => `
+                            <div class="attr-row">
+                                <span class="label">${a.attribute_definitions?.name || ''}</span>
+                                <span class="value">${a.value || a.numeric_value || '—'}${a.attribute_definitions?.unit ? ' ' + a.attribute_definitions.unit : ''}</span>
+                            </div>
+                        `).join('') || '<p style="color:var(--mute);font-size:13px">No attributes</p>'}
+                    </div>
+                `;
+            }).join('')}
+        </div>
+        <button class="btn p" style="width:100%;padding:14px" id="lockBtn" onclick="goToPriorities()" disabled>
+            Select an option first
+        </button>
+    `;
+    modal.classList.remove('hidden');
 }
 
 function selectOption(idx) {
-  currentComparison.choice = idx;
-  document.querySelectorAll('.option-card').forEach((el, i) => {
-    el.classList.toggle('selected', i === idx);
-  });
-  const lockBtn = document.getElementById('lockBtn');
-  lockBtn.disabled = false;
-  lockBtn.textContent = 'Lock choice & reveal';
+    currentComparison.choice = idx;
+    document.querySelectorAll('.option-card').forEach((el, i) => {
+        el.classList.toggle('selected', i === idx);
+    });
+    const lockBtn = document.getElementById('lockBtn');
+    lockBtn.disabled = false;
+    lockBtn.textContent = 'Next: Set Your Priorities →';
+}
+
+function goToPriorities() {
+    if (currentComparison.choice === null) return;
+    currentComparison.step = 'priorities';
+    renderPrioritiesStep();
+}
+
+function renderPrioritiesStep() {
+    const content = document.getElementById('compContent');
+    const chosenItem = currentComparison.options[currentComparison.choice];
+
+    // Collect all unique attributes from all options
+    const allAttrs = new Map();
+    currentComparison.options.forEach(item => {
+        (item.item_attributes || []).forEach(a => {
+            if (a.attribute_definitions && !allAttrs.has(a.attribute_definitions.id)) {
+                allAttrs.set(a.attribute_definitions.id, a.attribute_definitions);
+            }
+        });
+    });
+
+    const attrsArray = [...allAttrs.values()];
+    // Initialize priorities with all attributes
+    currentComparison.priorities = attrsArray.map(a => a.id);
+
+    content.innerHTML = `
+        <div class="comp-header">
+            <h3 style="font-family:'Bricolage Grotesque';font-size:22px">Your Priorities</h3>
+            <span class="badge">Step 2 of 2: Rank what matters</span>
+        </div>
+        <p style="color:var(--mute);font-size:14px;margin-bottom:8px">
+            Drag to reorder. Top = most important to you.
+        </p>
+        <p style="color:var(--mute);font-size:12px;margin-bottom:16px">
+            <em>Tip: Click the ↑ ↓ buttons to move items.</em>
+        </p>
+        <div class="priority-list" id="priorityList">
+            ${attrsArray.map((a, i) => `
+                <div class="priority-item" draggable="true" data-attr-id="${a.id}" data-idx="${i}">
+                    <div style="display:flex;align-items:center;gap:10px;">
+                        <span class="rank">${i + 1}</span>
+                        <span>${a.name}${a.unit ? ' (' + a.unit + ')' : ''}</span>
+                    </div>
+                    <div style="display:flex;gap:4px;">
+                        <button class="btn" style="padding:4px 10px;font-size:12px;" onclick="movePriority(${i}, -1)">↑</button>
+                        <button class="btn" style="padding:4px 10px;font-size:12px;" onclick="movePriority(${i}, 1)">↓</button>
+                    </div>
+                </div>
+            `).join('')}
+        </div>
+        <button class="btn p" style="width:100%;padding:14px" onclick="lockChoice()">
+            🔒 Lock Choice & Reveal
+        </button>
+        <button class="btn" style="width:100%;margin-top:8px;" onclick="backToSelect()">
+            ← Back to options
+        </button>
+    `;
+
+    setupDragAndDrop();
+}
+
+function setupDragAndDrop() {
+    const list = document.getElementById('priorityList');
+    if (!list) return;
+    let dragged = null;
+
+    list.querySelectorAll('.priority-item').forEach(item => {
+        item.addEventListener('dragstart', e => {
+            dragged = item;
+            item.style.opacity = '0.5';
+        });
+        item.addEventListener('dragend', () => {
+            item.style.opacity = '1';
+            updateRanks();
+        });
+        item.addEventListener('dragover', e => e.preventDefault());
+        item.addEventListener('drop', e => {
+            e.preventDefault();
+            if (!dragged || dragged === item) return;
+            const items = [...list.children];
+            const fromIdx = items.indexOf(dragged);
+            const toIdx = items.indexOf(item);
+            if (fromIdx < toIdx) item.after(dragged);
+            else item.before(dragged);
+        });
+    });
+}
+
+function updateRanks() {
+    const items = document.querySelectorAll('#priorityList .priority-item');
+    items.forEach((el, i) => {
+        el.querySelector('.rank').textContent = i + 1;
+        el.dataset.idx = i;
+    });
+    currentComparison.priorities = [...items].map(el => el.dataset.attrId);
+}
+
+function movePriority(idx, dir) {
+    const list = document.getElementById('priorityList');
+    const items = [...list.children];
+    const target = idx + dir;
+    if (target < 0 || target >= items.length) return;
+    if (dir === -1) items[target].before(items[idx]);
+    else items[target].after(items[idx]);
+    updateRanks();
+}
+
+function backToSelect() {
+    currentComparison.step = 'select';
+    renderComparisonModal();
+    // Re-highlight previous choice
+    if (currentComparison.choice !== null) {
+        const cards = document.querySelectorAll('.option-card');
+        if (cards[currentComparison.choice]) cards[currentComparison.choice].classList.add('selected');
+        const lockBtn = document.getElementById('lockBtn');
+        if (lockBtn) { lockBtn.disabled = false; lockBtn.textContent = 'Next: Set Your Priorities →'; }
+    }
 }
 
 async function lockChoice() {
-  if (currentComparison.choice === null) return;
+    if (currentComparison.choice === null) return;
 
-  const chosenIdx = currentComparison.choice;
-  const chosenItem = currentComparison.options[chosenIdx];
-  const chosenLabel = currentComparison.labels[chosenIdx];
+    updateRanks();
+    const chosenIdx = currentComparison.choice;
+    const chosenItem = currentComparison.options[chosenIdx];
+    const chosenLabel = currentComparison.labels[chosenIdx];
 
-  // Fetch full details of chosen item
-  const { data: fullItem } = await sb
-    .from('items')
-    .select('*, brands(*), item_attributes(*, attribute_definitions(*))')
-    .eq('id', chosenItem.id)
-    .single();
+    // Fetch full details
+    const { data: fullItem } = await sb
+        .from('items')
+        .select('*, brands(*), item_attributes(*, attribute_definitions(*))')
+        .eq('id', chosenItem.id)
+        .single();
 
-  // Save comparison to database
-  const { data: { session } } = await sb.auth.getSession();
-  if (session) {
-    await sb.from('comparisons').insert({
-      user_id: session.user.id,
-      category_id: currentComparison.categoryId,
-      title: 'Comparison',
-      status: 'completed',
-      completed_at: new Date().toISOString()
-    });
-  }
+    // Save comparison record
+    const { data: { session } } = await sb.auth.getSession();
+    if (session) {
+        await sb.from('comparisons').insert({
+            user_id: session.user.id,
+            category_id: currentComparison.categoryId,
+            title: 'Blind Comparison',
+            status: 'completed',
+            completed_at: new Date().toISOString()
+        });
+    }
 
-  renderReveal(fullItem, chosenLabel);
+    currentComparison.step = 'revealed';
+    renderReveal(fullItem, chosenLabel);
 }
 
 function renderReveal(item, label) {
-  const content = document.getElementById('compContent');
-  const attrs = item.item_attributes || [];
+    const content = document.getElementById('compContent');
+    const attrs = item.item_attributes || [];
+    const priorities = currentComparison.priorities || [];
 
-  content.innerHTML = `
-    <div class="reveal-card">
-      <h2>🎉 Revealed</h2>
-      <p style="opacity:0.9">You chose Option ${label}</p>
-      <div class="item-name">${item.name}</div>
-      <div class="brand-name">${item.brands?.name || 'Unknown brand'}</div>
-      <div class="price">${item.currency} ${item.base_price?.toLocaleString() || '—'}</div>
-    </div>
+    // Build priority explanation
+    const priorityExplanations = priorities.slice(0, 5).map((attrId, idx) => {
+        const attr = attrs.find(a => a.attribute_definitions?.id === attrId);
+        if (!attr) return null;
+        return {
+            rank: idx + 1,
+            name: attr.attribute_definitions?.name || 'Unknown',
+            value: `${attr.value || attr.numeric_value || '—'}${attr.attribute_definitions?.unit ? ' ' + attr.attribute_definitions.unit : ''}`
+        };
+    }).filter(Boolean);
 
-    <div class="why-section" style="background:var(--acbg);color:var(--ink)">
-      <h4>Why I Chose This</h4>
-      <p>You selected this option from ${currentComparison.options.length} anonymous choices.</p>
-      <p><strong>Key attributes of your choice:</strong></p>
-      <ul>
-        ${attrs.slice(0, 6).map(a => `
-          <li><strong>${a.attribute_definitions?.name}:</strong> ${a.value || a.numeric_value || '—'}${a.attribute_definitions?.unit ? ' ' + a.attribute_definitions.unit : ''}</li>
-        `).join('')}
-      </ul>
-      <p style="margin-top:12px;font-size:13px;color:var(--mute)">
-        <em>Note: This explanation is generated from stored data. No AI fabrication.</em>
-      </p>
-    </div>
+    content.innerHTML = `
+        <div class="reveal-card">
+            <h2>🎉 Revealed</h2>
+            <p style="opacity:0.9">You chose Option ${label}</p>
+            <div class="item-name">${item.name}</div>
+            <div class="brand-name">${item.brands?.name || 'Unknown brand'}</div>
+            <div class="price">${item.currency} ${item.base_price?.toLocaleString() || '—'}</div>
+        </div>
 
-    <div class="reveal-actions">
-      <button class="btn p" onclick="saveDecision('${item.id}')">💾 Save Decision Memory</button>
-      <button class="btn" onclick="shareResult()">🔗 Share Result</button>
-      <button class="btn" onclick="closeCompModal()">Close</button>
-    </div>
-  `;
+        <div class="why-section" style="background:var(--acbg);color:var(--ink)">
+            <h4 style="font-family:'Bricolage Grotesque';font-size:18px;margin-bottom:12px">Why I Chose This</h4>
+            <p style="margin-bottom:12px;font-size:14px">
+                You ranked these priorities (top = most important):
+            </p>
+            ${priorityExplanations.length > 0 ? `
+                <ol style="margin:0;padding-left:20px;font-size:14px;line-height:1.8">
+                    ${priorityExplanations.map(p => `
+                        <li>
+                            <strong>${p.name}</strong> 
+                            <span style="color:var(--ac);font-weight:600">→ ${p.value}</span>
+                        </li>
+                    `).join('')}
+                </ol>
+                <p style="margin-top:14px;font-size:13px;color:var(--mute)">
+                    You selected the option that felt right for these priorities. 
+                    Brand names were hidden during your decision.
+                </p>
+            ` : `
+                <p style="font-size:14px">You selected this option from ${currentComparison.options.length} anonymous choices.</p>
+            `}
+        </div>
+
+        <div class="reveal-actions">
+            <button class="btn p" onclick="saveDecision('${item.id}')">💾 Save to Memory</button>
+            <button class="btn" onclick="shareResult()">🔗 Share</button>
+            <button class="btn" onclick="closeCompModal()">Close</button>
+        </div>
+    `;
 }
 
 async function saveDecision(itemId) {
-  const { data: { session } } = await sb.auth.getSession();
-  if (!session) { openAuth(); return; }
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) { openAuth(); return; }
 
-  const item = currentComparison.options[currentComparison.choice];
-  await sb.from('decision_memories').insert({
-    user_id: session.user.id,
-    category_id: currentComparison.categoryId,
-    chosen_item_id: itemId,
-    title: `I chose ${item.name}`,
-    note: '',
-    priorities: currentComparison.priorities || []
-  });
+    const item = currentComparison.options[currentComparison.choice];
 
-  alert('Decision saved to your memory!');
+    const { error } = await sb.from('decision_memories').insert({
+        user_id: session.user.id,
+        category_id: currentComparison.categoryId,
+        chosen_item_id: itemId,
+        title: `I chose ${item.name}`,
+        note: '',
+        priorities: currentComparison.priorities || []
+    });
+
+    if (error) {
+        alert('Could not save: ' + error.message);
+        return;
+    }
+
+    // Button feedback
+    const btn = event.target;
+    btn.textContent = '✅ Saved!';
+    btn.disabled = true;
+    setTimeout(() => {
+        btn.textContent = '💾 Save to Memory';
+        btn.disabled = false;
+    }, 2000);
 }
 
 function shareResult() {
-  const url = window.location.href;
-  if (navigator.share) {
-    navigator.share({ title: 'My CHOZ Decision', url });
-  } else {
-    navigator.clipboard.writeText(url);
-    alert('Link copied!');
-  }
+    const item = currentComparison.options[currentComparison.choice];
+    const shareText = `I just chose "${item.name}" on CHOZ — blind comparison, real priorities. Choose without the noise.`;
+    const shareUrl = window.location.origin;
+
+    if (navigator.share) {
+        navigator.share({
+            title: 'My CHOZ Decision',
+            text: shareText,
+            url: shareUrl
+        }).catch(() => {});
+    } else {
+        navigator.clipboard.writeText(`${shareText}\n${shareUrl}`);
+        alert('Copied to clipboard!');
+    }
 }
 
 function closeCompModal() {
-  document.getElementById('compModal').classList.add('hidden');
-  currentComparison = { categoryId: null, options: [], labels: [], priorities: [], choice: null };
+    document.getElementById('compModal').classList.add('hidden');
+    currentComparison = {
+        categoryId: null, options: [], labels: [],
+        priorities: [], choice: null, step: 'select'
+    };
 }
 
-// Load categories on page
+// Categories loading
 async function loadCategories() {
-  const grid = document.getElementById('catGrid');
-  const { data: cats, error } = await sb.from('categories').select('*').eq('is_active', true).order('sort_order');
+    const grid = document.getElementById('catGrid');
+    if (!grid) return;
 
-  if (error || !cats || cats.length === 0) {
-    grid.innerHTML = '<p style="color:var(--mute)">No categories available.</p>';
-    return;
-  }
+    const { data: cats, error } = await sb
+        .from('categories')
+        .select('*')
+        .eq('is_active', true)
+        .order('sort_order');
 
-  grid.innerHTML = cats.map(c => `
-    <a onclick="startComparison('${c.id}')">
-      <span class="icon">${c.icon || '📦'}</span>
-      <b>${c.name}</b>
-      <small>${c.description || 'Compare options'}</small>
-    </a>
-  `).join('');
+    if (error || !cats || cats.length === 0) {
+        grid.innerHTML = '<p style="color:var(--mute)">No categories available.</p>';
+        return;
+    }
+
+    grid.innerHTML = cats.map(c => `
+        <a onclick="startComparison('${c.id}')">
+            <span class="icon">${c.icon || '📦'}</span>
+            <b>${c.name}</b>
+            <small>${c.description || 'Compare options'}</small>
+        </a>
+    `).join('');
 }
 
-// Bind modal close
+// Modal close handlers
 document.addEventListener('DOMContentLoaded', () => {
-  const compModal = document.getElementById('compModal');
-  const closeComp = document.getElementById('closeComp');
-  if (closeComp) closeComp.onclick = closeCompModal;
-  if (compModal) compModal.addEventListener('click', (e) => {
-    if (e.target.id === 'compModal') closeCompModal();
-  });
+    const compModal = document.getElementById('compModal');
+    const closeComp = document.getElementById('closeComp');
+    if (closeComp) closeComp.onclick = closeCompModal;
+    if (compModal) compModal.addEventListener('click', (e) => {
+        if (e.target.id === 'compModal') closeCompModal();
+    });
 });
