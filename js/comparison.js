@@ -333,20 +333,329 @@ async function saveDecision(itemId) {
     }, 2000);
 }
 
-function shareResult() {
+// ============================================================
+// SHARE RESULT — Beautiful shareable card
+// ============================================================
+async function shareResult() {
     const item = currentComparison.options[currentComparison.choice];
-    const shareText = `I just chose "${item.name}" on CHOZ — blind comparison, real priorities. Choose without the noise.`;
-    const shareUrl = window.location.origin;
+    if (!item) return;
+
+    // Fetch full details
+    const { data: fullItem } = await sb
+        .from('items')
+        .select('*, brands(name), categories(name)')
+        .eq('id', item.id)
+        .single();
+
+    if (!fullItem) {
+        alert('Could not load item details.');
+        return;
+    }
+
+    // Show share modal
+    showShareModal(fullItem);
+}
+
+function showShareModal(item) {
+    const modal = document.getElementById('compModal');
+    const content = document.getElementById('compContent');
+
+    const categoryName = item.categories?.name || 'Comparison';
+    const brandName = item.brands?.name || 'Unknown brand';
+    const price = item.base_price ? `${item.currency} ${item.base_price.toLocaleString()}` : 'Price unavailable';
+    const priorities = (currentComparison.priorities || []).slice(0, 5);
+
+    // Get priority names from chosen item's attributes
+    const priorityNames = priorities
+        .map(pid => item.item_attributes?.find(a => a.attribute_definitions?.id === pid))
+        .filter(Boolean)
+        .map(a => a.attribute_definitions?.name)
+        .filter(Boolean);
+
+    content.innerHTML = `
+        <div class="comp-header">
+            <h3 style="font-family:'Bricolage Grotesque';font-size:22px">Share Your Decision</h3>
+            <button class="modal-close" style="position:static;font-size:20px" onclick="closeCompModal()">×</button>
+        </div>
+
+        <!-- Preview Card -->
+        <div id="sharePreview" style="
+            background: linear-gradient(135deg, #3A3FD9 0%, #7C3AED 100%);
+            border-radius: 20px;
+            padding: 32px;
+            color: white;
+            text-align: center;
+            margin: 20px 0;
+            box-shadow: 0 20px 60px rgba(58,63,217,0.3);
+        ">
+            <div style="font-family:'Bricolage Grotesque';font-size:14px;letter-spacing:3px;opacity:0.85;margin-bottom:20px">
+                CHOZ
+            </div>
+            <div style="font-family:'Bricolage Grotesque';font-size:28px;font-weight:700;line-height:1.2;margin-bottom:8px">
+                I chose this.
+            </div>
+            <div style="font-size:13px;opacity:0.8;margin-bottom:24px">
+                Choose without the noise.
+            </div>
+
+            <div style="background:rgba(255,255,255,0.15);border-radius:14px;padding:20px;margin-bottom:20px;backdrop-filter:blur(10px)">
+                <div style="font-size:11px;letter-spacing:2px;opacity:0.7;text-transform:uppercase;margin-bottom:8px">
+                    ${escapeHtml(categoryName)}
+                </div>
+                <div style="font-size:20px;font-family:'Bricolage Grotesque';font-weight:700;margin-bottom:4px">
+                    ${escapeHtml(item.name)}
+                </div>
+                <div style="font-size:13px;opacity:0.85;margin-bottom:8px">
+                    ${escapeHtml(brandName)}
+                </div>
+                <div style="font-size:16px;font-weight:600">
+                    ${price}
+                </div>
+            </div>
+
+            ${priorityNames.length > 0 ? `
+                <div style="margin-bottom:20px">
+                    <div style="font-size:11px;letter-spacing:2px;opacity:0.7;text-transform:uppercase;margin-bottom:10px">
+                        My priorities were
+                    </div>
+                    <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center">
+                        ${priorityNames.map(p => `
+                            <span style="
+                                background:rgba(255,255,255,0.2);
+                                padding:6px 12px;
+                                border-radius:20px;
+                                font-size:12px;
+                                font-weight:500;
+                            ">${escapeHtml(p)}</span>
+                        `).join('')}
+                    </div>
+                </div>
+            ` : ''}
+
+            <div style="font-size:11px;opacity:0.6;margin-top:24px">
+                choz-platform.pages.dev
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div style="display:flex;flex-direction:column;gap:10px">
+            <button class="btn p" style="width:100%;padding:14px" onclick="downloadShareCard('${item.id}')">
+                📥 Download Card (PNG)
+            </button>
+            <button class="btn" style="width:100%;padding:14px" onclick="shareNative('${item.id}')">
+                📱 Share via Device
+            </button>
+            <button class="btn" style="width:100%;padding:14px" onclick="copyShareText('${item.id}')">
+                📋 Copy Text
+            </button>
+            <button class="btn" style="width:100%;padding:14px" onclick="closeCompModal()">
+                Close
+            </button>
+        </div>
+
+        <p style="font-size:11px;color:var(--mute);text-align:center;margin-top:16px">
+            Your share card shows no personal data.
+        </p>
+    `;
+}
+
+// Download share card as PNG (canvas generated)
+async function downloadShareCard(itemId) {
+    const item = currentComparison.options[currentComparison.choice];
+    const { data: fullItem } = await sb
+        .from('items')
+        .select('*, brands(name), categories(name), item_attributes(*, attribute_definitions(name, id))')
+        .eq('id', itemId)
+        .single();
+
+    if (!fullItem) { alert('Load failed'); return; }
+
+    const canvas = document.createElement('canvas');
+    canvas.width = 1080;
+    canvas.height = 1350;
+    const ctx = canvas.getContext('2d');
+
+    // Background gradient
+    const grad = ctx.createLinearGradient(0, 0, 1080, 1350);
+    grad.addColorStop(0, '#3A3FD9');
+    grad.addColorStop(1, '#7C3AED');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, 1080, 1350);
+
+    // CHOZ logo text
+    ctx.fillStyle = 'rgba(255,255,255,0.9)';
+    ctx.font = 'bold 42px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText('CHOZ', 540, 130);
+
+    // Tagline
+    ctx.font = '22px Arial';
+    ctx.fillStyle = 'rgba(255,255,255,0.75)';
+    ctx.fillText('Choose without the noise.', 540, 175);
+
+    // "I chose this"
+    ctx.font = 'bold 72px Arial';
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillText('I chose this.', 540, 320);
+
+    // White card
+    ctx.fillStyle = 'rgba(255,255,255,0.15)';
+    roundRect(ctx, 90, 420, 900, 360, 32);
+    ctx.fill();
+
+    // Category
+    ctx.font = 'bold 24px Arial';
+    ctx.fillStyle = 'rgba(255,255,255,0.75)';
+    ctx.fillText((fullItem.categories?.name || 'Comparison').toUpperCase(), 540, 500);
+
+    // Product name
+    ctx.font = 'bold 48px Arial';
+    ctx.fillStyle = '#FFFFFF';
+    wrapText(ctx, fullItem.name, 540, 580, 800, 56);
+
+    // Brand
+    ctx.font = '26px Arial';
+    ctx.fillStyle = 'rgba(255,255,255,0.85)';
+    ctx.fillText(fullItem.brands?.name || '', 540, 680);
+
+    // Price
+    ctx.font = 'bold 40px Arial';
+    ctx.fillStyle = '#FFD25A';
+    const priceText = fullItem.base_price ? `${fullItem.currency} ${fullItem.base_price.toLocaleString()}` : '';
+    ctx.fillText(priceText, 540, 740);
+
+    // Priorities
+    const priorities = (currentComparison.priorities || []).slice(0, 5);
+    const priorityNames = priorities
+        .map(pid => fullItem.item_attributes?.find(a => a.attribute_definitions?.id === pid))
+        .filter(Boolean)
+        .map(a => a.attribute_definitions?.name)
+        .filter(Boolean);
+
+    if (priorityNames.length > 0) {
+        ctx.font = 'bold 22px Arial';
+        ctx.fillStyle = 'rgba(255,255,255,0.7)';
+        ctx.fillText('MY PRIORITIES', 540, 870);
+
+        // Priority chips
+        let x = 90;
+        let y = 910;
+        const chipH = 60;
+        const chipGap = 16;
+        ctx.font = 'bold 24px Arial';
+        priorityNames.forEach(p => {
+            const w = ctx.measureText(p).width + 60;
+            if (x + w > 990) {
+                x = 90;
+                y += chipH + chipGap;
+            }
+            ctx.fillStyle = 'rgba(255,255,255,0.2)';
+            roundRect(ctx, x, y, w, chipH, 30);
+            ctx.fill();
+            ctx.fillStyle = '#FFFFFF';
+            ctx.textAlign = 'left';
+            ctx.fillText(p, x + 30, y + 40);
+            ctx.textAlign = 'center';
+            x += w + chipGap;
+        });
+    }
+
+    // Footer
+    ctx.font = '22px Arial';
+    ctx.fillStyle = 'rgba(255,255,255,0.7)';
+    ctx.textAlign = 'center';
+    ctx.fillText('choz-platform.pages.dev', 540, 1270);
+
+    // Download
+    canvas.toBlob(blob => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `choz-${fullItem.id}-decision.png`;
+        a.click();
+        URL.revokeObjectURL(url);
+    }, 'image/png');
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+}
+
+function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
+    const words = text.split(' ');
+    let line = '';
+    let currentY = y;
+    for (let n = 0; n < words.length; n++) {
+        const testLine = line + words[n] + ' ';
+        const metrics = ctx.measureText(testLine);
+        if (metrics.width > maxWidth && n > 0) {
+            ctx.fillText(line.trim(), x, currentY);
+            line = words[n] + ' ';
+            currentY += lineHeight;
+        } else {
+            line = testLine;
+        }
+    }
+    ctx.fillText(line.trim(), x, currentY);
+}
+
+// Native share (mobile)
+async function shareNative(itemId) {
+    const item = currentComparison.options[currentComparison.choice];
+    const { data: fullItem } = await sb
+        .from('items')
+        .select('*, brands(name), categories(name)')
+        .eq('id', itemId)
+        .single();
+
+    const text = `I just chose "${fullItem?.name}" on CHOZ — blind comparison, real priorities. Choose without the noise.`;
+    const url = window.location.origin;
 
     if (navigator.share) {
-        navigator.share({
-            title: 'My CHOZ Decision',
-            text: shareText,
-            url: shareUrl
-        }).catch(() => {});
+        try {
+            await navigator.share({
+                title: 'My CHOZ Decision',
+                text: text,
+                url: url
+            });
+        } catch (err) {
+            if (err.name !== 'AbortError') {
+                console.warn('Share failed:', err);
+            }
+        }
     } else {
-        navigator.clipboard.writeText(`${shareText}\n${shareUrl}`);
-        alert('Copied to clipboard!');
+        copyShareText(itemId);
+    }
+}
+
+// Copy text to clipboard
+async function copyShareText(itemId) {
+    const item = currentComparison.options[currentComparison.choice];
+    const { data: fullItem } = await sb
+        .from('items')
+        .select('*, brands(name), categories(name)')
+        .eq('id', itemId)
+        .single();
+
+    const text = `I just chose "${fullItem?.name}" (${fullItem?.brands?.name}) on CHOZ — blind comparison, real priorities. Choose without the noise.\n\nhttps://choz-platform.pages.dev`;
+
+    try {
+        await navigator.clipboard.writeText(text);
+        // Show feedback
+        const btn = event?.target;
+        if (btn) {
+            const original = btn.textContent;
+            btn.textContent = '✓ Copied!';
+            setTimeout(() => { btn.textContent = original; }, 2000);
+        }
+    } catch (err) {
+        alert('Could not copy. Text:\n\n' + text);
     }
 }
 
