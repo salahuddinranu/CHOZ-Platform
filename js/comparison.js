@@ -58,8 +58,9 @@ function renderComparisonModal() {
 
     content.innerHTML = `
         <div class="comp-header">
+        <span class="badge" style="background:#dcfce7;color:#166534">Step 3 of 3: Result</span>
             <h3 style="font-family:'Bricolage Grotesque';font-size:22px">Blind Comparison</h3>
-            <span class="badge">Step 1 of 2: Pick an option</span>
+            <span class="badge">Step 1 of 3: Pick an option</span>
         </div>
         <p style="color:var(--mute);font-size:14px;margin-bottom:16px">
             Brand names are hidden. Review the specs and pick the option that feels right.
@@ -137,7 +138,7 @@ function renderPrioritiesStep() {
     content.innerHTML = `
         <div class="comp-header">
             <h3 style="font-family:'Bricolage Grotesque';font-size:22px">Your Priorities</h3>
-            <span class="badge">Step 2 of 2: Rank what matters</span>
+            <span class="badge">Step 2 of 3: Set your priorities</span>
         </div>
         <p style="color:var(--mute);font-size:14px;margin-bottom:16px">
             <strong style="color:var(--ink)">Click ↑ ↓ to move items.</strong> Top = most important.
