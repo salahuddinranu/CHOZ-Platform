@@ -1,5 +1,5 @@
 // ============================================================
-// CHOZ BLIND COMPARISON ENGINE — Clean Final Version
+// CHOZ BLIND COMPARISON ENGINE — v3 with Custom Option + Checkbox Priorities
 // ============================================================
 
 let currentComparison = {
@@ -9,7 +9,9 @@ let currentComparison = {
     priorities: [],
     priorityNames: [],
     choice: null,
-    step: 'select'
+    step: 'select',
+    attributeDefs: [],
+    customCounter: 0
 };
 
 // ============================================================
@@ -23,14 +25,24 @@ async function startComparison(categoryId) {
     currentComparison.step = 'select';
     currentComparison.choice = null;
     currentComparison.priorityNames = [];
+    currentComparison.customCounter = 0;
 
-    const { data: items, error } = await sb
-        .from('items')
-        .select('*, brands(name), item_attributes(*, attribute_definitions(id, name, slug, unit, is_priority_eligible))')
-        .eq('category_id', categoryId)
-        .eq('is_active', true);
+    // Fetch items AND attribute definitions (for custom option form)
+    const [itemsRes, attrsRes] = await Promise.all([
+        sb.from('items')
+            .select('*, brands(name), item_attributes(*, attribute_definitions(id, name, slug, unit, is_priority_eligible))')
+            .eq('category_id', categoryId)
+            .eq('is_active', true),
+        sb.from('attribute_definitions')
+            .select('*')
+            .eq('category_id', categoryId)
+            .order('sort_order')
+    ]);
 
-    if (error || !items || items.length < 2) {
+    const items = itemsRes.data;
+    const attrDefs = attrsRes.data || [];
+
+    if (itemsRes.error || !items || items.length < 2) {
         alert('Not enough items in this category yet.');
         return;
     }
@@ -41,6 +53,8 @@ async function startComparison(categoryId) {
         return;
     }
 
+    currentComparison.attributeDefs = attrDefs;
+
     const shuffled = [...validItems].sort(() => Math.random() - 0.5).slice(0, 3);
     currentComparison.options = shuffled;
     currentComparison.labels = ['A', 'B', 'C'].slice(0, shuffled.length);
@@ -49,7 +63,7 @@ async function startComparison(categoryId) {
 }
 
 // ============================================================
-// STEP 1: RENDER OPTIONS
+// STEP 1: RENDER OPTIONS (with Custom Option Button)
 // ============================================================
 function renderComparisonModal() {
     const modal = document.getElementById('compModal');
@@ -68,9 +82,12 @@ function renderComparisonModal() {
         <div class="options-grid" id="optionsGrid">
             ${options.map((item, i) => {
                 const attrs = (item.item_attributes || []).slice(0, 6);
+                const customTag = item.is_custom
+                    ? '<span style="font-size:10px;background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:10px;margin-left:6px;vertical-align:middle">YOUR OPTION</span>'
+                    : '';
                 return `
                     <div class="option-card" data-idx="${i}" style="cursor:pointer">
-                        <h3>Option ${labels[i]}</h3>
+                        <h3>Option ${labels[i]}${customTag}</h3>
                         ${attrs.map(a => `
                             <div class="attr-row">
                                 <span class="label">${a.attribute_definitions?.name || ''}</span>
@@ -81,6 +98,14 @@ function renderComparisonModal() {
                 `;
             }).join('')}
         </div>
+
+        ${currentComparison.customCounter < 3 ? `
+            <button type="button" class="btn" style="width:100%;padding:12px;margin-bottom:8px;border-style:dashed;color:var(--ac);border-color:var(--ac)"
+                    id="addCustomBtn">
+                ➕ Add your own option to compare
+            </button>
+        ` : ''}
+
         <button type="button" class="btn p" style="width:100%;padding:14px" id="lockBtn" disabled>
             Select an option first
         </button>
@@ -92,6 +117,9 @@ function renderComparisonModal() {
             selectOption(idx);
         });
     });
+
+    const addBtn = document.getElementById('addCustomBtn');
+    if (addBtn) addBtn.addEventListener('click', showCustomOptionForm);
 
     document.getElementById('lockBtn').addEventListener('click', goToPriorities);
 
@@ -117,47 +145,184 @@ function goToPriorities() {
 }
 
 // ============================================================
-// STEP 2: RENDER PRIORITIES
+// CUSTOM OPTION FORM
+// ============================================================
+function showCustomOptionForm() {
+    const content = document.getElementById('compContent');
+    const attrsArray = currentComparison.attributeDefs || [];
+
+    content.innerHTML = `
+        <div class="comp-header">
+            <h3>Add Your Own Option</h3>
+            <button class="modal-close" style="position:static;font-size:20px" onclick="renderComparisonModal()">×</button>
+        </div>
+        <p style="color:var(--mute);font-size:14px;margin-bottom:16px;line-height:1.6">
+            Enter your own product to compare against the anonymous options.
+            This option appears as a regular choice — your entry stays private.
+        </p>
+
+        <label style="display:block;font-size:13px;font-weight:600;margin-bottom:6px">Name <span style="color:#ef4444">*</span></label>
+        <input type="text" id="customName" placeholder="e.g. My Current Phone" maxlength="80"
+               style="width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font-family:inherit;font-size:14px;margin-bottom:14px">
+
+        <label style="display:block;font-size:13px;font-weight:600;margin-bottom:6px">Price (optional)</label>
+        <input type="number" id="customPrice" placeholder="e.g. 50000" min="0"
+               style="width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font-family:inherit;font-size:14px;margin-bottom:16px">
+
+        <div style="border-top:1px solid var(--line);padding-top:16px;margin-bottom:8px">
+            <strong style="font-size:13px;color:var(--ink)">Specifications</strong>
+            <p style="font-size:12px;color:var(--mute);margin-top:4px;margin-bottom:12px">
+                Fill in what you know. Empty fields will be skipped.
+            </p>
+        </div>
+
+        <div id="customAttrs" style="max-height:280px;overflow-y:auto;padding-right:4px">
+            ${attrsArray.length === 0 ? `
+                <p style="color:var(--mute);font-size:13px">No predefined attributes for this category.</p>
+            ` : attrsArray.map(a => `
+                <div style="margin-bottom:12px">
+                    <label style="display:block;font-size:13px;font-weight:600;margin-bottom:6px">
+                        ${a.name}${a.unit ? ' <span style="color:var(--mute);font-weight:400">(' + a.unit + ')</span>' : ''}
+                    </label>
+                    <input type="text" class="custom-attr-input"
+                           data-attr-id="${a.id}"
+                           data-attr-name="${a.name}"
+                           data-attr-unit="${a.unit || ''}"
+                           data-attr-type="${a.data_type}"
+                           placeholder="Enter value"
+                           style="width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font-family:inherit;font-size:14px">
+                </div>
+            `).join('')}
+        </div>
+
+        <div style="display:flex;gap:8px;margin-top:16px">
+            <button class="btn p" style="flex:1;padding:14px" id="customSaveBtn">Add to Comparison</button>
+            <button class="btn" id="customCancelBtn">Cancel</button>
+        </div>
+    `;
+
+    document.getElementById('customSaveBtn').addEventListener('click', saveCustomOption);
+    document.getElementById('customCancelBtn').addEventListener('click', renderComparisonModal);
+}
+
+function saveCustomOption() {
+    const nameEl = document.getElementById('customName');
+    const priceEl = document.getElementById('customPrice');
+    if (!nameEl) return;
+
+    const name = nameEl.value.trim();
+    const price = priceEl ? priceEl.value : '';
+
+    if (!name) {
+        alert('Please enter a name for your option.');
+        nameEl.focus();
+        return;
+    }
+
+    // Collect attribute values
+    const item_attributes = [];
+    document.querySelectorAll('.custom-attr-input').forEach(input => {
+        const val = input.value.trim();
+        if (val) {
+            const numVal = parseFloat(val);
+            item_attributes.push({
+                attribute_definitions: {
+                    id: input.dataset.attrId,
+                    name: input.dataset.attrName,
+                    unit: input.dataset.attrUnit,
+                    data_type: input.dataset.attrType
+                },
+                value: val,
+                numeric_value: isNaN(numVal) ? null : numVal
+            });
+        }
+    });
+
+    // Add synthetic attributes for attributes user didn't fill (so it displays nicely)
+    currentComparison.customCounter = (currentComparison.customCounter || 0) + 1;
+    const customLabel = String.fromCharCode(65 + currentComparison.options.length);
+
+    const customOption = {
+        id: 'custom-' + Date.now(),
+        name: name,
+        base_price: price ? parseFloat(price) : null,
+        currency: 'PKR',
+        is_custom: true,
+        item_attributes: item_attributes
+    };
+
+    currentComparison.options.push(customOption);
+    currentComparison.labels.push(customLabel);
+
+    renderComparisonModal();
+}
+
+// ============================================================
+// STEP 2: RENDER PRIORITIES (checkbox based)
 // ============================================================
 function renderPrioritiesStep() {
     const content = document.getElementById('compContent');
+    const attrsArray = currentComparison.attributeDefs || [];
 
-    const allAttrs = new Map();
-    currentComparison.options.forEach(item => {
-        (item.item_attributes || []).forEach(a => {
-            if (a.attribute_definitions && !allAttrs.has(a.attribute_definitions.id)) {
-                allAttrs.set(a.attribute_definitions.id, a.attribute_definitions);
-            }
+    if (attrsArray.length === 0) {
+        // Fallback: collect attributes from options
+        const allAttrs = new Map();
+        currentComparison.options.forEach(item => {
+            (item.item_attributes || []).forEach(a => {
+                if (a.attribute_definitions && !allAttrs.has(a.attribute_definitions.id)) {
+                    allAttrs.set(a.attribute_definitions.id, a.attribute_definitions);
+                }
+            });
         });
-    });
+        currentComparison.attributeDefs = [...allAttrs.values()];
+    }
 
-    const attrsArray = [...allAttrs.values()];
-    currentComparison.priorities = attrsArray.map(a => a.id);
-    currentComparison.priorityNames = attrsArray.map(a => a.name);
+    const list = currentComparison.attributeDefs;
+
+    // All selected by default
+    currentComparison.priorities = list.map(a => a.id);
+    currentComparison.priorityNames = list.map(a => a.name);
 
     content.innerHTML = `
         <div class="comp-header">
             <h3>Your Priorities</h3>
-            <span class="badge">Step 2 of 3: Set your priorities</span>
+            <span class="badge">Step 2 of 3: Select priorities</span>
         </div>
-        <p style="color:var(--mute);font-size:14px;margin-bottom:16px;line-height:1.6">
-            <strong style="color:var(--ink)">What matters most to you?</strong><br>
-            Click ↑↓ to rank. Top = highest priority.
+        <p style="color:var(--mute);font-size:14px;margin-bottom:8px;line-height:1.6">
+            <strong style="color:var(--ink)">Tick what matters to you.</strong>
+            Use ↑ ↓ to rank the order.
         </p>
-        <div class="priority-list" id="priorityList">
-            ${attrsArray.map((a, i) => `
-                <div class="priority-item" data-attr-id="${a.id}" data-attr-name="${a.name}">
-                    <div style="display:flex;align-items:center;gap:10px;">
-                        <span class="rank">${i + 1}</span>
-                        <span>${a.name}${a.unit ? ' (' + a.unit + ')' : ''}</span>
-                    </div>
-                    <div style="display:flex;gap:4px;">
+        <p style="color:var(--mute);font-size:12px;margin-bottom:12px">
+            First tick = highest priority. Unticked items are ignored.
+        </p>
+
+        <div id="priorityList" style="max-height:400px;overflow-y:auto;padding-right:4px">
+            ${list.map((a, i) => `
+                <div class="priority-item"
+                     data-attr-id="${a.id}"
+                     data-attr-name="${a.name}"
+                     style="cursor:default;margin-bottom:6px">
+                    <label style="display:flex;align-items:center;gap:12px;flex:1;cursor:pointer;margin:0">
+                        <input type="checkbox" class="pri-check" checked
+                               style="width:18px;height:18px;cursor:pointer;flex-shrink:0;accent-color:var(--ac)">
+                        <span class="rank-badge"
+                              style="background:var(--ac-soft);color:var(--ac);min-width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:12px;flex-shrink:0">
+                            ${i + 1}
+                        </span>
+                        <span style="font-size:14px">${a.name}${a.unit ? ' (' + a.unit + ')' : ''}</span>
+                    </label>
+                    <div style="display:flex;gap:4px">
                         <button type="button" class="btn pri-up" style="padding:6px 14px;font-size:14px;font-weight:700">↑</button>
                         <button type="button" class="btn pri-down" style="padding:6px 14px;font-size:14px;font-weight:700">↓</button>
                     </div>
                 </div>
             `).join('')}
         </div>
+
+        <div id="prioritySummary" style="margin-top:12px;padding:12px;background:var(--ac-soft);border-radius:10px;font-size:13px;color:var(--ac)">
+            All priorities selected
+        </div>
+
         <button type="button" class="btn p" style="width:100%;padding:14px;margin-top:16px" id="lockChoiceBtn">
             🔒 Lock Choice & Reveal
         </button>
@@ -166,46 +331,89 @@ function renderPrioritiesStep() {
         </button>
     `;
 
-    const list = document.getElementById('priorityList');
-    list.querySelectorAll('.priority-item').forEach(item => {
+    const listEl = document.getElementById('priorityList');
+
+    // Checkbox handlers
+    listEl.querySelectorAll('.pri-check').forEach(cb => {
+        cb.addEventListener('change', updateSelectedPriorities);
+    });
+
+    // Up/Down handlers
+    listEl.querySelectorAll('.priority-item').forEach(item => {
         const upBtn = item.querySelector('.pri-up');
         const downBtn = item.querySelector('.pri-down');
 
-        upBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            const items = [...list.children];
+        upBtn.addEventListener('click', () => {
+            const items = [...listEl.children];
             const idx = items.indexOf(item);
             if (idx > 0) {
                 items[idx - 1].before(item);
-                updateRanks();
+                updateSelectedPriorities();
             }
         });
 
-        downBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            const items = [...list.children];
+        downBtn.addEventListener('click', () => {
+            const items = [...listEl.children];
             const idx = items.indexOf(item);
             if (idx < items.length - 1) {
                 items[idx + 1].after(item);
-                updateRanks();
+                updateSelectedPriorities();
             }
         });
     });
+
+    updateSelectedPriorities();
 
     document.getElementById('lockChoiceBtn').addEventListener('click', lockChoice);
     document.getElementById('backBtn').addEventListener('click', backToSelect);
 }
 
-function updateRanks() {
+function updateSelectedPriorities() {
     const items = document.querySelectorAll('#priorityList .priority-item');
-    items.forEach((el, i) => {
-        const rankEl = el.querySelector('.rank');
-        if (rankEl) rankEl.textContent = i + 1;
+    const selected = [];
+    const names = [];
+    let rank = 1;
+
+    items.forEach(item => {
+        const cb = item.querySelector('.pri-check');
+        const badge = item.querySelector('.rank-badge');
+
+        if (cb.checked) {
+            selected.push(item.dataset.attrId);
+            names.push(item.dataset.attrName);
+            badge.textContent = rank++;
+            badge.style.background = 'var(--ac-soft)';
+            badge.style.color = 'var(--ac)';
+            badge.style.opacity = '1';
+            item.style.opacity = '1';
+        } else {
+            badge.textContent = '–';
+            badge.style.background = 'var(--line)';
+            badge.style.color = 'var(--mute)';
+            badge.style.opacity = '0.6';
+            item.style.opacity = '0.55';
+        }
     });
-    currentComparison.priorities = [...items].map(el => el.dataset.attrId);
-    currentComparison.priorityNames = [...items].map(el => el.dataset.attrName);
+
+    currentComparison.priorities = selected;
+    currentComparison.priorityNames = names;
+
+    const summary = document.getElementById('prioritySummary');
+    if (summary) {
+        if (selected.length === 0) {
+            summary.textContent = '⚠️ Tick at least one priority';
+            summary.style.background = '#fee2e2';
+            summary.style.color = '#991b1b';
+        } else if (selected.length === items.length) {
+            summary.textContent = 'All ' + selected.length + ' priorities selected';
+            summary.style.background = 'var(--ac-soft)';
+            summary.style.color = 'var(--ac)';
+        } else {
+            summary.textContent = selected.length + ' of ' + items.length + ' selected';
+            summary.style.background = 'var(--ac-soft)';
+            summary.style.color = 'var(--ac)';
+        }
+    }
 }
 
 function backToSelect() {
@@ -230,17 +438,34 @@ function backToSelect() {
 async function lockChoice() {
     if (currentComparison.choice === null) return;
 
-    updateRanks();
+    // Ensure priorities up to date
+    if (document.getElementById('priorityList')) {
+        updateSelectedPriorities();
+    }
+
+    if (!currentComparison.priorities || currentComparison.priorities.length === 0) {
+        alert('Please tick at least one priority.');
+        return;
+    }
+
     const chosenIdx = currentComparison.choice;
     const chosenItem = currentComparison.options[chosenIdx];
     const chosenLabel = currentComparison.labels[chosenIdx];
 
-    const { data: fullItem } = await sb
-        .from('items')
-        .select('*, brands(*), item_attributes(*, attribute_definitions(*))')
-        .eq('id', chosenItem.id)
-        .single();
+    let fullItem;
 
+    if (chosenItem.is_custom) {
+        fullItem = chosenItem;
+    } else {
+        const { data } = await sb
+            .from('items')
+            .select('*, brands(*), item_attributes(*, attribute_definitions(*))')
+            .eq('id', chosenItem.id)
+            .single();
+        fullItem = data;
+    }
+
+    // Save comparison record
     const { data: { session } } = await sb.auth.getSession();
     if (session) {
         await sb.from('comparisons').insert({
@@ -274,6 +499,8 @@ function renderReveal(item, label) {
         };
     }).filter(Boolean);
 
+    const isCustom = item.is_custom === true;
+
     content.innerHTML = `
         <div class="comp-header">
             <h3>Your Result</h3>
@@ -284,8 +511,8 @@ function renderReveal(item, label) {
             <h2>🎉 Revealed</h2>
             <p style="opacity:0.9">You chose Option ${label}</p>
             <div class="item-name">${item.name}</div>
-            <div class="brand-name">${item.brands?.name || 'Unknown brand'}</div>
-            <div class="price">${item.currency} ${item.base_price?.toLocaleString() || '—'}</div>
+            ${!isCustom ? `<div class="brand-name">${item.brands?.name || 'Unknown brand'}</div>` : `<div class="brand-name" style="opacity:0.7">Your custom entry</div>`}
+            ${item.base_price ? `<div class="price">${item.currency} ${item.base_price.toLocaleString()}</div>` : ''}
         </div>
 
         <div class="why-section-box">
@@ -297,14 +524,14 @@ function renderReveal(item, label) {
                 <ol style="margin:0;padding-left:20px;font-size:14px;line-height:1.8">
                     ${priorityExplanations.map(p => `
                         <li>
-                            <strong>${p.name}</strong> 
+                            <strong>${p.name}</strong>
                             <span style="color:var(--ac);font-weight:600">→ ${p.value}</span>
                         </li>
                     `).join('')}
                 </ol>
                 <p style="margin-top:14px;font-size:13px;color:var(--mute)">
-                    You selected the option that felt right for these priorities. 
-                    Brand names were hidden during your decision.
+                    You selected the option that felt right for these priorities.
+                    ${!isCustom ? 'Brand names were hidden during your decision.' : ''}
                 </p>
             ` : `
                 <p style="font-size:14px">You selected this option from ${currentComparison.options.length} anonymous choices.</p>
@@ -313,22 +540,28 @@ function renderReveal(item, label) {
 
         <div class="reveal-actions">
             <button class="btn p" onclick="saveDecision('${item.id}')">💾 Save to Memory</button>
-            <button class="btn" onclick="bookmarkComparison('${item.id}', \`${item.name.replace(/`/g, '\\`')}\`)">🔖 Bookmark</button>
-            <button class="btn" onclick="openReviewModal('${item.id}', \`${item.name.replace(/`/g, '\\`')}\`)">⭐ Write Review</button>
+            ${!isCustom ? `
+                <button class="btn" onclick="bookmarkComparison('${item.id}', \`${item.name.replace(/`/g, '\\`')}\`)">🔖 Bookmark</button>
+                <button class="btn" onclick="openReviewModal('${item.id}', \`${item.name.replace(/`/g, '\\`')}\`)">⭐ Write Review</button>
+            ` : ''}
             <button class="btn" onclick="shareResult()">🔗 Share</button>
             <button class="btn" onclick="showWhereToBuy('${item.id}', \`${item.name.replace(/`/g, '\\`')}\`, '${currentComparison.categoryId}')">🛒 Where to Buy</button>
             <button class="btn" onclick="closeCompModal()">Close</button>
         </div>
 
-        <div id="reviewsSection" style="margin-top:20px"></div>
+        ${!isCustom ? `
+            <div id="reviewsSection" style="margin-top:20px"></div>
+        ` : ''}
         <div id="buySection" style="margin-top:20px"></div>
     `;
 
-    setTimeout(() => {
-        if (typeof loadItemReviews === 'function') {
-            loadItemReviews(item.id, item.name);
-        }
-    }, 100);
+    if (!isCustom) {
+        setTimeout(() => {
+            if (typeof loadItemReviews === 'function') {
+                loadItemReviews(item.id, item.name);
+            }
+        }, 100);
+    }
 }
 
 // ============================================================
@@ -343,9 +576,9 @@ async function saveDecision(itemId) {
     const { error } = await sb.from('decision_memories').insert({
         user_id: session.user.id,
         category_id: currentComparison.categoryId,
-        chosen_item_id: itemId,
+        chosen_item_id: item.is_custom ? null : itemId,
         title: `I chose ${item.name}`,
-        note: '',
+        note: item.is_custom ? 'Custom option entered by me' : '',
         priorities: currentComparison.priorities || []
     });
 
@@ -366,11 +599,16 @@ async function saveDecision(itemId) {
 }
 
 // ============================================================
-// BOOKMARK COMPARISON
+// BOOKMARK
 // ============================================================
 async function bookmarkComparison(itemId, itemName) {
     const { data: { session } } = await sb.auth.getSession();
     if (!session) { openAuth(); return; }
+
+    if (String(itemId).startsWith('custom-')) {
+        alert('Custom entries cannot be bookmarked.');
+        return;
+    }
 
     const { data: existing } = await sb
         .from('saved_comparisons')
@@ -380,13 +618,8 @@ async function bookmarkComparison(itemId, itemName) {
         .maybeSingle();
 
     if (existing) {
-        const { error } = await sb
-            .from('saved_comparisons')
-            .delete()
-            .eq('id', existing.id);
-
+        const { error } = await sb.from('saved_comparisons').delete().eq('id', existing.id);
         if (error) { alert('Could not remove: ' + error.message); return; }
-
         if (event?.target) {
             event.target.textContent = '🔖 Bookmark';
             event.target.style.background = '';
@@ -419,6 +652,18 @@ async function shareResult() {
     const item = currentComparison.options[currentComparison.choice];
     if (!item) return;
 
+    if (item.is_custom) {
+        showShareModal({
+            id: item.id,
+            name: item.name,
+            base_price: item.base_price,
+            currency: item.currency,
+            brands: null,
+            categories: { name: 'Custom' }
+        });
+        return;
+    }
+
     const { data: fullItem } = await sb
         .from('items')
         .select('*, brands(name), categories(name)')
@@ -437,7 +682,7 @@ function showShareModal(item) {
     const content = document.getElementById('compContent');
 
     const categoryName = item.categories?.name || 'Comparison';
-    const brandName = item.brands?.name || 'Unknown brand';
+    const brandName = item.brands?.name || 'Custom Option';
     const price = item.base_price ? `${item.currency} ${item.base_price.toLocaleString()}` : 'Price unavailable';
 
     const priorityNames = (currentComparison.priorityNames || []).slice(0, 5);
@@ -448,91 +693,58 @@ function showShareModal(item) {
             <button class="modal-close" style="position:static;font-size:20px" onclick="closeCompModal()">×</button>
         </div>
 
-        <div id="sharePreview" style="
-            background: linear-gradient(135deg, #3A3FD9 0%, #7C3AED 100%);
-            border-radius: 20px;
-            padding: 32px;
-            color: white;
-            text-align: center;
-            margin: 20px 0;
-            box-shadow: 0 20px 60px rgba(58,63,217,0.3);
-        ">
-            <div style="font-family:'Bricolage Grotesque';font-size:14px;letter-spacing:3px;opacity:0.85;margin-bottom:20px">
-                CHOZ
-            </div>
-            <div style="font-family:'Bricolage Grotesque';font-size:28px;font-weight:700;line-height:1.2;margin-bottom:8px">
-                I chose this.
-            </div>
-            <div style="font-size:13px;opacity:0.8;margin-bottom:24px">
-                Choose without the noise.
-            </div>
+        <div id="sharePreview" style="background: linear-gradient(135deg, #3A3FD9 0%, #7C3AED 100%);border-radius: 20px;padding: 32px;color: white;text-align: center;margin: 20px 0;box-shadow: 0 20px 60px rgba(58,63,217,0.3);">
+            <div style="font-family:'Bricolage Grotesque';font-size:14px;letter-spacing:3px;opacity:0.85;margin-bottom:20px">CHOZ</div>
+            <div style="font-family:'Bricolage Grotesque';font-size:28px;font-weight:700;line-height:1.2;margin-bottom:8px">I chose this.</div>
+            <div style="font-size:13px;opacity:0.8;margin-bottom:24px">Choose without the noise.</div>
 
             <div style="background:rgba(255,255,255,0.15);border-radius:14px;padding:20px;margin-bottom:20px;backdrop-filter:blur(10px)">
-                <div style="font-size:11px;letter-spacing:2px;opacity:0.7;text-transform:uppercase;margin-bottom:8px">
-                    ${escapeHtml(categoryName)}
-                </div>
-                <div style="font-size:20px;font-family:'Bricolage Grotesque';font-weight:700;margin-bottom:4px">
-                    ${escapeHtml(item.name)}
-                </div>
-                <div style="font-size:13px;opacity:0.85;margin-bottom:8px">
-                    ${escapeHtml(brandName)}
-                </div>
-                <div style="font-size:16px;font-weight:600">
-                    ${price}
-                </div>
+                <div style="font-size:11px;letter-spacing:2px;opacity:0.7;text-transform:uppercase;margin-bottom:8px">${escapeHtml(categoryName)}</div>
+                <div style="font-size:20px;font-family:'Bricolage Grotesque';font-weight:700;margin-bottom:4px">${escapeHtml(item.name)}</div>
+                <div style="font-size:13px;opacity:0.85;margin-bottom:8px">${escapeHtml(brandName)}</div>
+                <div style="font-size:16px;font-weight:600">${price}</div>
             </div>
 
             ${priorityNames.length > 0 ? `
                 <div style="margin-bottom:20px">
-                    <div style="font-size:11px;letter-spacing:2px;opacity:0.7;text-transform:uppercase;margin-bottom:10px">
-                        My priorities were
-                    </div>
+                    <div style="font-size:11px;letter-spacing:2px;opacity:0.7;text-transform:uppercase;margin-bottom:10px">My priorities were</div>
                     <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center">
-                        ${priorityNames.map(p => `
-                            <span style="
-                                background:rgba(255,255,255,0.2);
-                                padding:6px 12px;
-                                border-radius:20px;
-                                font-size:12px;
-                                font-weight:500;
-                            ">${escapeHtml(p)}</span>
-                        `).join('')}
+                        ${priorityNames.map(p => `<span style="background:rgba(255,255,255,0.2);padding:6px 12px;border-radius:20px;font-size:12px;font-weight:500">${escapeHtml(p)}</span>`).join('')}
                     </div>
                 </div>
             ` : ''}
 
-            <div style="font-size:11px;opacity:0.6;margin-top:24px">
-                choz-platform.pages.dev
-            </div>
+            <div style="font-size:11px;opacity:0.6;margin-top:24px">choz-platform.pages.dev</div>
         </div>
 
         <div style="display:flex;flex-direction:column;gap:10px">
-            <button class="btn p" style="width:100%;padding:14px" onclick="downloadShareCard('${item.id}')">
-                📥 Download Card (PNG)
-            </button>
-            <button class="btn" style="width:100%;padding:14px" onclick="shareNative('${item.id}')">
-                📱 Share via Device
-            </button>
-            <button class="btn" style="width:100%;padding:14px" onclick="copyShareText('${item.id}')">
-                📋 Copy Text
-            </button>
-            <button class="btn" style="width:100%;padding:14px" onclick="closeCompModal()">
-                Close
-            </button>
+            <button class="btn p" style="width:100%;padding:14px" onclick="downloadShareCard('${item.id}')">📥 Download Card (PNG)</button>
+            <button class="btn" style="width:100%;padding:14px" onclick="shareNative('${item.id}')">📱 Share via Device</button>
+            <button class="btn" style="width:100%;padding:14px" onclick="copyShareText('${item.id}')">📋 Copy Text</button>
+            <button class="btn" style="width:100%;padding:14px" onclick="closeCompModal()">Close</button>
         </div>
 
-        <p style="font-size:11px;color:var(--mute);text-align:center;margin-top:16px">
-            Your share card shows no personal data.
-        </p>
+        <p style="font-size:11px;color:var(--mute);text-align:center;margin-top:16px">Your share card shows no personal data.</p>
     `;
 }
 
 async function downloadShareCard(itemId) {
-    const { data: fullItem } = await sb
-        .from('items')
-        .select('*, brands(name), categories(name)')
-        .eq('id', itemId)
-        .single();
+    let fullItem;
+    const item = currentComparison.options[currentComparison.choice];
+
+    if (item.is_custom) {
+        fullItem = {
+            id: item.id,
+            name: item.name,
+            base_price: item.base_price,
+            currency: item.currency,
+            brands: { name: 'Custom' },
+            categories: { name: 'Custom' }
+        };
+    } else {
+        const { data } = await sb.from('items').select('*, brands(name), categories(name)').eq('id', itemId).single();
+        fullItem = data;
+    }
 
     if (!fullItem) { alert('Load failed'); return; }
 
@@ -654,13 +866,15 @@ function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
 }
 
 async function shareNative(itemId) {
-    const { data: fullItem } = await sb
-        .from('items')
-        .select('*, brands(name)')
-        .eq('id', itemId)
-        .single();
+    const item = currentComparison.options[currentComparison.choice];
+    let name = item.name;
 
-    const text = `I just chose "${fullItem?.name}" on CHOZ — blind comparison, real priorities. Choose without the noise.`;
+    if (!item.is_custom) {
+        const { data } = await sb.from('items').select('name').eq('id', itemId).single();
+        if (data) name = data.name;
+    }
+
+    const text = `I just chose "${name}" on CHOZ — blind comparison, real priorities. Choose without the noise.`;
     const url = window.location.origin;
 
     if (navigator.share) {
@@ -675,13 +889,19 @@ async function shareNative(itemId) {
 }
 
 async function copyShareText(itemId) {
-    const { data: fullItem } = await sb
-        .from('items')
-        .select('*, brands(name)')
-        .eq('id', itemId)
-        .single();
+    const item = currentComparison.options[currentComparison.choice];
+    let name = item.name;
+    let brand = '';
 
-    const text = `I just chose "${fullItem?.name}" (${fullItem?.brands?.name}) on CHOZ — blind comparison, real priorities. Choose without the noise.\n\nhttps://choz-platform.pages.dev`;
+    if (!item.is_custom) {
+        const { data } = await sb.from('items').select('name, brands(name)').eq('id', itemId).single();
+        if (data) {
+            name = data.name;
+            brand = data.brands?.name || '';
+        }
+    }
+
+    const text = `I just chose "${name}"${brand ? ' (' + brand + ')' : ''} on CHOZ — blind comparison, real priorities. Choose without the noise.\n\nhttps://choz-platform.pages.dev`;
 
     try {
         await navigator.clipboard.writeText(text);
@@ -703,9 +923,7 @@ const SEARCH_PROVIDERS = {
     'cat-phone': [
         { name: 'Daraz', icon: '🛍️', url: q => `https://www.daraz.pk/catalog/?q=${q}` },
         { name: 'PriceOye', icon: '💰', url: q => `https://priceoye.pk/search?q=${q}` },
-        { name: 'Mega.pk', icon: '🏬', url: q => `https://www.mega.pk/search/?q=${q}` },
         { name: 'OLX Pakistan', icon: '📦', url: q => `https://www.olx.com.pk/items/q-${q.replace(/%20/g, '-')}` },
-        { name: 'WhatMobile', icon: '📱', url: q => `https://www.whatmobile.com.pk/search?q=${q}` },
         { name: 'Google Shopping', icon: '🔍', url: q => `https://www.google.com/search?tbm=shop&q=${q}` }
     ],
     'cat-laptop': [
@@ -746,12 +964,18 @@ async function showWhereToBuy(itemId, itemName, categoryId) {
 
     section.innerHTML = '<p style="text-align:center;color:var(--mute);font-size:14px;padding:16px">Loading buy options...</p>';
 
-    const { data: adminLinks } = await sb
-        .from('affiliate_links')
-        .select('*')
-        .eq('item_id', itemId)
-        .eq('is_active', true)
-        .order('created_at');
+    const isCustom = String(itemId).startsWith('custom-');
+
+    let adminLinks = null;
+    if (!isCustom) {
+        const { data } = await sb
+            .from('affiliate_links')
+            .select('*')
+            .eq('item_id', itemId)
+            .eq('is_active', true)
+            .order('created_at');
+        adminLinks = data;
+    }
 
     let html = `
         <div style="background:var(--sf);border:1px solid var(--line);border-radius:14px;padding:20px">
@@ -837,9 +1061,7 @@ async function loadItemReviews(itemId, itemName) {
     if (!reviews || reviews.length === 0) {
         section.innerHTML = `
             <div style="background:var(--sf);border:1px solid var(--line);border-radius:14px;padding:18px">
-                <p style="color:var(--mute);font-size:13px;text-align:center">
-                    No reviews yet. Be the first to share your experience.
-                </p>
+                <p style="color:var(--mute);font-size:13px;text-align:center">No reviews yet. Be the first to share your experience.</p>
             </div>
         `;
         return;
@@ -871,6 +1093,11 @@ async function loadItemReviews(itemId, itemName) {
 function openReviewModal(itemId, itemName) {
     const section = document.getElementById('reviewsSection');
     if (!section) return;
+
+    if (String(itemId).startsWith('custom-')) {
+        alert('Custom entries cannot be reviewed.');
+        return;
+    }
 
     section.innerHTML = `
         <div style="background:var(--sf);border:1px solid var(--line);border-radius:14px;padding:24px">
@@ -987,12 +1214,13 @@ function closeCompModal() {
     document.getElementById('compModal').classList.add('hidden');
     currentComparison = {
         categoryId: null, options: [], labels: [],
-        priorities: [], priorityNames: [], choice: null, step: 'select'
+        priorities: [], priorityNames: [], choice: null, step: 'select',
+        attributeDefs: [], customCounter: 0
     };
 }
 
 // ============================================================
-// LOAD CATEGORIES — Premium version
+// LOAD CATEGORIES
 // ============================================================
 async function loadCategories() {
     const grid = document.getElementById('catGrid');
