@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://choz-platform.pages.dev/sitemap.xml
