@@ -544,7 +544,17 @@ async function deleteAffiliateLink(linkId, itemId, itemName) {
 
         async function loadReviews(content, title) {
             title.textContent = 'Reviews';
-            const { data } = await sb.from('user_reviews').select('*, items(name), profiles(email)').order('created_at', { ascending: false });
+            const { data } = await sb.from('user_reviews').select('*, items(name)').order('created_at', { ascending: false });
+
+// Fetch user emails separately
+let userEmails = {};
+if (data && data.length > 0) {
+    const userIds = [...new Set(data.map(r => r.user_id).filter(Boolean))];
+    if (userIds.length > 0) {
+        const { data: profiles } = await sb.from('profiles').select('id, email').in('id', userIds);
+        if (profiles) profiles.forEach(p => userEmails[p.id] = p.email);
+    }
+}
             if (!data || data.length === 0) {
                 content.innerHTML = '<div class="admin-card empty-state">No reviews yet.</div>';
                 return;
@@ -557,7 +567,7 @@ async function deleteAffiliateLink(linkId, itemId, itemName) {
                             ${data.map(r => `
                                 <tr>
                                     <td>${r.items?.name || '—'}</td>
-                                    <td>${r.profiles?.email || '—'}</td>
+                                    <td>${userEmails[r.user_id] || r.user_id?.substring(0, 8) + '...' || '—'}</td>
                                     <td>${'⭐'.repeat(r.rating || 0)}</td>
                                     <td>${r.title || '—'}</td>
                                     <td>${r.is_hidden ? '<span class="badge badge-red">Hidden</span>' : '<span class="badge badge-green">Visible</span>'}</td>
