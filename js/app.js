@@ -125,6 +125,9 @@ if ('serviceWorker' in navigator) {
 
 // Init
 checkAuth();
+checkAuth();
+initNotifications();  // ← yeh add karo
+loadCategories();
 loadCategories();
 loadPulse();
 // ============================================================
