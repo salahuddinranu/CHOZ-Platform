@@ -302,11 +302,11 @@ async function deleteAffiliateLink(linkId, itemId, itemName) {
         async function loadDashboard(content, title) {
             title.textContent = 'Dashboard';
             const [users, items, reviews, feedback, comps] = await Promise.all([
-                sb.from('profiles').select('*', { count: 'exact', head: true }),
-                sb.from('items').select('*', { count: 'exact', head: true }),
-                sb.from('user_reviews').select('*', { count: 'exact', head: true }),
-                sb.from('feedback').select('*', { count: 'exact', head: true }),
-                sb.from('comparisons').select('*', { count: 'exact', head: true })
+                sb.from('profiles').select('id', { count: 'exact', head: true }),
+sb.from('items').select('id', { count: 'exact', head: true }),
+sb.from('user_reviews').select('id', { count: 'exact', head: true }),
+sb.from('feedback').select('id', { count: 'exact', head: true }),
+sb.from('comparisons').select('id', { count: 'exact', head: true })
             ]);
             content.innerHTML = `
                 <div class="stats-grid">
