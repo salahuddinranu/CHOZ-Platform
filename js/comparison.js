@@ -288,10 +288,12 @@ function renderReveal(item, label) {
         </div>
 
         <div class="reveal-actions">
-            <button class="btn p" onclick="saveDecision('${item.id}')">💾 Save to Memory</button>
-            <button class="btn" onclick="shareResult()">🔗 Share</button>
-            <button class="btn" onclick="closeCompModal()">Close</button>
-        </div>
+    <button class="btn p" onclick="saveDecision('${item.id}')">💾 Save to Memory</button>
+    <button class="btn" onclick="shareResult()">🔗 Share</button>
+    <button class="btn" onclick="showWhereToBuy('${item.id}', \`${item.name.replace(/`/g, '\\`')}\`)">🛒 Where to Buy</button>
+    <button class="btn" onclick="closeCompModal()">Close</button>
+</div>
+<div id="buySection" style="margin-top:20px"></div>
     `;
 }
 
@@ -384,3 +386,84 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.target.id === 'compModal') closeCompModal();
     });
 });
+// ============================================================
+// WHERE TO BUY — Affiliate links with click tracking
+// ============================================================
+async function showWhereToBuy(itemId, itemName) {
+    const section = document.getElementById('buySection');
+    section.innerHTML = '<p style="text-align:center;color:var(--mute);font-size:14px;padding:16px">Loading buy options...</p>';
+
+    const { data: links } = await sb
+        .from('affiliate_links')
+        .select('*')
+        .eq('item_id', itemId)
+        .eq('is_active', true)
+        .order('created_at');
+
+    let html = `
+        <div style="background:var(--sf);border:1px solid var(--line);border-radius:14px;padding:20px">
+            <h4 style="font-family:'Bricolage Grotesque';font-size:17px;margin-bottom:12px">🛒 Where to Buy</h4>
+    `;
+
+    if (links && links.length > 0) {
+        // Admin-configured affiliate links
+        html += `<p style="color:var(--mute);font-size:13px;margin-bottom:14px">
+            These links are managed by CHOZ. We may earn a commission when you buy through them — this never affects your comparison result.
+        </p>`;
+        html += `<div style="display:flex;flex-direction:column;gap:8px">`;
+        links.forEach(l => {
+            const safeLabel = (l.label || l.provider || 'Open store').replace(/'/g, "\\'");
+            html += `
+                <a href="${l.url}" target="_blank" rel="noopener noreferrer nofollow sponsored"
+                   onclick="trackAffiliateClick('${l.id}', '${itemId}')"
+                   style="display:flex;justify-content:space-between;align-items:center;padding:14px 18px;background:var(--acbg);color:var(--ink);border-radius:10px;text-decoration:none;font-weight:500">
+                    <span>${safeLabel}</span>
+                    <span style="color:var(--ac);font-size:13px">Visit →</span>
+                </a>
+            `;
+        });
+        html += `</div>`;
+    } else {
+        // Fallback search links (no affiliate — just helps user find it)
+        const q = encodeURIComponent(itemName);
+        const searchLinks = [
+            { name: 'Search on Daraz', url: `https://www.daraz.pk/catalog/?q=${q}`, icon: '🛍️' },
+            { name: 'Search on OLX', url: `https://www.olx.com.pk/items/q-${q}`, icon: '📦' },
+            { name: 'Search on Google Shopping', url: `https://www.google.com/search?tbm=shop&q=${q}`, icon: '🔍' }
+        ];
+        html += `<p style="color:var(--mute);font-size:13px;margin-bottom:14px">
+            No purchase links are configured for this product yet. You can search on trusted platforms:
+        </p>`;
+        html += `<div style="display:flex;flex-direction:column;gap:8px">`;
+        searchLinks.forEach(l => {
+            html += `
+                <a href="${l.url}" target="_blank" rel="noopener noreferrer"
+                   style="display:flex;justify-content:space-between;align-items:center;padding:14px 18px;background:var(--sf);border:1px solid var(--line);color:var(--ink);border-radius:10px;text-decoration:none;font-weight:500">
+                    <span>${l.icon} ${l.name}</span>
+                    <span style="color:var(--ac);font-size:13px">Open →</span>
+                </a>
+            `;
+        });
+        html += `</div>`;
+        html += `<p style="color:var(--mute);font-size:12px;margin-top:14px;font-style:italic">
+            CHOZ does not sell products directly. These open search results on external platforms.
+        </p>`;
+    }
+
+    html += `</div>`;
+    section.innerHTML = html;
+}
+
+// Track affiliate click (for admin analytics)
+async function trackAffiliateClick(linkId, itemId) {
+    try {
+        const { data: { session } } = await sb.auth.getSession();
+        await sb.from('analytics_events').insert({
+            event_type: 'affiliate_click',
+            user_id: session?.user?.id || null,
+            metadata: { link_id: linkId, item_id: itemId }
+        });
+    } catch (e) {
+        // Silent fail — analytics should never break UX
+    }
+}
