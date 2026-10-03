@@ -287,12 +287,13 @@ function renderReveal(item, label) {
             `}
         </div>
 
-        <div class="reveal-actions">
+       <div class="reveal-actions">
     <button class="btn p" onclick="saveDecision('${item.id}')">💾 Save to Memory</button>
     <button class="btn" onclick="shareResult()">🔗 Share</button>
-    <button class="btn" onclick="showWhereToBuy('${item.id}', \`${item.name.replace(/`/g, '\\`')}\`)">🛒 Where to Buy</button>
+    <button class="btn" onclick="showWhereToBuy('${item.id}', \`${item.name.replace(/`/g, '\\`')}\`, '${currentComparison.categoryId}')">🛒 Where to Buy</button>
     <button class="btn" onclick="closeCompModal()">Close</button>
 </div>
+<div id="buySection" style="margin-top:20px"></div>
 <div id="buySection" style="margin-top:20px"></div>
     `;
 }
@@ -466,4 +467,130 @@ async function trackAffiliateClick(linkId, itemId) {
     } catch (e) {
         // Silent fail — analytics should never break UX
     }
+}
+// ============================================================
+// WHERE TO BUY — Admin links + Category-aware search fallback
+// ============================================================
+
+// Category-wise search providers
+const SEARCH_PROVIDERS = {
+    'cat-phone': [
+        { name: 'Daraz', icon: '🛍️', url: q => `https://www.daraz.pk/catalog/?q=${q}` },
+        { name: 'PriceOye', icon: '💰', url: q => `https://priceoye.pk/search?q=${q}` },
+        { name: 'Mega.pk', icon: '🏬', url: q => `https://www.mega.pk/search/?q=${q}` },
+        { name: 'OLX Pakistan', icon: '📦', url: q => `https://www.olx.com.pk/items/q-${q.replace(/%20/g, '-')}` },
+        { name: 'WhatMobile', icon: '📱', url: q => `https://www.whatmobile.com.pk/search?q=${q}` },
+        { name: 'Google Shopping', icon: '🔍', url: q => `https://www.google.com/search?tbm=shop&q=${q}` }
+    ],
+    'cat-laptop': [
+        { name: 'Daraz', icon: '🛍️', url: q => `https://www.daraz.pk/catalog/?q=${q}` },
+        { name: 'Mega.pk', icon: '🏬', url: q => `https://www.mega.pk/search/?q=${q}` },
+        { name: 'OLX Pakistan', icon: '📦', url: q => `https://www.olx.com.pk/items/q-${q.replace(/%20/g, '-')}` },
+        { name: 'Google Shopping', icon: '🔍', url: q => `https://www.google.com/search?tbm=shop&q=${q}` }
+    ],
+    'cat-headphone': [
+        { name: 'Daraz', icon: '🛍️', url: q => `https://www.daraz.pk/catalog/?q=${q}` },
+        { name: 'Mega.pk', icon: '🏬', url: q => `https://www.mega.pk/search/?q=${q}` },
+        { name: 'Amazon', icon: '📦', url: q => `https://www.amazon.com/s?k=${q}` },
+        { name: 'Google Shopping', icon: '🔍', url: q => `https://www.google.com/search?tbm=shop&q=${q}` }
+    ],
+    'cat-bike': [
+        { name: 'OLX Pakistan', icon: '📦', url: q => `https://www.olx.com.pk/items/q-${q.replace(/%20/g, '-')}` },
+        { name: 'PakWheels', icon: '🏍️', url: q => `https://www.pakwheels.com/used-bikes/search/all/${q.replace(/%20/g, '-')}` },
+        { name: 'Daraz', icon: '🛍️', url: q => `https://www.daraz.pk/catalog/?q=${q}` },
+        { name: 'Google', icon: '🔍', url: q => `https://www.google.com/search?q=${q}` }
+    ],
+    'cat-car': [
+        { name: 'OLX Pakistan', icon: '📦', url: q => `https://www.olx.com.pk/items/q-${q.replace(/%20/g, '-')}` },
+        { name: 'PakWheels', icon: '🚗', url: q => `https://www.pakwheels.com/used-cars/search/-/${q.replace(/%20/g, '-')}` },
+        { name: 'Daraz', icon: '🛍️', url: q => `https://www.daraz.pk/catalog/?q=${q}` },
+        { name: 'Google', icon: '🔍', url: q => `https://www.google.com/search?q=${q}` }
+    ],
+    'cat-hotel': [
+        { name: 'Booking.com', icon: '🏨', url: q => `https://www.booking.com/searchresults.html?ss=${q}` },
+        { name: 'Agoda', icon: '🏨', url: q => `https://www.agoda.com/search?q=${q}` },
+        { name: 'Airbnb', icon: '🏠', url: q => `https://www.airbnb.com/s/${q}/homes` },
+        { name: 'Trivago', icon: '🔍', url: q => `https://www.trivago.com/en-US/srl?query=${q}` }
+    ]
+};
+
+async function showWhereToBuy(itemId, itemName, categoryId) {
+    const section = document.getElementById('buySection');
+    section.innerHTML = '<p style="text-align:center;color:var(--mute);font-size:14px;padding:16px">Loading buy options...</p>';
+
+    // 1. Try admin-configured links
+    const { data: adminLinks } = await sb
+        .from('affiliate_links')
+        .select('*')
+        .eq('item_id', itemId)
+        .eq('is_active', true)
+        .order('created_at');
+
+    let html = `
+        <div style="background:var(--sf);border:1px solid var(--line);border-radius:14px;padding:20px">
+            <h4 style="font-family:'Bricolage Grotesque';font-size:17px;margin-bottom:6px">🛒 Where to Buy</h4>
+            <p style="color:var(--mute);font-size:12px;margin-bottom:16px">
+                Find this product on trusted platforms.
+            </p>
+    `;
+
+    // 2. Show admin links if any
+    if (adminLinks && adminLinks.length > 0) {
+        html += `<p style="color:var(--mute);font-size:13px;margin-bottom:12px;padding:10px;background:var(--acbg);border-radius:8px">
+            ⓘ Some links below are affiliate links. We may earn a commission — this never affects your comparison result.
+        </p>`;
+        html += `<div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">`;
+        adminLinks.forEach(l => {
+            const safeLabel = (l.label || l.provider || 'Open store').replace(/'/g, "\\'");
+            html += `
+                <a href="${l.url}" target="_blank" rel="noopener noreferrer nofollow sponsored"
+                   onclick="trackAffiliateClick('${l.id}', '${itemId}')"
+                   style="display:flex;justify-content:space-between;align-items:center;padding:14px 18px;background:var(--acbg);color:var(--ink);border-radius:10px;text-decoration:none;font-weight:500">
+                    <span>${safeLabel}</span>
+                    <span style="color:var(--ac);font-size:13px">Visit →</span>
+                </a>
+            `;
+        });
+        html += `</div>`;
+    }
+
+    // 3. Show category-specific search links (always shown as fallback/additional)
+    const providers = SEARCH_PROVIDERS[categoryId] || [
+        { name: 'Google Shopping', icon: '🔍', url: q => `https://www.google.com/search?tbm=shop&q=${q}` },
+        { name: 'Daraz', icon: '🛍️', url: q => `https://www.daraz.pk/catalog/?q=${q}` },
+        { name: 'OLX Pakistan', icon: '📦', url: q => `https://www.olx.com.pk/items/q-${q.replace(/%20/g, '-')}` }
+    ];
+
+    const q = encodeURIComponent(itemName);
+    html += `<div style="display:flex;flex-direction:column;gap:8px">`;
+    providers.forEach(p => {
+        html += `
+            <a href="${p.url(q)}" target="_blank" rel="noopener noreferrer"
+               style="display:flex;justify-content:space-between;align-items:center;padding:14px 18px;background:var(--sf);border:1px solid var(--line);color:var(--ink);border-radius:10px;text-decoration:none;font-weight:500">
+                <span>${p.icon} Search on ${p.name}</span>
+                <span style="color:var(--ac);font-size:13px">Open →</span>
+            </a>
+        `;
+    });
+    html += `</div>`;
+
+    html += `<p style="color:var(--mute);font-size:12px;margin-top:14px;font-style:italic;line-height:1.5">
+        CHOZ does not sell products directly. These links open search results on external platforms. 
+        Prices and availability are shown by those platforms.
+    </p>`;
+
+    html += `</div>`;
+    section.innerHTML = html;
+}
+
+// Track affiliate click
+async function trackAffiliateClick(linkId, itemId) {
+    try {
+        const { data: { session } } = await sb.auth.getSession();
+        await sb.from('analytics_events').insert({
+            event_type: 'affiliate_click',
+            user_id: session?.user?.id || null,
+            metadata: { link_id: linkId, item_id: itemId }
+        });
+    } catch (e) {}
 }
