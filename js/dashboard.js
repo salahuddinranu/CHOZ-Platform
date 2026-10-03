@@ -45,6 +45,7 @@ function loadTab(tab) {
     else if (tab === 'favorites') loadFavorites(content);
     else if (tab === 'reviews') loadMyReviews(content);
     else if (tab === 'profile') loadChoiceProfile(content);
+    else if (tab === 'pulse') loadPulseDashboard(content);
     else if (tab === 'settings') loadSettings(content);
 }
 
@@ -601,4 +602,74 @@ function escapeHtmlProfile(s) {
         '"': '&quot;',
         "'": '&#39;'
     }[c]));
+}
+// ============================================================
+// CHOZ PULSE — Dashboard view
+// ============================================================
+async function loadPulseDashboard(content) {
+    content.innerHTML = '<div class="loading">Loading community trends...</div>';
+
+    const { data: trends, error } = await sb
+        .from('pulse_category_trends')
+        .select('*')
+        .order('total_comparisons', { ascending: false });
+
+    if (error) {
+        content.innerHTML = `<div class="empty"><h3>Could not load</h3><p>${error.message}</p></div>`;
+        return;
+    }
+
+    const activeTrends = (trends || []).filter(t => t.total_comparisons > 0);
+
+    if (activeTrends.length === 0) {
+        content.innerHTML = `
+            <div class="empty">
+                <h3>No community data yet</h3>
+                <p style="margin-bottom:20px">Community trends will appear here once enough comparisons have been completed.</p>
+                <a class="btn p" href="/#cats">Start comparing →</a>
+            </div>
+        `;
+        return;
+    }
+
+    content.innerHTML = `
+        <div style="background:var(--sf);border:1px solid var(--line);border-radius:16px;padding:24px;margin-bottom:16px">
+            <h2 style="font-family:'Bricolage Grotesque';font-size:22px;margin-bottom:8px">CHOZ Pulse</h2>
+            <p style="color:var(--mute);font-size:14px;margin-bottom:20px">
+                Anonymous aggregate trends from the CHOZ community. No individual user data is shown.
+            </p>
+
+            ${activeTrends.slice(0, 10).map(t => `
+                <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-top:1px solid var(--line)">
+                    <div style="display:flex;align-items:center;gap:12px">
+                        <span style="font-size:22px">${t.category_icon || '📦'}</span>
+                        <div>
+                            <div style="font-weight:500;font-size:15px">${escapeHtmlPulse(t.category_name)}</div>
+                            <div style="font-size:12px;color:var(--mute);margin-top:2px">
+                                ${t.unique_users || 0} unique users
+                            </div>
+                        </div>
+                    </div>
+                    <div style="text-align:right">
+                        <div style="font-family:'Bricolage Grotesque';font-size:20px;font-weight:700;color:var(--ac)">
+                            ${t.total_comparisons}
+                        </div>
+                        <div style="font-size:11px;color:var(--mute)">comparisons</div>
+                    </div>
+                </div>
+            `).join('')}
+        </div>
+
+        <div style="background:var(--sf);border:1px solid var(--line);border-radius:16px;padding:24px">
+            <h3 style="font-family:'Bricolage Grotesque';font-size:16px;margin-bottom:8px">
+                About CHOZ Pulse
+            </h3>
+            <p style="font-size:13px;color:var(--mute);line-height:1.7">
+                CHOZ Pulse shows anonymized trends from completed comparisons.
+                Popularity in the community does not mean a product is objectively better —
+                it only reflects what other users are choosing.
+                Trends are updated as new comparisons are completed.
+            </p>
+        </div>
+    `;
 }
