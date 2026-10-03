@@ -611,3 +611,16 @@ checkAuth();
 initNotifications();
 loadCategories();
 loadPulse();
+// ============================================================
+// RESET COOKIE CONSENT
+// ============================================================
+function resetCookieConsent() {
+    localStorage.removeItem('choz-cookie-consent');
+    const banner = document.getElementById('cookieBanner');
+    if (banner) {
+        banner.style.display = 'block';
+        banner.style.transform = 'translateY(0)';
+        banner.style.opacity = '1';
+        initCookieBanner();
+    }
+}
