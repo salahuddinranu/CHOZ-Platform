@@ -85,7 +85,7 @@ function closeAuth() {
     const terms = document.getElementById('termsCheck');
     if (terms) terms.checked = false;
 
-    updatePasswordStrength();
+    if (typeof updatePasswordStrength === 'function') updatePasswordStrength();
 }
 
 function toggleAuthMode(e) {
@@ -125,7 +125,6 @@ async function handleAuthSubmit() {
         return;
     }
 
-    // Signup validations
     if (authMode === 'signup') {
         const checks = checkPasswordStrength(password);
         if (!checks.length) {
@@ -473,70 +472,6 @@ function escapeHtmlPulse(s) {
 }
 
 // ============================================================
-// SERVICE WORKER
-// ============================================================
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/service-worker.js').catch(() => {});
-    });
-}
-
-// ============================================================
-// EVENT LISTENERS
-// ============================================================
-document.addEventListener('DOMContentLoaded', () => {
-    // Auth modal close
-    const closeBtn = document.getElementById('closeAuth');
-    if (closeBtn) closeBtn.onclick = closeAuth;
-
-    const authModal = document.getElementById('authModal');
-    if (authModal) {
-        authModal.addEventListener('click', (e) => {
-            if (e.target.id === 'authModal') closeAuth();
-        });
-    }
-
-    // Auth switch
-    const switchBtn = document.getElementById('authSwitch');
-    if (switchBtn) switchBtn.onclick = toggleAuthMode;
-
-    // Password strength
-    const pwdInput = document.getElementById('authPass');
-    if (pwdInput) {
-        pwdInput.addEventListener('input', () => {
-            if (authMode === 'signup') updatePasswordStrength();
-        });
-    }
-
-    // Auth submit
-    const submitBtn = document.getElementById('authSubmit');
-    if (submitBtn) submitBtn.onclick = handleAuthSubmit;
-
-    // Google login
-    const googleBtn = document.getElementById('googleBtn');
-    if (googleBtn) googleBtn.onclick = handleGoogleLogin;
-
-    // Hero demo
-    const revealBtn = document.getElementById('revealBtn');
-    if (revealBtn) {
-        revealBtn.onclick = function() {
-            const card = document.getElementById('heroCard');
-            if (!card) return;
-            const isRevealed = card.classList.toggle('rv');
-            this.textContent = isRevealed ? 'Hide brands again' : 'Lock choice & reveal';
-        };
-    }
-
-    // Start comparison
-    const startBtn = document.getElementById('startBtn');
-    if (startBtn) {
-        startBtn.onclick = () => {
-            const cats = document.getElementById('cats');
-            if (cats) cats.scrollIntoView({ behavior: 'smooth' });
-        };
-    }
-});
-// ============================================================
 // ONBOARDING TOUR
 // ============================================================
 function initOnboarding() {
@@ -582,6 +517,16 @@ function skipOnboarding() {
     localStorage.setItem('choz-onboarded', '1');
     document.getElementById('onboardModal').classList.add('hidden');
 }
+
+function startOnboardingFromHero() {
+    localStorage.removeItem('choz-onboarded');
+    const modal = document.getElementById('onboardModal');
+    if (modal) {
+        modal.classList.remove('hidden');
+        showOnboardStep(1);
+    }
+}
+
 // ============================================================
 // COOKIE CONSENT
 // ============================================================
@@ -590,20 +535,16 @@ function initCookieBanner() {
     const banner = document.getElementById('cookieBanner');
     if (!banner) return;
 
-    // Check if user already chose
     const consent = localStorage.getItem(COOKIE_KEY);
     if (consent) {
-        // Already consented — don't show
         applyCookieConsent(consent);
         return;
     }
 
-    // Show banner after small delay
     setTimeout(() => {
         banner.style.display = 'block';
     }, 800);
 
-    // Accept button
     const acceptBtn = document.getElementById('cookieAccept');
     if (acceptBtn) {
         acceptBtn.onclick = () => {
@@ -613,7 +554,6 @@ function initCookieBanner() {
         };
     }
 
-    // Reject button
     const rejectBtn = document.getElementById('cookieReject');
     if (rejectBtn) {
         rejectBtn.onclick = () => {
@@ -634,32 +574,9 @@ function hideBanner(banner) {
 }
 
 function applyCookieConsent(consent) {
-    // In future, this can conditionally load analytics or ads
-    if (consent === 'accepted') {
-        // console.log('Cookie consent: accepted (analytics may load)');
-    } else if (consent === 'rejected') {
-        // console.log('Cookie consent: rejected (only essential cookies)');
-    }
+    // Future: load analytics/ads conditionally here
 }
-// ============================================================
-// INITIALIZE
-// ============================================================
-// ============================================================
-// INITIALIZE
-// ============================================================
-checkAuth();
-initNotifications();
-initCookieBanner();  // ← YEH ADD KARO
-loadCategories();
-loadPulse();
-checkAuth();
-initNotifications();
-loadCategories();
-loadPulse();
-initOnboarding();
-// ============================================================
-// RESET COOKIE CONSENT
-// ============================================================
+
 function resetCookieConsent() {
     localStorage.removeItem('choz-cookie-consent');
     const banner = document.getElementById('cookieBanner');
@@ -670,3 +587,78 @@ function resetCookieConsent() {
         initCookieBanner();
     }
 }
+
+// ============================================================
+// SERVICE WORKER
+// ============================================================
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/service-worker.js').catch(() => {});
+    });
+}
+
+// ============================================================
+// EVENT LISTENERS
+// ============================================================
+document.addEventListener('DOMContentLoaded', () => {
+    // Auth modal close
+    const closeBtn = document.getElementById('closeAuth');
+    if (closeBtn) closeBtn.onclick = closeAuth;
+
+    const authModal = document.getElementById('authModal');
+    if (authModal) {
+        authModal.addEventListener('click', (e) => {
+            if (e.target.id === 'authModal') closeAuth();
+        });
+    }
+
+    // Auth switch
+    const switchBtn = document.getElementById('authSwitch');
+    if (switchBtn) switchBtn.onclick = toggleAuthMode;
+
+    // Password strength
+    const pwdInput = document.getElementById('authPass');
+    if (pwdInput) {
+        pwdInput.addEventListener('input', () => {
+            if (authMode === 'signup') updatePasswordStrength();
+        });
+    }
+
+    // Auth submit
+    const submitBtn = document.getElementById('authSubmit');
+    if (submitBtn) submitBtn.onclick = handleAuthSubmit;
+
+    // Google login
+    const googleBtn = document.getElementById('googleBtn');
+    if (googleBtn) googleBtn.onclick = handleGoogleLogin;
+
+    // Hero demo reveal
+    const revealBtn = document.getElementById('revealBtn');
+    if (revealBtn) {
+        revealBtn.onclick = function() {
+            const card = document.getElementById('heroCard');
+            if (!card) return;
+            const isRevealed = card.classList.toggle('rv');
+            this.textContent = isRevealed ? 'Hide brands again' : 'Lock choice & reveal';
+        };
+    }
+
+    // Start comparison button
+    const startBtn = document.getElementById('startBtn');
+    if (startBtn) {
+        startBtn.onclick = () => {
+            const cats = document.getElementById('cats');
+            if (cats) cats.scrollIntoView({ behavior: 'smooth' });
+        };
+    }
+});
+
+// ============================================================
+// INITIALIZE
+// ============================================================
+checkAuth();
+initNotifications();
+initCookieBanner();
+initOnboarding();
+loadCategories();
+loadPulse();
