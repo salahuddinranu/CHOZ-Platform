@@ -4,76 +4,36 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 
-<!-- Primary Meta Tags -->
 <title>CHOZ — Choose without the noise | Blind Decision Platform</title>
 <meta name="title" content="CHOZ — Choose without the noise">
 <meta name="description" content="Compare products, bikes, hotels and more without brand bias. Set your priorities, make a blind choice, then reveal. Choose without the noise.">
-<meta name="keywords" content="blind comparison, product comparison, decision platform, CHOZ, bikes, phones, hotels, laptops">
+<meta name="keywords" content="blind comparison, product comparison, decision platform, CHOZ">
 <meta name="author" content="Salahuddin Ranu">
 <meta name="robots" content="index, follow">
 <meta name="theme-color" content="#3A3FD9">
 <meta name="color-scheme" content="light dark">
 
-<!-- Canonical -->
 <link rel="canonical" href="https://choz-platform.pages.dev/">
 
-<!-- Open Graph / Facebook / WhatsApp -->
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://choz-platform.pages.dev/">
 <meta property="og:title" content="CHOZ — Choose without the noise">
-<meta property="og:description" content="Blind decision platform. Compare without brand bias. Real priorities. No hidden manipulation.">
-<meta property="og:site_name" content="CHOZ">
+<meta property="og:description" content="Blind decision platform. Compare without brand bias.">
 <meta property="og:image" content="https://choz-platform.pages.dev/assets/icon-512.png">
-<meta property="og:image:width" content="512">
-<meta property="og:image:height" content="512">
-<meta property="og:locale" content="en_US">
 
-<!-- Twitter -->
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:url" content="https://choz-platform.pages.dev/">
 <meta name="twitter:title" content="CHOZ — Choose without the noise">
 <meta name="twitter:description" content="Blind decision platform. Compare without brand bias.">
 <meta name="twitter:image" content="https://choz-platform.pages.dev/assets/icon-512.png">
 
-<!-- Favicon (inline SVG) -->
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%233A3FD9'/%3E%3Cstop offset='1' stop-color='%237C3AED'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='512' height='512' rx='112' fill='url(%23g)'/%3E%3Cpath d='M 350 154 A 128 128 0 1 0 350 358' fill='none' stroke='%23FFFFFF' stroke-width='52' stroke-linecap='round'/%3E%3Ccircle cx='376' cy='256' r='14' fill='%23FFD25A'/%3E%3C/svg%3E">
-
-<!-- Apple Touch Icon -->
 <link rel="apple-touch-icon" href="/assets/icon-192.png">
-
-<!-- PWA Manifest -->
 <link rel="manifest" href="/manifest.json">
 
-<!-- Structured Data (JSON-LD) -->
-<script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "WebSite",
-  "name": "CHOZ",
-  "alternateName": "Choose without the noise",
-  "url": "https://choz-platform.pages.dev/",
-  "description": "Blind decision platform. Compare products, bikes, hotels and more without brand bias.",
-  "creator": {
-    "@type": "Person",
-    "name": "Salahuddin Ranu"
-  },
-  "potentialAction": {
-    "@type": "SearchAction",
-    "target": "https://choz-platform.pages.dev/?q={search_term_string}",
-    "query-input": "required name=search_term_string"
-  }
-}
-</script>
-
-<!-- Fonts -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
-
-<!-- Stylesheet -->
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700;12..96,800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/css/style.css">
-
-<!-- Supabase -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
@@ -90,168 +50,351 @@
 <circle cx="376" cy="256" r="14" fill="#FFD25A"/>
 </svg>CHOZ</a>
 <div class="l">
-<a href="#cats">Categories</a>
 <a href="#how">How it works</a>
+<a href="#categories">Categories</a>
+<a href="#why">Why CHOZ</a>
 <a href="/about.html">About</a>
-<a href="/faq.html">FAQ</a>
 </div>
 <div class="sp"></div>
-<button class="btn" id="searchBtn" aria-label="Search" style="display:flex;align-items:center;gap:6px">
-<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-<circle cx="11" cy="11" r="8"/>
-<path d="m21 21-4.35-4.35"/>
+<button class="btn btn-icon" id="searchBtn" aria-label="Search">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+<circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
 </svg>
-<span style="font-size:13px;color:var(--mute)">Search</span>
 </button>
-  <button class="btn" id="notifBtn" aria-label="Notifications" style="position:relative;display:none;align-items:center;justify-content:center;padding:9px 12px">
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/>
-        <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>
-    </svg>
-    <span id="notifBadge" style="display:none;position:absolute;top:4px;right:4px;background:#ef4444;color:white;font-size:10px;font-weight:700;padding:2px 5px;border-radius:10px;min-width:16px;text-align:center;line-height:1">0</span>
+<button class="btn btn-icon" id="notifBtn" aria-label="Notifications" style="position:relative;display:none">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/>
+<path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>
+</svg>
+<span id="notifBadge" class="badge-dot" style="display:none">0</span>
 </button>
-<button class="btn" id="themeBtn" aria-label="Toggle theme">🌙</button>
+<button class="btn btn-icon" id="themeBtn" aria-label="Toggle theme">🌙</button>
 <button class="btn" id="authBtn">Sign in</button>
 <button class="btn p" id="dashBtn" style="display:none">Dashboard</button>
-  <div id="notifDropdown" style="display:none;position:fixed;top:70px;right:20px;width:340px;max-width:calc(100vw - 40px);background:var(--sf);border:1px solid var(--line);border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,0.15);z-index:200;max-height:480px;overflow-y:auto">
+</div></nav>
+
+<!-- NOTIFICATION DROPDOWN -->
+<div id="notifDropdown" style="display:none;position:fixed;top:70px;right:20px;width:340px;max-width:calc(100vw - 40px);background:var(--sf);border:1px solid var(--line);border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,0.12);z-index:200;max-height:480px;overflow-y:auto">
     <div style="padding:16px 20px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center">
-        <strong style="font-size:15px">Notifications</strong>
+        <strong style="font-size:14px;font-family:'Bricolage Grotesque'">Notifications</strong>
         <button onclick="markAllNotifsRead()" style="background:none;border:none;color:var(--ac);font-size:12px;cursor:pointer;font-weight:500">Mark all read</button>
     </div>
     <div id="notifList" style="padding:8px">
         <p style="text-align:center;color:var(--mute);font-size:13px;padding:32px 16px">Loading...</p>
     </div>
 </div>
-</div></nav>
 
 <!-- HERO -->
-<header class="hero" id="top"><div class="w">
-<div>
-<div style="display:inline-block;padding:6px 14px;background:var(--acbg);color:var(--ac);border-radius:20px;font-size:12px;font-weight:600;letter-spacing:0.5px;margin-bottom:20px">
-    🎯 BLIND COMPARISON PLATFORM
-</div>
-<h1>Choose without the noise.</h1>
-<p class="s">
-    Brand names stay hidden until you decide.<br>
-    Compare based on what actually matters to you.
-</p>
-<div class="cta" style="margin-bottom:32px">
-    <button class="btn p lg" id="startBtn">Start a blind comparison →</button>
-    <button class="btn lg" onclick="startOnboardingFromHero()">How it works</button>
+<header class="hero-v2">
+<div class="w">
+<div class="hero-grid">
+
+<!-- Left: Text -->
+<div class="hero-text">
+<div class="eyebrow">
+<span class="eyebrow-dot"></span>
+Blind Decision Platform
 </div>
 
-<!-- Quick 3-step explainer -->
-<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;max-width:520px">
-    <div style="text-align:left">
-        <div style="font-family:'Bricolage Grotesque';font-size:24px;color:var(--ac);font-weight:700;line-height:1">1</div>
-        <div style="font-size:13px;color:var(--ink);font-weight:600;margin:6px 0 2px">Pick a category</div>
-        <div style="font-size:12px;color:var(--mute);line-height:1.4">Phones, bikes, hotels...</div>
-    </div>
-    <div style="text-align:left">
-        <div style="font-family:'Bricolage Grotesque';font-size:24px;color:var(--ac);font-weight:700;line-height:1">2</div>
-        <div style="font-size:13px;color:var(--ink);font-weight:600;margin:6px 0 2px">Set priorities</div>
-        <div style="font-size:12px;color:var(--mute);line-height:1.4">What matters most?</div>
-    </div>
-    <div style="text-align:left">
-        <div style="font-family:'Bricolage Grotesque';font-size:24px;color:var(--ac);font-weight:700;line-height:1">3</div>
-        <div style="font-size:13px;color:var(--ink);font-weight:600;margin:6px 0 2px">Choose & reveal</div>
-        <div style="font-size:12px;color:var(--mute);line-height:1.4">See who won.</div>
-    </div>
+<h1 class="hero-h1">
+Choose without<br>
+the <span class="highlight">noise</span>.
+</h1>
+
+<p class="hero-sub">
+Compare options without brand bias.<br>
+Set what <strong>you</strong> care about — then let the choice be yours.
+</p>
+
+<div class="hero-actions">
+<button class="btn-hero primary" id="startBtn">
+Start comparing
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+</button>
+<button class="btn-hero secondary" onclick="startOnboardingFromHero()">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8" fill="currentColor" stroke="none"/></svg>
+See how it works
+</button>
+</div>
+
+<div class="hero-stats">
+<div class="stat-item"><strong>20+</strong><span>Categories</span></div>
+<div class="stat-item"><strong>60+</strong><span>Products</span></div>
+<div class="stat-item"><strong>0</strong><span>Brand bias</span></div>
 </div>
 </div>
 
-<!-- Right side demo card -->
-<div class="card" id="heroCard">
-<div class="top"><span>Live Demo</span><span>Blind mode</span></div>
-<div class="pri"><span>Battery</span><span>Camera</span><span>Price</span></div>
-<div class="o"><b>A</b><div><span class="rd">Demo Nova One</span><br><small>Battery 5000 mAh • Camera 50 MP</small></div><em>₨ 300k</em></div>
-<div class="o"><b>B</b><div><span class="rd">Demo Orbit Pro</span><br><small>Battery 4500 mAh • Camera 48 MP</small></div><em>₨ 450k</em></div>
-<div class="o"><b>C</b><div><span class="rd">Demo Apex Max</span><br><small>Battery 4200 mAh • Camera 50 MP</small></div><em>₨ 600k</em></div>
-<div class="lock"><button class="btn p" id="revealBtn" style="flex:1">Lock choice &amp; reveal</button></div>
-<p style="font-size:11px;color:var(--mute);text-align:center;margin-top:10px;line-height:1.4">
-    Click reveal to see how brand names appear after your choice
-</p>
+<!-- Right: Demo Card -->
+<div class="hero-demo">
+<div class="demo-card" id="heroCard">
+
+<div class="demo-header">
+<div class="demo-pill">
+<span class="pulse-dot"></span>
+Live Demo
 </div>
-</div></header>
+<span class="demo-tag">Blind mode</span>
+</div>
+
+<div class="demo-priorities">
+<span class="pri-pill">Battery</span>
+<span class="pri-pill">Camera</span>
+<span class="pri-pill">Price</span>
+</div>
+
+<div class="demo-options">
+<div class="demo-option">
+<div class="opt-letter">A</div>
+<div class="opt-details">
+<div class="opt-name"><span class="rd">Demo Nova One</span></div>
+<div class="opt-specs">5000 mAh • 50 MP</div>
+</div>
+<div class="opt-price">₨ 300k</div>
+</div>
+
+<div class="demo-option">
+<div class="opt-letter">B</div>
+<div class="opt-details">
+<div class="opt-name"><span class="rd">Demo Orbit Pro</span></div>
+<div class="opt-specs">4500 mAh • 48 MP</div>
+</div>
+<div class="opt-price">₨ 450k</div>
+</div>
+
+<div class="demo-option">
+<div class="opt-letter">C</div>
+<div class="opt-details">
+<div class="opt-name"><span class="rd">Demo Apex Max</span></div>
+<div class="opt-specs">4200 mAh • 50 MP</div>
+</div>
+<div class="opt-price">₨ 600k</div>
+</div>
+</div>
+
+<button class="btn-demo-reveal" id="revealBtn">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+Lock choice & reveal
+</button>
+
+<div class="demo-hint">
+Brand names appear after you choose
+</div>
+
+</div>
+</div>
+
+</div>
+</div>
+</header>
 
 <!-- HOW IT WORKS -->
-<section id="how"><div class="w">
-<h2>From first look to final choice</h2>
-<p class="sub">Every comparison follows the same ten steps, so you always know where you are.</p>
-<div class="fl">
-<div><i>1</i>Choose category</div><div><i>2</i>Set priorities</div><div><i>3</i>Meet anonymous options</div><div><i>4</i>Compare</div><div><i>5</i>Make your choice</div>
-<div class="k"><i>6</i>Lock choice</div><div class="k"><i>7</i>Reveal</div><div><i>8</i>Why I chose</div><div><i>9</i>Save</div><div><i>10</i>Share</div>
-</div></div></section>
-
-<!-- CATEGORIES -->
-<section id="cats"><div class="w">
-<h2>Explore Categories</h2>
-<p class="sub">Each category has its own attributes. Nothing is forced into one template.</p>
-<div class="cats" id="catGrid"><p style="color:var(--mute)">Loading categories...</p></div>
-</div></section>
-
-<!-- FEATURES -->
-<section id="features"><div class="w">
-<h2>Understand your choice, then keep it</h2>
-<p class="sub">After the reveal, CHOZ shows why the result matched your priorities, using stored data only.</p>
-<div class="g3">
-<div class="card"><h3>Decision Memory</h3><p>Save what you chose, why, and when. Search and revisit it later.</p></div>
-<div class="card"><h3>Choice Profile</h3><p>See patterns from your own CHOZ activity. Reset any time.</p></div>
-<div class="card"><h3>CHOZ Pulse</h3><p>Anonymous community trends, shown only above a minimum sample size.</p></div>
-<div class="card"><h3>Explain my result</h3><p>Simple, detailed, or technical. Pick how much of the scoring you want to see.</p></div>
-<div class="card"><h3>Share cards</h3><p>"I chose this." A clean result card with your priorities and no private data.</p></div>
-<div class="card"><span class="tg">Coming soon</span><h3>CHOZ Test Lab</h3><p>Blind studies for brands, with consent and aggregate-only reports.</p></div>
-</div></div></section>
-<!-- CHOZ PULSE — Community Trends -->
-<section id="pulse" style="padding:52px 0">
+<section class="how-section" id="how">
 <div class="w">
-<h2>What the community is choosing</h2>
-<p class="sub">Anonymous trends from real CHOZ comparisons. No individual data shown.</p>
-<div id="pulseGrid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px">
-    <p style="color:var(--mute);text-align:center;grid-column:1/-1;padding:40px">Loading community trends...</p>
+<div class="section-header">
+<div class="eyebrow">Simple 3-step process</div>
+<h2>How CHOZ works</h2>
+<p class="section-sub">No noise. No bias. Just your decision.</p>
 </div>
-<p style="color:var(--mute);font-size:12px;margin-top:16px;text-align:center;font-style:italic">
-    Minimum sample threshold applied. Trends update as more comparisons are completed.
-</p>
+
+<div class="how-grid">
+<div class="how-card">
+<div class="how-number">01</div>
+<div class="how-icon">🎯</div>
+<h3>Pick a category</h3>
+<p>Phones, bikes, hotels, laptops — 20 categories, each with its own attributes.</p>
+</div>
+
+<div class="how-card">
+<div class="how-number">02</div>
+<div class="how-icon">⚖️</div>
+<h3>Set your priorities</h3>
+<p>Battery? Price? Camera? Rank what matters to <strong>you</strong>, in your order.</p>
+</div>
+
+<div class="how-card">
+<div class="how-number">03</div>
+<div class="how-icon">🎉</div>
+<h3>Choose & reveal</h3>
+<p>Lock your choice, then the brand is revealed. See why it matched your priorities.</p>
+</div>
+</div>
 </div>
 </section>
-<!-- TRUST -->
-<section id="trust"><div class="w"><div class="tr">
-<h2>No hidden favorites</h2>
-<p style="margin:0;color:var(--line);max-width:560px">Results come from the published scoring method. Money never changes the outcome.</p>
-<ul>
-<li>Brand mapping stays on the server until reveal</li>
-<li>Affiliate links never affect scoring</li>
-<li>Ads are labeled and kept apart from controls</li>
-<li>Missing data says "Data unavailable"</li>
-<li>User reviews are marked as user reviews</li>
-<li>Delete your account and data any time</li>
-</ul></div></div></section>
+
+<!-- CATEGORIES -->
+<section class="categories-section" id="categories">
+<div class="w">
+<div class="section-header">
+<div class="eyebrow">Explore</div>
+<h2>What would you like to compare?</h2>
+<p class="section-sub">Each category has its own attributes — nothing forced into one template.</p>
+</div>
+
+<div class="cats-v2" id="catGrid">
+<p style="color:var(--mute);text-align:center;grid-column:1/-1;padding:40px">Loading categories...</p>
+</div>
+</div>
+</section>
+
+<!-- PULSE -->
+<section class="pulse-section" id="pulse">
+<div class="w">
+<div class="section-header">
+<div class="eyebrow">Community</div>
+<h2>What the community is choosing</h2>
+<p class="section-sub">Anonymous trends from real CHOZ comparisons.</p>
+</div>
+
+<div id="pulseGrid" class="pulse-grid">
+<p style="color:var(--mute);text-align:center;grid-column:1/-1;padding:40px">Loading community trends...</p>
+</div>
+</div>
+</section>
+
+<!-- WHY CHOZ -->
+<section class="why-section" id="why">
+<div class="w">
+<div class="why-grid">
+
+<div class="why-left">
+<div class="eyebrow">Why CHOZ</div>
+<h2>Decision clarity,<br>not marketing.</h2>
+<p>
+Traditional comparison sites are built on ads and affiliate commissions. 
+CHOZ is built on one thing: <strong>helping you decide based on your own priorities</strong>.
+</p>
+
+<div class="trust-badges">
+<div class="trust-item">
+<div class="trust-icon">🔒</div>
+<div>
+<strong>No hidden favorites</strong>
+<p>Results come from published scoring. Money never changes outcomes.</p>
+</div>
+</div>
+
+<div class="trust-item">
+<div class="trust-icon">👁️</div>
+<div>
+<strong>Brands hidden until reveal</strong>
+<p>No logos, no names — until you lock your choice.</p>
+</div>
+</div>
+
+<div class="trust-item">
+<div class="trust-icon">📊</div>
+<div>
+<strong>Transparent explanations</strong>
+<p>"Why I Chose This" — based on actual stored data.</p>
+</div>
+</div>
+
+<div class="trust-item">
+<div class="trust-icon">🗑️</div>
+<div>
+<strong>Delete anytime</strong>
+<p>Your data, your control. Delete account in one click.</p>
+</div>
+</div>
+</div>
+</div>
+
+<div class="why-right">
+<div class="quote-card">
+<div class="quote-mark">"</div>
+<div class="quote-text">
+I stopped picking phones based on logos. For the first time, 
+I chose based on <strong>what I actually use every day</strong>.
+</div>
+<div class="quote-author">
+<div class="author-avatar">S</div>
+<div>
+<strong>Salahuddin R.</strong>
+<span>Creator, CHOZ</span>
+</div>
+</div>
+</div>
+
+<div class="feature-mini">
+<div class="fm-item"><span>✅</span> Decision Memory</div>
+<div class="fm-item"><span>✅</span> Choice Profile</div>
+<div class="fm-item"><span>✅</span> Share cards</div>
+<div class="fm-item"><span>✅</span> Community Pulse</div>
+</div>
+</div>
+
+</div>
+</div>
+</section>
+
+<!-- CTA -->
+<section class="final-cta">
+<div class="w">
+<div class="cta-card">
+<div class="eyebrow-light">Ready when you are</div>
+<h2>Start your first blind decision.</h2>
+<p>No sign-up needed to browse. Sign up to save your choices.</p>
+<div class="cta-buttons">
+<button class="btn-hero primary-light" id="startBtn2" onclick="document.getElementById('categories').scrollIntoView({behavior:'smooth'})">
+Browse categories
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+</button>
+<button class="btn-hero ghost" onclick="openAuth()">Create account</button>
+</div>
+</div>
+</div>
+</section>
 
 <!-- FOOTER -->
-<footer><div class="w">
-<div>
-<span class="logo" style="display:flex;align-items:center;gap:8px">
-<svg width="20" height="20" viewBox="0 0 512 512">
-<defs><linearGradient id="lg2" x1="0" y1="0" x2="1" y2="1">
+<footer class="footer-v2">
+<div class="w">
+<div class="footer-grid">
+
+<div class="footer-brand">
+<span class="logo" style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+<svg width="24" height="24" viewBox="0 0 512 512">
+<defs><linearGradient id="lgf" x1="0" y1="0" x2="1" y2="1">
 <stop offset="0" stop-color="#3A3FD9"/><stop offset="1" stop-color="#7C3AED"/>
 </linearGradient></defs>
-<rect width="512" height="512" rx="112" fill="url(#lg2)"/>
+<rect width="512" height="512" rx="112" fill="url(#lgf)"/>
 <path d="M 350 154 A 128 128 0 1 0 350 358" fill="none" stroke="#FFFFFF" stroke-width="52" stroke-linecap="round"/>
 <circle cx="376" cy="256" r="14" fill="#FFD25A"/>
 </svg>CHOZ</span>
-<br>"Choose without the noise."<br>
-Web owned and created by Salahuddin Ranu.
+<p class="footer-tagline">"Choose without the noise."</p>
+<p class="footer-credit">Web owned and created by Salahuddin Ranu.</p>
 </div>
-<div class="ln">
+
+<div class="footer-links">
+<div>
+<strong>Product</strong>
+<a href="#how">How it works</a>
+<a href="#categories">Categories</a>
+<a href="#pulse">Community Pulse</a>
+</div>
+
+<div>
+<strong>Company</strong>
 <a href="/about.html">About</a>
 <a href="/faq.html">FAQ</a>
 <a href="/contact.html">Contact</a>
-<a href="/privacy.html">Privacy</a>
-  <a href="#" onclick="resetCookieConsent(); return false;">Cookie Settings</a>
-<a href="/terms.html">Terms</a>
 </div>
-</div></footer>
+
+<div>
+<strong>Legal</strong>
+<a href="/privacy.html">Privacy</a>
+<a href="/terms.html">Terms</a>
+<a href="#" onclick="resetCookieConsent();return false;">Cookies</a>
+</div>
+</div>
+
+</div>
+
+<div class="footer-bottom">
+<span>© 2026 CHOZ. All rights reserved.</span>
+<span>Made with care in Pakistan 🇵🇰</span>
+</div>
+</div>
+</footer>
 
 <!-- COMPARISON MODAL -->
 <div id="compModal" class="modal hidden">
@@ -266,35 +409,26 @@ Web owned and created by Salahuddin Ranu.
 <div class="modal-content" style="max-width:420px">
 <button class="modal-close" id="closeAuth">×</button>
 <h3 id="authTitle" style="margin-bottom:1rem">Sign in</h3>
+
 <input type="email" id="authEmail" placeholder="Email" autocomplete="email">
 <input type="password" id="authPass" placeholder="Password" autocomplete="current-password">
 
-<!-- Password Strength (only shows in signup mode) -->
 <div id="passwordStrength" style="display:none;margin-bottom:14px">
     <div style="display:flex;gap:4px;margin-bottom:8px">
-        <div class="pwd-bar" data-bar="1" style="flex:1;height:4px;background:var(--line);border-radius:2px;transition:background 0.2s"></div>
-        <div class="pwd-bar" data-bar="2" style="flex:1;height:4px;background:var(--line);border-radius:2px;transition:background 0.2s"></div>
-        <div class="pwd-bar" data-bar="3" style="flex:1;height:4px;background:var(--line);border-radius:2px;transition:background 0.2s"></div>
-        <div class="pwd-bar" data-bar="4" style="flex:1;height:4px;background:var(--line);border-radius:2px;transition:background 0.2s"></div>
+        <div class="pwd-bar" style="flex:1;height:4px;background:var(--line);border-radius:2px;transition:background 0.2s"></div>
+        <div class="pwd-bar" style="flex:1;height:4px;background:var(--line);border-radius:2px;transition:background 0.2s"></div>
+        <div class="pwd-bar" style="flex:1;height:4px;background:var(--line);border-radius:2px;transition:background 0.2s"></div>
+        <div class="pwd-bar" style="flex:1;height:4px;background:var(--line);border-radius:2px;transition:background 0.2s"></div>
     </div>
     <div id="pwdStrengthLabel" style="font-size:12px;color:var(--mute);margin-bottom:8px">Password strength</div>
     <ul id="pwdChecks" style="list-style:none;padding:0;margin:0;font-size:12px;color:var(--mute);display:grid;gap:4px">
-        <li data-check="length" style="display:flex;align-items:center;gap:6px">
-            <span class="pwd-check-icon" style="width:14px;text-align:center">○</span> At least 8 characters
-        </li>
-        <li data-check="upper" style="display:flex;align-items:center;gap:6px">
-            <span class="pwd-check-icon" style="width:14px;text-align:center">○</span> Uppercase letter (A-Z)
-        </li>
-        <li data-check="number" style="display:flex;align-items:center;gap:6px">
-            <span class="pwd-check-icon" style="width:14px;text-align:center">○</span> Number (0-9)
-        </li>
-        <li data-check="symbol" style="display:flex;align-items:center;gap:6px">
-            <span class="pwd-check-icon" style="width:14px;text-align:center">○</span> Symbol (!@#$)
-        </li>
+        <li data-check="length" style="display:flex;align-items:center;gap:6px"><span class="pwd-check-icon" style="width:14px;text-align:center">○</span> At least 8 characters</li>
+        <li data-check="upper" style="display:flex;align-items:center;gap:6px"><span class="pwd-check-icon" style="width:14px;text-align:center">○</span> Uppercase letter (A-Z)</li>
+        <li data-check="number" style="display:flex;align-items:center;gap:6px"><span class="pwd-check-icon" style="width:14px;text-align:center">○</span> Number (0-9)</li>
+        <li data-check="symbol" style="display:flex;align-items:center;gap:6px"><span class="pwd-check-icon" style="width:14px;text-align:center">○</span> Symbol (!@#$)</li>
     </ul>
 </div>
 
-<!-- Terms checkbox (only shows in signup mode) -->
 <label id="termsLabel" style="display:none;align-items:flex-start;gap:8px;margin:14px 0;font-size:13px;color:var(--mute);line-height:1.5;cursor:pointer">
     <input type="checkbox" id="termsCheck" style="width:16px;height:16px;margin:2px 0 0 0;flex-shrink:0;cursor:pointer">
     <span>I agree to CHOZ's <a href="/terms.html" target="_blank" style="color:var(--ac);text-decoration:underline">Terms</a> and <a href="/privacy.html" target="_blank" style="color:var(--ac);text-decoration:underline">Privacy Policy</a></span>
@@ -309,78 +443,17 @@ Web owned and created by Salahuddin Ranu.
 </p>
 </div>
 </div>
-<!-- ONBOARDING MODAL -->
-<div id="onboardModal" class="modal hidden">
-<div class="modal-content" style="max-width:520px;padding:0;overflow:hidden;position:relative">
 
-    <button class="modal-close" onclick="skipOnboarding()" style="position:absolute;top:12px;right:16px;font-size:24px;z-index:10;background:rgba(0,0,0,0.05);width:32px;height:32px;border-radius:50%;display:grid;place-items:center;border:none;cursor:pointer;color:var(--mute)">×</button>
-
-    <!-- Step 1 -->
-    <div class="onboard-step" data-step="1" style="padding:48px 32px 32px;text-align:center">
-        <div style="font-size:64px;margin-bottom:16px;line-height:1">👋</div>
-        <h2 style="font-family:'Bricolage Grotesque';font-size:26px;margin-bottom:12px;letter-spacing:-0.5px">Welcome to CHOZ</h2>
-        <p style="color:var(--mute);font-size:15px;line-height:1.6;margin-bottom:28px">
-            A blind decision platform.<br>
-            Compare options without seeing brand names — choose based on <strong style="color:var(--ink)">what matters to you</strong>.
-        </p>
-        <button class="btn p" style="padding:14px 32px;font-size:15px" onclick="nextOnboardStep(2)">Show me how →</button>
-        <button class="btn" style="display:block;margin:12px auto 0;font-size:13px;color:var(--mute);background:none;border:none" onclick="skipOnboarding()">Skip tour</button>
-    </div>
-
-    <!-- Step 2 -->
-    <div class="onboard-step" data-step="2" style="display:none;padding:48px 32px 32px;text-align:center">
-        <div style="font-size:64px;margin-bottom:16px;line-height:1">🎭</div>
-        <h2 style="font-family:'Bricolage Grotesque';font-size:26px;margin-bottom:12px;letter-spacing:-0.5px">Brands stay hidden</h2>
-        <p style="color:var(--mute);font-size:15px;line-height:1.6;margin-bottom:28px">
-            When you compare, you see <strong style="color:var(--ink)">Option A, B, C</strong> — not brand names or logos. This stops marketing influence from hijacking your decision.
-        </p>
-        <button class="btn p" style="padding:14px 32px;font-size:15px" onclick="nextOnboardStep(3)">Next →</button>
-        <button class="btn" style="display:block;margin:12px auto 0;font-size:13px;color:var(--mute);background:none;border:none" onclick="prevOnboardStep(1)">← Back</button>
-    </div>
-
-    <!-- Step 3 -->
-    <div class="onboard-step" data-step="3" style="display:none;padding:48px 32px 32px;text-align:center">
-        <div style="font-size:64px;margin-bottom:16px;line-height:1">⚖️</div>
-        <h2 style="font-family:'Bricolage Grotesque';font-size:26px;margin-bottom:12px;letter-spacing:-0.5px">You set the priorities</h2>
-        <p style="color:var(--mute);font-size:15px;line-height:1.6;margin-bottom:28px">
-            Battery life? Price? Camera? <strong style="color:var(--ink)">You decide what matters most.</strong> Then lock your choice, and the brand is finally revealed.
-        </p>
-        <button class="btn p" style="padding:14px 32px;font-size:15px" onclick="nextOnboardStep(4)">Almost there →</button>
-        <button class="btn" style="display:block;margin:12px auto 0;font-size:13px;color:var(--mute);background:none;border:none" onclick="prevOnboardStep(2)">← Back</button>
-    </div>
-
-    <!-- Step 4 -->
-    <div class="onboard-step" data-step="4" style="display:none;padding:48px 32px 40px;text-align:center">
-        <div style="font-size:64px;margin-bottom:16px;line-height:1">🚀</div>
-        <h2 style="font-family:'Bricolage Grotesque';font-size:26px;margin-bottom:12px;letter-spacing:-0.5px">Ready to start?</h2>
-        <p style="color:var(--mute);font-size:15px;line-height:1.6;margin-bottom:28px">
-            Pick any category — phones, bikes, hotels, laptops, and 16 more. No sign-up required to browse. Sign up to save your decisions.
-        </p>
-        <button class="btn p" style="padding:14px 32px;font-size:15px;width:100%" onclick="finishOnboarding()">Browse Categories →</button>
-        <button class="btn" style="display:block;margin:12px auto 0;font-size:13px;color:var(--mute);background:none;border:none" onclick="prevOnboardStep(3)">← Back</button>
-    </div>
-
-    <!-- Progress Dots -->
-    <div style="padding:0 32px 24px;display:flex;justify-content:center;gap:8px">
-        <span class="onboard-dot" data-dot="1" style="width:8px;height:8px;border-radius:50%;background:var(--ac);transition:all 0.3s"></span>
-        <span class="onboard-dot" data-dot="2" style="width:8px;height:8px;border-radius:50%;background:var(--line);transition:all 0.3s"></span>
-        <span class="onboard-dot" data-dot="3" style="width:8px;height:8px;border-radius:50%;background:var(--line);transition:all 0.3s"></span>
-        <span class="onboard-dot" data-dot="4" style="width:8px;height:8px;border-radius:50%;background:var(--line);transition:all 0.3s"></span>
-    </div>
-
-</div>
-</div>
 <!-- SEARCH MODAL -->
 <div id="searchModal" class="modal hidden">
 <div class="modal-content" style="max-width:640px;padding:0;overflow:hidden">
     <div style="display:flex;align-items:center;padding:16px 20px;border-bottom:1px solid var(--line);gap:12px">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--mute)" stroke-width="2">
-            <circle cx="11" cy="11" r="8"/>
-            <path d="m21 21-4.35-4.35"/>
+            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
         </svg>
         <input type="search" id="searchInput" placeholder="Search products, brands, categories..." autocomplete="off"
                style="flex:1;border:none;background:none;font-size:16px;padding:0;margin:0;outline:none;color:var(--ink)">
-        <kbd style="font-size:11px;padding:4px 8px;background:var(--bg-alt);border:1px solid var(--line);border-radius:6px;color:var(--mute)">ESC</kbd>
+        <kbd>ESC</kbd>
     </div>
     <div id="searchResults" style="max-height:420px;overflow-y:auto;padding:8px">
         <p style="text-align:center;color:var(--mute);font-size:13px;padding:40px 20px">
@@ -390,21 +463,68 @@ Web owned and created by Salahuddin Ranu.
 </div>
 </div>
 
-<!-- SCRIPTS -->
-<script src="/js/config.js"></script>
-<script src="/js/comparison.js"></script>
-<script src="/js/app.js"></script>
-<script src="/js/search.js"></script>
-<!-- COOKIE CONSENT BANNER -->
+<!-- ONBOARDING MODAL -->
+<div id="onboardModal" class="modal hidden">
+<div class="modal-content" style="max-width:520px;padding:0;overflow:hidden;position:relative">
+    <button class="modal-close" onclick="skipOnboarding()" style="position:absolute;top:12px;right:16px;font-size:24px;z-index:10;background:rgba(0,0,0,0.05);width:32px;height:32px;border-radius:50%;display:grid;place-items:center;border:none;cursor:pointer;color:var(--mute)">×</button>
+
+    <div class="onboard-step" data-step="1" style="padding:48px 32px 32px;text-align:center">
+        <div style="font-size:64px;margin-bottom:16px;line-height:1">👋</div>
+        <h2 style="font-family:'Bricolage Grotesque';font-size:26px;margin-bottom:12px;letter-spacing:-0.5px">Welcome to CHOZ</h2>
+        <p style="color:var(--mute);font-size:15px;line-height:1.6;margin-bottom:28px">
+            A blind decision platform.<br>
+            Compare options without seeing brand names.
+        </p>
+        <button class="btn p" style="padding:14px 32px;font-size:15px" onclick="nextOnboardStep(2)">Show me how →</button>
+        <button class="btn" style="display:block;margin:12px auto 0;font-size:13px;color:var(--mute);background:none;border:none" onclick="skipOnboarding()">Skip tour</button>
+    </div>
+
+    <div class="onboard-step" data-step="2" style="display:none;padding:48px 32px 32px;text-align:center">
+        <div style="font-size:64px;margin-bottom:16px;line-height:1">🎭</div>
+        <h2 style="font-family:'Bricolage Grotesque';font-size:26px;margin-bottom:12px;letter-spacing:-0.5px">Brands stay hidden</h2>
+        <p style="color:var(--mute);font-size:15px;line-height:1.6;margin-bottom:28px">
+            You see <strong style="color:var(--ink)">Option A, B, C</strong> — not brand names or logos.
+        </p>
+        <button class="btn p" style="padding:14px 32px;font-size:15px" onclick="nextOnboardStep(3)">Next →</button>
+        <button class="btn" style="display:block;margin:12px auto 0;font-size:13px;color:var(--mute);background:none;border:none" onclick="prevOnboardStep(1)">← Back</button>
+    </div>
+
+    <div class="onboard-step" data-step="3" style="display:none;padding:48px 32px 32px;text-align:center">
+        <div style="font-size:64px;margin-bottom:16px;line-height:1">⚖️</div>
+        <h2 style="font-family:'Bricolage Grotesque';font-size:26px;margin-bottom:12px;letter-spacing:-0.5px">You set priorities</h2>
+        <p style="color:var(--mute);font-size:15px;line-height:1.6;margin-bottom:28px">
+            Battery life? Price? Camera? <strong style="color:var(--ink)">You decide what matters.</strong>
+        </p>
+        <button class="btn p" style="padding:14px 32px;font-size:15px" onclick="nextOnboardStep(4)">Almost there →</button>
+        <button class="btn" style="display:block;margin:12px auto 0;font-size:13px;color:var(--mute);background:none;border:none" onclick="prevOnboardStep(2)">← Back</button>
+    </div>
+
+    <div class="onboard-step" data-step="4" style="display:none;padding:48px 32px 40px;text-align:center">
+        <div style="font-size:64px;margin-bottom:16px;line-height:1">🚀</div>
+        <h2 style="font-family:'Bricolage Grotesque';font-size:26px;margin-bottom:12px;letter-spacing:-0.5px">Ready to start?</h2>
+        <p style="color:var(--mute);font-size:15px;line-height:1.6;margin-bottom:28px">
+            Pick any category — no sign-up needed to browse.
+        </p>
+        <button class="btn p" style="padding:14px 32px;font-size:15px;width:100%" onclick="finishOnboarding()">Browse Categories →</button>
+        <button class="btn" style="display:block;margin:12px auto 0;font-size:13px;color:var(--mute);background:none;border:none" onclick="prevOnboardStep(3)">← Back</button>
+    </div>
+
+    <div style="padding:0 32px 24px;display:flex;justify-content:center;gap:8px">
+        <span class="onboard-dot" data-dot="1" style="width:8px;height:8px;border-radius:50%;background:var(--ac);transition:all 0.3s"></span>
+        <span class="onboard-dot" data-dot="2" style="width:8px;height:8px;border-radius:50%;background:var(--line);transition:all 0.3s"></span>
+        <span class="onboard-dot" data-dot="3" style="width:8px;height:8px;border-radius:50%;background:var(--line);transition:all 0.3s"></span>
+        <span class="onboard-dot" data-dot="4" style="width:8px;height:8px;border-radius:50%;background:var(--line);transition:all 0.3s"></span>
+    </div>
+</div>
+</div>
+
+<!-- COOKIE BANNER -->
 <div id="cookieBanner" style="display:none;position:fixed;bottom:0;left:0;right:0;background:var(--sf);border-top:1px solid var(--line);box-shadow:0 -4px 20px rgba(0,0,0,0.08);z-index:150;padding:20px">
     <div style="max-width:1080px;margin:0 auto;display:flex;gap:20px;align-items:center;flex-wrap:wrap;justify-content:space-between">
         <div style="flex:1;min-width:280px">
-            <strong style="display:block;font-family:'Bricolage Grotesque';font-size:16px;margin-bottom:6px;color:var(--ink)">
-                🍪 We use cookies
-            </strong>
+            <strong style="display:block;font-family:'Bricolage Grotesque';font-size:15px;margin-bottom:4px;color:var(--ink)">🍪 We use cookies</strong>
             <p style="font-size:13px;color:var(--mute);line-height:1.5;margin:0">
-                We use essential cookies for authentication and optional cookies to improve your experience.
-                Read our <a href="/privacy.html" style="color:var(--ac);text-decoration:underline">Privacy Policy</a>.
+                Essential cookies for auth + optional cookies to improve experience. <a href="/privacy.html" style="color:var(--ac);text-decoration:underline">Privacy Policy</a>.
             </p>
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
@@ -413,5 +533,12 @@ Web owned and created by Salahuddin Ranu.
         </div>
     </div>
 </div>
+
+<!-- SCRIPTS -->
+<script src="/js/config.js"></script>
+<script src="/js/comparison.js"></script>
+<script src="/js/search.js"></script>
+<script src="/js/app.js"></script>
+
 </body>
 </html>
