@@ -144,3 +144,28 @@ footer .ln{display:flex;gap:14px;flex-wrap:wrap}
 #searchInput::-webkit-search-cancel-button { display: none; }
 #searchInput::placeholder { color: var(--mute); }
 kbd { font-family: inherit; }
+/* Choice Profile insights */
+.profile-insight {
+    background: var(--sf);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 20px;
+    margin-bottom: 14px;
+}
+.profile-insight h3 {
+    font-family: 'Bricolage Grotesque';
+    font-size: 16px;
+    margin-bottom: 8px;
+}
+.progress-bar {
+    height: 6px;
+    background: var(--line);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-top: 6px;
+}
+.progress-bar > div {
+    height: 100%;
+    background: var(--ac);
+    transition: width 0.4s ease;
+}
