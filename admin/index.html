@@ -54,6 +54,40 @@
             margin-bottom: 1rem;
             box-shadow: var(--shadow);
         }
+
+        .admin-google-btn {
+            width: 100%;
+            margin-top: 0.75rem;
+            padding: 0.85rem 1rem;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: white;
+            color: #222;
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-weight: 500;
+        }
+
+        .admin-google-btn:hover {
+            background: #f7f7f7;
+        }
+
+        .admin-divider {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin: 1rem 0;
+            color: #888;
+            font-size: 0.85rem;
+        }
+
+        .admin-divider::before,
+        .admin-divider::after {
+            content: "";
+            flex: 1;
+            height: 1px;
+            background: #e5e5e5;
+        }
     </style>
 
     <!-- Supabase JS -->
@@ -65,11 +99,17 @@
 
 <body>
 
+    <!-- =====================================================
+         ADMIN LOGIN
+    ====================================================== -->
+
     <div id="admin-login" class="modal" style="display:flex;">
         <div class="modal-content">
+
             <h3>Admin Login</h3>
 
             <form id="admin-form">
+
                 <input
                     type="email"
                     id="admin-email"
@@ -87,12 +127,32 @@
                 <button
                     type="submit"
                     class="btn btn-primary"
+                    id="admin-login-btn"
                 >
                     Login
                 </button>
+
             </form>
+
+            <div class="admin-divider">
+                OR
+            </div>
+
+            <button
+                type="button"
+                class="admin-google-btn"
+                id="admin-google-btn"
+            >
+                Continue with Google
+            </button>
+
         </div>
     </div>
+
+
+    <!-- =====================================================
+         ADMIN APP
+    ====================================================== -->
 
     <div id="admin-app" class="admin-layout hidden">
 
@@ -136,14 +196,17 @@
 
         </aside>
 
+
         <main class="admin-main">
 
             <header class="admin-header">
+
                 <h2 id="admin-title">
                     Dashboard
                 </h2>
 
                 <span id="admin-user"></span>
+
             </header>
 
             <div id="admin-content"></div>
@@ -152,29 +215,121 @@
 
     </div>
 
+
     <script>
 
         let adminUser = null;
 
-        async function adminLogin(email, password) {
+
+        // ====================================================
+        // CHECK WHETHER USER IS ADMIN
+        // ====================================================
+
+        async function checkAdminSession() {
+
+            try {
+
+                const {
+                    data: { session },
+                    error
+                } = await chozSupabase.auth.getSession();
+
+                if (error) {
+                    console.error(
+                        'Session error:',
+                        error
+                    );
+                    return false;
+                }
+
+                if (!session) {
+                    return false;
+                }
+
+                const { data: adminData, error: adminError } =
+                    await chozSupabase
+                        .from('admin_users')
+                        .select('*')
+                        .eq('user_id', session.user.id)
+                        .single();
+
+                if (adminError || !adminData) {
+
+                    await chozSupabase.auth.signOut();
+
+                    alert(
+                        'You are not authorized as admin.'
+                    );
+
+                    return false;
+                }
+
+                adminUser = {
+                    ...session.user,
+                    role: adminData.role
+                };
+
+                document.getElementById(
+                    'admin-login'
+                ).style.display = 'none';
+
+                document
+                    .getElementById('admin-app')
+                    .classList.remove('hidden');
+
+                document.getElementById(
+                    'admin-user'
+                ).textContent =
+                    session.user.email || '';
+
+                loadAdminSection('dashboard');
+
+                return true;
+
+            } catch (error) {
+
+                console.error(
+                    'Admin session error:',
+                    error
+                );
+
+                return false;
+            }
+        }
+
+
+        // ====================================================
+        // EMAIL + PASSWORD ADMIN LOGIN
+        // ====================================================
+
+        async function adminLogin(
+            email,
+            password
+        ) {
 
             const { data, error } =
-                await chozSupabase.auth.signInWithPassword({
-                    email: email,
-                    password: password
-                });
+                await chozSupabase.auth
+                    .signInWithPassword({
+                        email: email,
+                        password: password
+                    });
 
             if (error) {
                 throw error;
             }
 
+
             // Check admin_users table
-            const { data: adminData, error: adminError } =
-                await chozSupabase
-                    .from('admin_users')
-                    .select('*')
-                    .eq('user_id', data.user.id)
-                    .single();
+
+            const {
+                data: adminData,
+                error: adminError
+            } = await chozSupabase
+                .from('admin_users')
+                .select('*')
+                .eq('user_id', data.user.id)
+                .single();
+
 
             if (adminError || !adminData) {
 
@@ -185,23 +340,94 @@
                 );
             }
 
+
             adminUser = {
                 ...data.user,
                 role: adminData.role
             };
 
-            document.getElementById('admin-login').style.display = 'none';
+
+            document.getElementById(
+                'admin-login'
+            ).style.display = 'none';
 
             document
                 .getElementById('admin-app')
                 .classList.remove('hidden');
 
-            document.getElementById('admin-user').textContent =
-                data.user.email;
+
+            document.getElementById(
+                'admin-user'
+            ).textContent =
+                data.user.email || '';
+
 
             loadAdminSection('dashboard');
         }
 
+
+        // ====================================================
+        // GOOGLE ADMIN LOGIN
+        // ====================================================
+
+        async function adminGoogleLogin() {
+
+            const button =
+                document.getElementById(
+                    'admin-google-btn'
+                );
+
+            if (button) {
+                button.disabled = true;
+                button.textContent =
+                    'Connecting to Google...';
+            }
+
+            try {
+
+                const { error } =
+                    await chozSupabase.auth
+                        .signInWithOAuth({
+
+                            provider: 'google',
+
+                            options: {
+
+                                redirectTo:
+                                    window.location.origin +
+                                    '/admin/'
+                            }
+                        });
+
+
+                if (error) {
+                    throw error;
+                }
+
+            } catch (error) {
+
+                console.error(
+                    'Admin Google login error:',
+                    error
+                );
+
+                alert(
+                    error.message ||
+                    'Google login failed.'
+                );
+
+                if (button) {
+                    button.disabled = false;
+                    button.textContent =
+                        'Continue with Google';
+                }
+            }
+        }
+
+
+        // ====================================================
+        // SIGN OUT
+        // ====================================================
 
         async function adminSignOut() {
 
@@ -209,7 +435,9 @@
 
             adminUser = null;
 
-            document.getElementById('admin-login').style.display = 'flex';
+            document.getElementById(
+                'admin-login'
+            ).style.display = 'flex';
 
             document
                 .getElementById('admin-app')
@@ -217,71 +445,139 @@
         }
 
 
+        // ====================================================
+        // EMAIL LOGIN FORM
+        // ====================================================
+
         document
             .getElementById('admin-form')
-            .addEventListener('submit', async (e) => {
-
-                e.preventDefault();
-
-                const button = e.target.querySelector('button');
-
-                button.disabled = true;
-                button.textContent = 'Logging in...';
-
-                try {
-
-                    await adminLogin(
-                        document.getElementById('admin-email').value,
-                        document.getElementById('admin-password').value
-                    );
-
-                } catch (err) {
-
-                    console.error('Admin login error:', err);
-
-                    alert(err.message);
-
-                } finally {
-
-                    button.disabled = false;
-                    button.textContent = 'Login';
-                }
-            });
-
-
-        document
-            .querySelectorAll('.admin-sidebar a[data-section]')
-            .forEach(link => {
-
-                link.addEventListener('click', (e) => {
+            .addEventListener(
+                'submit',
+                async (e) => {
 
                     e.preventDefault();
 
-                    document
-                        .querySelectorAll('.admin-sidebar a')
-                        .forEach(a => a.classList.remove('active'));
+                    const button =
+                        document.getElementById(
+                            'admin-login-btn'
+                        );
 
-                    link.classList.add('active');
+                    button.disabled = true;
+                    button.textContent =
+                        'Logging in...';
 
-                    loadAdminSection(link.dataset.section);
-                });
+                    try {
+
+                        await adminLogin(
+                            document.getElementById(
+                                'admin-email'
+                            ).value.trim(),
+
+                            document.getElementById(
+                                'admin-password'
+                            ).value
+                        );
+
+                    } catch (err) {
+
+                        console.error(
+                            'Admin login error:',
+                            err
+                        );
+
+                        alert(
+                            err.message ||
+                            'Admin login failed.'
+                        );
+
+                    } finally {
+
+                        button.disabled = false;
+
+                        button.textContent =
+                            'Login';
+                    }
+                }
+            );
+
+
+        // ====================================================
+        // GOOGLE LOGIN BUTTON
+        // ====================================================
+
+        document
+            .getElementById(
+                'admin-google-btn'
+            )
+            .addEventListener(
+                'click',
+                adminGoogleLogin
+            );
+
+
+        // ====================================================
+        // SIDEBAR
+        // ====================================================
+
+        document
+            .querySelectorAll(
+                '.admin-sidebar a[data-section]'
+            )
+            .forEach(link => {
+
+                link.addEventListener(
+                    'click',
+                    (e) => {
+
+                        e.preventDefault();
+
+                        document
+                            .querySelectorAll(
+                                '.admin-sidebar a'
+                            )
+                            .forEach(a =>
+                                a.classList.remove(
+                                    'active'
+                                )
+                            );
+
+                        link.classList.add(
+                            'active'
+                        );
+
+                        loadAdminSection(
+                            link.dataset.section
+                        );
+                    }
+                );
             });
 
+
+        // ====================================================
+        // ADMIN SECTIONS
+        // ====================================================
 
         async function loadAdminSection(section) {
 
             const content =
-                document.getElementById('admin-content');
+                document.getElementById(
+                    'admin-content'
+                );
 
             const title =
-                document.getElementById('admin-title');
+                document.getElementById(
+                    'admin-title'
+                );
 
-            content.innerHTML = '<p>Loading...</p>';
+            content.innerHTML =
+                '<p>Loading...</p>';
 
 
             if (section === 'dashboard') {
 
-                title.textContent = 'Dashboard';
+                title.textContent =
+                    'Dashboard';
+
 
                 const { count: users } =
                     await chozSupabase
@@ -291,6 +587,7 @@
                             head: true
                         });
 
+
                 const { count: items } =
                     await chozSupabase
                         .from('items')
@@ -299,6 +596,7 @@
                             head: true
                         });
 
+
                 const { count: reviews } =
                     await chozSupabase
                         .from('user_reviews')
@@ -306,6 +604,7 @@
                             count: 'exact',
                             head: true
                         });
+
 
                 content.innerHTML = `
 
@@ -336,9 +635,12 @@
                     </div>
                 `;
 
+
             } else if (section === 'items') {
 
-                title.textContent = 'Products';
+                title.textContent =
+                    'Products';
+
 
                 const { data } =
                     await chozSupabase
@@ -346,10 +648,14 @@
                         .select(
                             '*, categories(name), brands(name)'
                         )
-                        .order('created_at', {
-                            ascending: false
-                        })
+                        .order(
+                            'created_at',
+                            {
+                                ascending: false
+                            }
+                        )
                         .limit(50);
+
 
                 content.innerHTML = `
 
@@ -437,17 +743,24 @@
                     </div>
                 `;
 
+
             } else if (section === 'feedback') {
 
-                title.textContent = 'Feedback';
+                title.textContent =
+                    'Feedback';
+
 
                 const { data } =
                     await chozSupabase
                         .from('feedback')
                         .select('*')
-                        .order('created_at', {
-                            ascending: false
-                        });
+                        .order(
+                            'created_at',
+                            {
+                                ascending: false
+                            }
+                        );
+
 
                 content.innerHTML =
                     (data || [])
@@ -477,6 +790,7 @@
                         .join('') ||
                     '<p>No feedback yet.</p>';
 
+
             } else {
 
                 title.textContent =
@@ -487,6 +801,13 @@
                     `<p>${section} section — coming soon.</p>`;
             }
         }
+
+
+        // ====================================================
+        // INITIAL ADMIN SESSION CHECK
+        // ====================================================
+
+        checkAdminSession();
 
     </script>
 
