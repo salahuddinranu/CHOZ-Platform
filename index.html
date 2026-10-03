@@ -279,7 +279,67 @@ Web owned and created by Salahuddin Ranu.
 </p>
 </div>
 </div>
+<!-- ONBOARDING MODAL -->
+<div id="onboardModal" class="modal hidden">
+<div class="modal-content" style="max-width:520px;padding:0;overflow:hidden;position:relative">
 
+    <button class="modal-close" onclick="skipOnboarding()" style="position:absolute;top:12px;right:16px;font-size:24px;z-index:10;background:rgba(0,0,0,0.05);width:32px;height:32px;border-radius:50%;display:grid;place-items:center;border:none;cursor:pointer;color:var(--mute)">×</button>
+
+    <!-- Step 1 -->
+    <div class="onboard-step" data-step="1" style="padding:48px 32px 32px;text-align:center">
+        <div style="font-size:64px;margin-bottom:16px;line-height:1">👋</div>
+        <h2 style="font-family:'Bricolage Grotesque';font-size:26px;margin-bottom:12px;letter-spacing:-0.5px">Welcome to CHOZ</h2>
+        <p style="color:var(--mute);font-size:15px;line-height:1.6;margin-bottom:28px">
+            A blind decision platform.<br>
+            Compare options without seeing brand names — choose based on <strong style="color:var(--ink)">what matters to you</strong>.
+        </p>
+        <button class="btn p" style="padding:14px 32px;font-size:15px" onclick="nextOnboardStep(2)">Show me how →</button>
+        <button class="btn" style="display:block;margin:12px auto 0;font-size:13px;color:var(--mute);background:none;border:none" onclick="skipOnboarding()">Skip tour</button>
+    </div>
+
+    <!-- Step 2 -->
+    <div class="onboard-step" data-step="2" style="display:none;padding:48px 32px 32px;text-align:center">
+        <div style="font-size:64px;margin-bottom:16px;line-height:1">🎭</div>
+        <h2 style="font-family:'Bricolage Grotesque';font-size:26px;margin-bottom:12px;letter-spacing:-0.5px">Brands stay hidden</h2>
+        <p style="color:var(--mute);font-size:15px;line-height:1.6;margin-bottom:28px">
+            When you compare, you see <strong style="color:var(--ink)">Option A, B, C</strong> — not brand names or logos. This stops marketing influence from hijacking your decision.
+        </p>
+        <button class="btn p" style="padding:14px 32px;font-size:15px" onclick="nextOnboardStep(3)">Next →</button>
+        <button class="btn" style="display:block;margin:12px auto 0;font-size:13px;color:var(--mute);background:none;border:none" onclick="prevOnboardStep(1)">← Back</button>
+    </div>
+
+    <!-- Step 3 -->
+    <div class="onboard-step" data-step="3" style="display:none;padding:48px 32px 32px;text-align:center">
+        <div style="font-size:64px;margin-bottom:16px;line-height:1">⚖️</div>
+        <h2 style="font-family:'Bricolage Grotesque';font-size:26px;margin-bottom:12px;letter-spacing:-0.5px">You set the priorities</h2>
+        <p style="color:var(--mute);font-size:15px;line-height:1.6;margin-bottom:28px">
+            Battery life? Price? Camera? <strong style="color:var(--ink)">You decide what matters most.</strong> Then lock your choice, and the brand is finally revealed.
+        </p>
+        <button class="btn p" style="padding:14px 32px;font-size:15px" onclick="nextOnboardStep(4)">Almost there →</button>
+        <button class="btn" style="display:block;margin:12px auto 0;font-size:13px;color:var(--mute);background:none;border:none" onclick="prevOnboardStep(2)">← Back</button>
+    </div>
+
+    <!-- Step 4 -->
+    <div class="onboard-step" data-step="4" style="display:none;padding:48px 32px 40px;text-align:center">
+        <div style="font-size:64px;margin-bottom:16px;line-height:1">🚀</div>
+        <h2 style="font-family:'Bricolage Grotesque';font-size:26px;margin-bottom:12px;letter-spacing:-0.5px">Ready to start?</h2>
+        <p style="color:var(--mute);font-size:15px;line-height:1.6;margin-bottom:28px">
+            Pick any category — phones, bikes, hotels, laptops, and 16 more. No sign-up required to browse. Sign up to save your decisions.
+        </p>
+        <button class="btn p" style="padding:14px 32px;font-size:15px;width:100%" onclick="finishOnboarding()">Browse Categories →</button>
+        <button class="btn" style="display:block;margin:12px auto 0;font-size:13px;color:var(--mute);background:none;border:none" onclick="prevOnboardStep(3)">← Back</button>
+    </div>
+
+    <!-- Progress Dots -->
+    <div style="padding:0 32px 24px;display:flex;justify-content:center;gap:8px">
+        <span class="onboard-dot" data-dot="1" style="width:8px;height:8px;border-radius:50%;background:var(--ac);transition:all 0.3s"></span>
+        <span class="onboard-dot" data-dot="2" style="width:8px;height:8px;border-radius:50%;background:var(--line);transition:all 0.3s"></span>
+        <span class="onboard-dot" data-dot="3" style="width:8px;height:8px;border-radius:50%;background:var(--line);transition:all 0.3s"></span>
+        <span class="onboard-dot" data-dot="4" style="width:8px;height:8px;border-radius:50%;background:var(--line);transition:all 0.3s"></span>
+    </div>
+
+</div>
+</div>
 <!-- SEARCH MODAL -->
 <div id="searchModal" class="modal hidden">
 <div class="modal-content" style="max-width:640px;padding:0;overflow:hidden">
