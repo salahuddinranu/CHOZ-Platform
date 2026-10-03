@@ -4,812 +4,702 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CHOZ Admin</title>
-
-    <link rel="stylesheet" href="/css/style.css">
-
     <style>
-        .admin-layout {
-            display: flex;
-            min-height: 100vh;
-        }
-
-        .admin-sidebar {
-            width: 250px;
-            background: #1a1a1a;
-            color: white;
-            padding: 1.5rem;
-        }
-
-        .admin-sidebar a {
-            display: block;
-            color: #9ca3af;
-            padding: 0.8rem;
-            text-decoration: none;
-            border-radius: 8px;
-        }
-
-        .admin-sidebar a:hover,
-        .admin-sidebar a.active {
-            background: #2d2d2d;
-            color: white;
-        }
-
-        .admin-main {
-            flex: 1;
-            padding: 2rem;
-            background: var(--bg-alt);
-        }
-
-        .admin-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 2rem;
-        }
-
-        .admin-card {
-            background: white;
-            padding: 1.5rem;
-            border-radius: 12px;
-            margin-bottom: 1rem;
-            box-shadow: var(--shadow);
-        }
-
-        .admin-google-btn {
-            width: 100%;
-            margin-top: 0.75rem;
-            padding: 0.85rem 1rem;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            background: white;
-            color: #222;
-            cursor: pointer;
-            font-size: 0.95rem;
-            font-weight: 500;
-        }
-
-        .admin-google-btn:hover {
-            background: #f7f7f7;
-        }
-
-        .admin-divider {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            margin: 1rem 0;
-            color: #888;
-            font-size: 0.85rem;
-        }
-
-        .admin-divider::before,
-        .admin-divider::after {
-            content: "";
-            flex: 1;
-            height: 1px;
-            background: #e5e5e5;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f7fa; }
+        .admin-layout { display: flex; min-height: 100vh; }
+        .admin-sidebar { width: 250px; background: #1a1a1a; color: white; padding: 1.5rem; }
+        .admin-sidebar h3 { margin-bottom: 1.5rem; font-size: 1.2rem; }
+        .admin-sidebar a { display: block; color: #9ca3af; padding: 0.7rem 1rem; text-decoration: none; border-radius: 8px; margin-bottom: 0.3rem; font-size: 0.9rem; cursor: pointer; }
+        .admin-sidebar a:hover, .admin-sidebar a.active { background: #6366f1; color: white; }
+        .admin-main { flex: 1; padding: 2rem; overflow: auto; }
+        .admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
+        .admin-header h2 { font-size: 1.5rem; }
+        .admin-card { background: white; padding: 1.5rem; border-radius: 12px; margin-bottom: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+        .stat-card { background: white; padding: 1.5rem; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+        .stat-card h3 { font-size: 2rem; color: #6366f1; }
+        .stat-card p { color: #6b7280; font-size: 0.9rem; margin-top: 0.3rem; }
+        table { width: 100%; border-collapse: collapse; }
+        th { text-align: left; padding: 0.7rem; border-bottom: 2px solid #e5e7eb; font-size: 0.85rem; color: #6b7280; }
+        td { padding: 0.7rem; border-bottom: 1px solid #f3f4f6; font-size: 0.9rem; }
+        .badge { padding: 0.2rem 0.6rem; border-radius: 12px; font-size: 0.75rem; font-weight: 600; }
+        .badge-green { background: #dcfce7; color: #166534; }
+        .badge-red { background: #fee2e2; color: #991b1b; }
+        .badge-yellow { background: #fef3c7; color: #92400e; }
+        .badge-blue { background: #dbeafe; color: #1e40af; }
+        .btn { padding: 0.5rem 1rem; border: none; border-radius: 8px; cursor: pointer; font-size: 0.85rem; font-weight: 600; }
+        .btn-primary { background: #6366f1; color: white; }
+        .btn-danger { background: #ef4444; color: white; }
+        .btn-sm { padding: 0.3rem 0.7rem; font-size: 0.75rem; }
+        input, textarea, select { width: 100%; padding: 0.6rem; border: 1px solid #d1d5db; border-radius: 8px; font-size: 0.9rem; margin-bottom: 0.7rem; font-family: inherit; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.7rem; }
+        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 100; }
+        .modal-content { background: white; padding: 2rem; border-radius: 12px; max-width: 500px; width: 90%; max-height: 90vh; overflow-y: auto; }
+        .modal-close { float: right; background: none; border: none; font-size: 1.5rem; cursor: pointer; }
+        .hidden { display: none !important; }
+        .login-box { max-width: 400px; margin: 10vh auto; background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .login-box h2 { margin-bottom: 1.5rem; text-align: center; }
+        .login-box input { margin-bottom: 1rem; }
+        .login-box button { width: 100%; }
+        .search-box { margin-bottom: 1rem; }
+        .empty-state { text-align: center; padding: 2rem; color: #6b7280; }
     </style>
-
-    <!-- Supabase JS -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-    <!-- CHOZ Supabase Configuration -->
-    <script src="/js/config.js"></script>
 </head>
-
 <body>
-
-    <!-- =====================================================
-         ADMIN LOGIN
-    ====================================================== -->
-
-    <div id="admin-login" class="modal" style="display:flex;">
-        <div class="modal-content">
-
-            <h3>Admin Login</h3>
-
-            <form id="admin-form">
-
-                <input
-                    type="email"
-                    id="admin-email"
-                    placeholder="Admin Email"
-                    required
-                >
-
-                <input
-                    type="password"
-                    id="admin-password"
-                    placeholder="Password"
-                    required
-                >
-
-                <button
-                    type="submit"
-                    class="btn btn-primary"
-                    id="admin-login-btn"
-                >
-                    Login
-                </button>
-
-            </form>
-
-            <div class="admin-divider">
-                OR
-            </div>
-
-            <button
-                type="button"
-                class="admin-google-btn"
-                id="admin-google-btn"
-            >
-                Continue with Google
-            </button>
-
+    <!-- LOGIN -->
+    <div id="admin-login">
+        <div class="login-box">
+            <h2>CHOZ Admin Login</h2>
+            <input type="email" id="admin-email" placeholder="Admin Email" />
+            <input type="password" id="admin-password" placeholder="Password" />
+            <button class="btn btn-primary" onclick="adminLogin()">Login</button>
+            <p id="login-error" style="color:#ef4444;margin-top:1rem;text-align:center;font-size:0.9rem;"></p>
         </div>
     </div>
 
-
-    <!-- =====================================================
-         ADMIN APP
-    ====================================================== -->
-
+    <!-- MAIN APP -->
     <div id="admin-app" class="admin-layout hidden">
-
         <aside class="admin-sidebar">
-
-            <h3 style="margin-bottom:1.5rem;">
-                CHOZ Admin
-            </h3>
-
-            <a href="#" class="active" data-section="dashboard">
-                Dashboard
-            </a>
-
-            <a href="#" data-section="items">
-                Products
-            </a>
-
-            <a href="#" data-section="categories">
-                Categories
-            </a>
-
-            <a href="#" data-section="reviews">
-                Reviews
-            </a>
-
-            <a href="#" data-section="feedback">
-                Feedback
-            </a>
-
-            <a href="#" data-section="users">
-                Users
-            </a>
-
-            <a href="#" data-section="settings">
-                Settings
-            </a>
-
-            <a href="#" onclick="adminSignOut()">
-                Sign Out
-            </a>
-
+            <h3>CHOZ Admin</h3>
+            <a data-section="dashboard" class="active">📊 Dashboard</a>
+            <a data-section="items">📦 Products</a>
+            <a data-section="categories">📁 Categories</a>
+            <a data-section="brands">🏷️ Brands</a>
+            <a data-section="reviews">⭐ Reviews</a>
+            <a data-section="feedback">💬 Feedback</a>
+            <a data-section="users">👥 Users</a>
+            <a data-section="settings">⚙️ Settings</a>
+            <a onclick="adminSignOut()">🚪 Sign Out</a>
         </aside>
-
-
         <main class="admin-main">
-
             <header class="admin-header">
-
-                <h2 id="admin-title">
-                    Dashboard
-                </h2>
-
-                <span id="admin-user"></span>
-
+                <h2 id="admin-title">Dashboard</h2>
+                <span id="admin-user" style="color:#6b7280;font-size:0.9rem;"></span>
             </header>
-
             <div id="admin-content"></div>
-
         </main>
-
     </div>
 
+    <!-- MODAL -->
+    <div id="admin-modal" class="modal hidden">
+        <div class="modal-content" id="modal-content"></div>
+    </div>
 
     <script>
+        // ============================================================
+        // CONFIG — apni values daalo
+        // ============================================================
+        const SUPABASE_URL = 'https://frqokteoccfxfszmhkht.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_fOQFhkrxgysqcewSXcPtMg_G5KcOCo3';
 
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         let adminUser = null;
+        let currentSection = 'dashboard';
 
-
-        // ====================================================
-        // CHECK WHETHER USER IS ADMIN
-        // ====================================================
-
-        async function checkAdminSession() {
-
-            try {
-
-                const {
-                    data: { session },
-                    error
-                } = await chozSupabase.auth.getSession();
-
-                if (error) {
-                    console.error(
-                        'Session error:',
-                        error
-                    );
-                    return false;
-                }
-
-                if (!session) {
-                    return false;
-                }
-
-                const { data: adminData, error: adminError } =
-                    await chozSupabase
-                        .from('admin_users')
-                        .select('*')
-                        .eq('user_id', session.user.id)
-                        .single();
-
-                if (adminError || !adminData) {
-
-                    await chozSupabase.auth.signOut();
-
-                    alert(
-                        'You are not authorized as admin.'
-                    );
-
-                    return false;
-                }
-
-                adminUser = {
-                    ...session.user,
-                    role: adminData.role
-                };
-
-                document.getElementById(
-                    'admin-login'
-                ).style.display = 'none';
-
-                document
-                    .getElementById('admin-app')
-                    .classList.remove('hidden');
-
-                document.getElementById(
-                    'admin-user'
-                ).textContent =
-                    session.user.email || '';
-
-                loadAdminSection('dashboard');
-
-                return true;
-
-            } catch (error) {
-
-                console.error(
-                    'Admin session error:',
-                    error
-                );
-
-                return false;
-            }
-        }
-
-
-        // ====================================================
-        // EMAIL + PASSWORD ADMIN LOGIN
-        // ====================================================
-
-        async function adminLogin(
-            email,
-            password
-        ) {
-
-            const { data, error } =
-                await chozSupabase.auth
-                    .signInWithPassword({
-                        email: email,
-                        password: password
-                    });
-
-            if (error) {
-                throw error;
-            }
-
-
-            // Check admin_users table
-
-            const {
-                data: adminData,
-                error: adminError
-            } = await chozSupabase
-                .from('admin_users')
-                .select('*')
-                .eq('user_id', data.user.id)
-                .single();
-
-
-            if (adminError || !adminData) {
-
-                await chozSupabase.auth.signOut();
-
-                throw new Error(
-                    'You are not authorized as admin.'
-                );
-            }
-
-
-            adminUser = {
-                ...data.user,
-                role: adminData.role
-            };
-
-
-            document.getElementById(
-                'admin-login'
-            ).style.display = 'none';
-
-            document
-                .getElementById('admin-app')
-                .classList.remove('hidden');
-
-
-            document.getElementById(
-                'admin-user'
-            ).textContent =
-                data.user.email || '';
-
-
-            loadAdminSection('dashboard');
-        }
-
-
-        // ====================================================
-        // GOOGLE ADMIN LOGIN
-        // ====================================================
-
-        async function adminGoogleLogin() {
-
-            const button =
-                document.getElementById(
-                    'admin-google-btn'
-                );
-
-            if (button) {
-                button.disabled = true;
-                button.textContent =
-                    'Connecting to Google...';
-            }
+        // ============================================================
+        // LOGIN
+        // ============================================================
+        async function adminLogin() {
+            const email = document.getElementById('admin-email').value;
+            const password = document.getElementById('admin-password').value;
+            const errEl = document.getElementById('login-error');
+            errEl.textContent = '';
 
             try {
+                const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+                if (error) throw error;
 
-                const { error } =
-                    await chozSupabase.auth
-                        .signInWithOAuth({
+                // Check admin_users
+                const { data: adminData, error: adminErr } = await supabase
+                    .from('admin_users')
+                    .select('*')
+                    .eq('user_id', data.user.id)
+                    .single();
 
-                            provider: 'google',
-
-                            options: {
-
-                                redirectTo:
-                                    window.location.origin +
-                                    '/admin/'
-                            }
-                        });
-
-
-                if (error) {
-                    throw error;
+                if (adminErr || !adminData) {
+                    await supabase.auth.signOut();
+                    throw new Error('You are not authorized as admin.');
                 }
 
-            } catch (error) {
-
-                console.error(
-                    'Admin Google login error:',
-                    error
-                );
-
-                alert(
-                    error.message ||
-                    'Google login failed.'
-                );
-
-                if (button) {
-                    button.disabled = false;
-                    button.textContent =
-                        'Continue with Google';
-                }
+                adminUser = { ...data.user, role: adminData.role };
+                document.getElementById('admin-login').classList.add('hidden');
+                document.getElementById('admin-app').classList.remove('hidden');
+                document.getElementById('admin-user').textContent = data.user.email + ' (' + adminData.role + ')';
+                loadSection('dashboard');
+            } catch (err) {
+                errEl.textContent = err.message;
             }
         }
-
-
-        // ====================================================
-        // SIGN OUT
-        // ====================================================
 
         async function adminSignOut() {
-
-            await chozSupabase.auth.signOut();
-
+            await supabase.auth.signOut();
             adminUser = null;
-
-            document.getElementById(
-                'admin-login'
-            ).style.display = 'flex';
-
-            document
-                .getElementById('admin-app')
-                .classList.add('hidden');
+            document.getElementById('admin-login').classList.remove('hidden');
+            document.getElementById('admin-app').classList.add('hidden');
         }
 
-
-        // ====================================================
-        // EMAIL LOGIN FORM
-        // ====================================================
-
-        document
-            .getElementById('admin-form')
-            .addEventListener(
-                'submit',
-                async (e) => {
-
-                    e.preventDefault();
-
-                    const button =
-                        document.getElementById(
-                            'admin-login-btn'
-                        );
-
-                    button.disabled = true;
-                    button.textContent =
-                        'Logging in...';
-
-                    try {
-
-                        await adminLogin(
-                            document.getElementById(
-                                'admin-email'
-                            ).value.trim(),
-
-                            document.getElementById(
-                                'admin-password'
-                            ).value
-                        );
-
-                    } catch (err) {
-
-                        console.error(
-                            'Admin login error:',
-                            err
-                        );
-
-                        alert(
-                            err.message ||
-                            'Admin login failed.'
-                        );
-
-                    } finally {
-
-                        button.disabled = false;
-
-                        button.textContent =
-                            'Login';
-                    }
+        // Check if already logged in
+        (async () => {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session) {
+                const { data: adminData } = await supabase
+                    .from('admin_users')
+                    .select('*')
+                    .eq('user_id', session.user.id)
+                    .single();
+                if (adminData) {
+                    adminUser = { ...session.user, role: adminData.role };
+                    document.getElementById('admin-login').classList.add('hidden');
+                    document.getElementById('admin-app').classList.remove('hidden');
+                    document.getElementById('admin-user').textContent = session.user.email + ' (' + adminData.role + ')';
+                    loadSection('dashboard');
                 }
-            );
+            }
+        })();
 
-
-        // ====================================================
-        // GOOGLE LOGIN BUTTON
-        // ====================================================
-
-        document
-            .getElementById(
-                'admin-google-btn'
-            )
-            .addEventListener(
-                'click',
-                adminGoogleLogin
-            );
-
-
-        // ====================================================
-        // SIDEBAR
-        // ====================================================
-
-        document
-            .querySelectorAll(
-                '.admin-sidebar a[data-section]'
-            )
-            .forEach(link => {
-
-                link.addEventListener(
-                    'click',
-                    (e) => {
-
-                        e.preventDefault();
-
-                        document
-                            .querySelectorAll(
-                                '.admin-sidebar a'
-                            )
-                            .forEach(a =>
-                                a.classList.remove(
-                                    'active'
-                                )
-                            );
-
-                        link.classList.add(
-                            'active'
-                        );
-
-                        loadAdminSection(
-                            link.dataset.section
-                        );
-                    }
-                );
+        // ============================================================
+        // NAVIGATION
+        // ============================================================
+        document.querySelectorAll('.admin-sidebar a[data-section]').forEach(link => {
+            link.addEventListener('click', () => {
+                document.querySelectorAll('.admin-sidebar a').forEach(a => a.classList.remove('active'));
+                link.classList.add('active');
+                loadSection(link.dataset.section);
             });
-
-
-        // ====================================================
-        // ADMIN SECTIONS
-        // ====================================================
-
-        async function loadAdminSection(section) {
-
-            const content =
-                document.getElementById(
-                    'admin-content'
-                );
-
-            const title =
-                document.getElementById(
-                    'admin-title'
-                );
-
-            content.innerHTML =
-                '<p>Loading...</p>';
-
-
-            if (section === 'dashboard') {
-
-                title.textContent =
-                    'Dashboard';
-
-
-                const { count: users } =
-                    await chozSupabase
-                        .from('profiles')
-                        .select('*', {
-                            count: 'exact',
-                            head: true
-                        });
-
-
-                const { count: items } =
-                    await chozSupabase
-                        .from('items')
-                        .select('*', {
-                            count: 'exact',
-                            head: true
-                        });
-
-
-                const { count: reviews } =
-                    await chozSupabase
-                        .from('user_reviews')
-                        .select('*', {
-                            count: 'exact',
-                            head: true
-                        });
-
-
-                content.innerHTML = `
-
-                    <div
-                        class="stats-grid"
-                        style="
-                            display:grid;
-                            grid-template-columns:repeat(3,1fr);
-                            gap:1rem;
-                        "
-                    >
-
-                        <div class="admin-card">
-                            <h3>${users || 0}</h3>
-                            <p>Total Users</p>
-                        </div>
-
-                        <div class="admin-card">
-                            <h3>${items || 0}</h3>
-                            <p>Products</p>
-                        </div>
-
-                        <div class="admin-card">
-                            <h3>${reviews || 0}</h3>
-                            <p>Reviews</p>
-                        </div>
-
-                    </div>
-                `;
-
-
-            } else if (section === 'items') {
-
-                title.textContent =
-                    'Products';
-
-
-                const { data } =
-                    await chozSupabase
-                        .from('items')
-                        .select(
-                            '*, categories(name), brands(name)'
-                        )
-                        .order(
-                            'created_at',
-                            {
-                                ascending: false
-                            }
-                        )
-                        .limit(50);
-
-
-                content.innerHTML = `
-
-                    <div class="admin-card">
-
-                        <table
-                            style="
-                                width:100%;
-                                border-collapse:collapse;
-                            "
-                        >
-
-                            <thead>
-
-                                <tr
-                                    style="
-                                        text-align:left;
-                                        border-bottom:1px solid #eee;
-                                    "
-                                >
-
-                                    <th style="padding:0.5rem;">
-                                        Name
-                                    </th>
-
-                                    <th style="padding:0.5rem;">
-                                        Category
-                                    </th>
-
-                                    <th style="padding:0.5rem;">
-                                        Brand
-                                    </th>
-
-                                    <th style="padding:0.5rem;">
-                                        Price
-                                    </th>
-
-                                    <th style="padding:0.5rem;">
-                                        Demo
-                                    </th>
-
-                                </tr>
-
-                            </thead>
-
-                            <tbody>
-
-                                ${(data || []).map(i => `
-
-                                    <tr
-                                        style="
-                                            border-bottom:1px solid #f5f5f5;
-                                        "
-                                    >
-
-                                        <td style="padding:0.5rem;">
-                                            ${i.name}
-                                        </td>
-
-                                        <td style="padding:0.5rem;">
-                                            ${i.categories?.name || '—'}
-                                        </td>
-
-                                        <td style="padding:0.5rem;">
-                                            ${i.brands?.name || '—'}
-                                        </td>
-
-                                        <td style="padding:0.5rem;">
-                                            ${i.currency}
-                                            ${i.base_price?.toLocaleString() || '—'}
-                                        </td>
-
-                                        <td style="padding:0.5rem;">
-                                            ${i.is_demo ? '✅' : '❌'}
-                                        </td>
-
-                                    </tr>
-
-                                `).join('')}
-
-                            </tbody>
-
-                        </table>
-
-                    </div>
-                `;
-
-
-            } else if (section === 'feedback') {
-
-                title.textContent =
-                    'Feedback';
-
-
-                const { data } =
-                    await chozSupabase
-                        .from('feedback')
-                        .select('*')
-                        .order(
-                            'created_at',
-                            {
-                                ascending: false
-                            }
-                        );
-
-
-                content.innerHTML =
-                    (data || [])
-                        .map(f => `
-
-                            <div class="admin-card">
-
-                                <h4>
-                                    ${f.subject || f.type}
-                                </h4>
-
-                                <p>
-                                    ${f.message}
-                                </p>
-
-                                <small>
-                                    ${f.email || 'No email'}
-                                    —
-                                    ${new Date(
-                                        f.created_at
-                                    ).toLocaleString()}
-                                </small>
-
-                            </div>
-
-                        `)
-                        .join('') ||
-                    '<p>No feedback yet.</p>';
-
-
-            } else {
-
-                title.textContent =
-                    section.charAt(0).toUpperCase() +
-                    section.slice(1);
-
-                content.innerHTML =
-                    `<p>${section} section — coming soon.</p>`;
+        });
+
+        async function loadSection(section) {
+            currentSection = section;
+            const content = document.getElementById('admin-content');
+            const title = document.getElementById('admin-title');
+            content.innerHTML = '<p>Loading...</p>';
+
+            try {
+                if (section === 'dashboard') await loadDashboard(content, title);
+                else if (section === 'items') await loadItems(content, title);
+                else if (section === 'categories') await loadCategories(content, title);
+                else if (section === 'brands') await loadBrands(content, title);
+                else if (section === 'reviews') await loadReviews(content, title);
+                else if (section === 'feedback') await loadFeedback(content, title);
+                else if (section === 'users') await loadUsers(content, title);
+                else if (section === 'settings') await loadSettings(content, title);
+            } catch (err) {
+                content.innerHTML = '<p style="color:#ef4444;">Error: ' + err.message + '</p>';
             }
         }
 
+        // ============================================================
+        // DASHBOARD
+        // ============================================================
+        async function loadDashboard(content, title) {
+            title.textContent = 'Dashboard';
+            const [users, items, reviews, feedback, comps] = await Promise.all([
+                supabase.from('profiles').select('*', { count: 'exact', head: true }),
+                supabase.from('items').select('*', { count: 'exact', head: true }),
+                supabase.from('user_reviews').select('*', { count: 'exact', head: true }),
+                supabase.from('feedback').select('*', { count: 'exact', head: true }),
+                supabase.from('comparisons').select('*', { count: 'exact', head: true })
+            ]);
 
-        // ====================================================
-        // INITIAL ADMIN SESSION CHECK
-        // ====================================================
+            content.innerHTML = `
+                <div class="stats-grid">
+                    <div class="stat-card"><h3>${users.count || 0}</h3><p>Total Users</p></div>
+                    <div class="stat-card"><h3>${items.count || 0}</h3><p>Products</p></div>
+                    <div class="stat-card"><h3>${comps.count || 0}</h3><p>Comparisons</p></div>
+                    <div class="stat-card"><h3>${reviews.count || 0}</h3><p>Reviews</p></div>
+                    <div class="stat-card"><h3>${feedback.count || 0}</h3><p>Feedback</p></div>
+                </div>
+            `;
+        }
 
-        checkAdminSession();
+        // ============================================================
+        // ITEMS (Products)
+        // ============================================================
+        async function loadItems(content, title) {
+            title.textContent = 'Products';
+            const { data: items } = await supabase
+                .from('items')
+                .select('*, categories(name), brands(name)')
+                .order('created_at', { ascending: false });
 
+            content.innerHTML = `
+                <div class="admin-card">
+                    <div style="display:flex;justify-content:space-between;margin-bottom:1rem;">
+                        <input type="text" id="item-search" placeholder="Search products..." class="search-box" style="max-width:300px;" oninput="filterTable('items-table', this.value)" />
+                        <button class="btn btn-primary" onclick="showItemForm()">+ Add Product</button>
+                    </div>
+                    <table id="items-table">
+                        <thead><tr>
+                            <th>Name</th><th>Category</th><th>Brand</th><th>Price</th><th>Demo</th><th>Actions</th>
+                        </tr></thead>
+                        <tbody>
+                            ${(items || []).map(i => `
+                                <tr>
+                                    <td>${i.name}</td>
+                                    <td>${i.categories?.name || '—'}</td>
+                                    <td>${i.brands?.name || '—'}</td>
+                                    <td>${i.currency} ${i.base_price?.toLocaleString() || '—'}</td>
+                                    <td>${i.is_demo ? '<span class="badge badge-yellow">DEMO</span>' : '<span class="badge badge-green">REAL</span>'}</td>
+                                    <td>
+                                        <button class="btn btn-primary btn-sm" onclick='showItemForm(${JSON.stringify(i).replace(/'/g, "&#39;")})'>Edit</button>
+                                        <button class="btn btn-danger btn-sm" onclick="deleteItem('${i.id}')">Delete</button>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        async function showItemForm(item = null) {
+            const { data: cats } = await supabase.from('categories').select('*').order('sort_order');
+            const { data: brands } = await supabase.from('brands').select('*').order('name');
+
+            const modal = document.getElementById('admin-modal');
+            document.getElementById('modal-content').innerHTML = `
+                <button class="modal-close" onclick="closeModal()">×</button>
+                <h3 style="margin-bottom:1rem;">${item ? 'Edit' : 'Add'} Product</h3>
+                <input type="text" id="f-id" placeholder="ID (e.g. phone-7)" value="${item?.id || ''}" ${item ? 'disabled' : ''} />
+                <input type="text" id="f-name" placeholder="Product Name" value="${item?.name || ''}" />
+                <div class="form-row">
+                    <select id="f-category">
+                        ${(cats || []).map(c => `<option value="${c.id}" ${item?.category_id === c.id ? 'selected' : ''}>${c.name}</option>`).join('')}
+                    </select>
+                    <select id="f-brand">
+                        <option value="">No brand</option>
+                        ${(brands || []).map(b => `<option value="${b.id}" ${item?.brand_id === b.id ? 'selected' : ''}>${b.name}</option>`).join('')}
+                    </select>
+                </div>
+                <input type="text" id="f-slug" placeholder="Slug (e.g. my-product)" value="${item?.slug || ''}" />
+                <textarea id="f-desc" placeholder="Description">${item?.description || ''}</textarea>
+                <div class="form-row">
+                    <input type="number" id="f-price" placeholder="Price" value="${item?.base_price || ''}" />
+                    <input type="text" id="f-currency" placeholder="Currency" value="${item?.currency || 'PKR'}" />
+                </div>
+                <label style="display:flex;align-items:center;gap:0.5rem;margin-bottom:1rem;">
+                    <input type="checkbox" id="f-demo" ${item?.is_demo ? 'checked' : ''} style="width:auto;margin:0;" /> Mark as demo data
+                </label>
+                <button class="btn btn-primary" style="width:100%;" onclick="saveItem(${item ? `'${item.id}'` : 'null'})">
+                    ${item ? 'Update' : 'Create'} Product
+                </button>
+            `;
+            modal.classList.remove('hidden');
+        }
+
+        async function saveItem(existingId) {
+            const id = existingId || document.getElementById('f-id').value;
+            const name = document.getElementById('f-name').value;
+            const slug = document.getElementById('f-slug').value || name.toLowerCase().replace(/\s+/g, '-');
+            const category_id = document.getElementById('f-category').value;
+            const brand_id = document.getElementById('f-brand').value || null;
+            const description = document.getElementById('f-desc').value;
+            const base_price = parseFloat(document.getElementById('f-price').value) || null;
+            const currency = document.getElementById('f-currency').value;
+            const is_demo = document.getElementById('f-demo').checked;
+
+            if (!id || !name || !category_id) { alert('ID, Name, Category required'); return; }
+
+            const payload = { id, name, slug, category_id, brand_id, description, base_price, currency, is_demo };
+            let err;
+            if (existingId) {
+                ({ error: err } = await supabase.from('items').update(payload).eq('id', existingId));
+            } else {
+                ({ error: err } = await supabase.from('items').insert(payload));
+            }
+            if (err) { alert(err.message); return; }
+            closeModal();
+            loadSection('items');
+        }
+
+        async function deleteItem(id) {
+            if (!confirm('Delete this product?')) return;
+            const { error } = await supabase.from('items').delete().eq('id', id);
+            if (error) alert(error.message);
+            else loadSection('items');
+        }
+
+        // ============================================================
+        // CATEGORIES
+        // ============================================================
+        async function loadCategories(content, title) {
+            title.textContent = 'Categories';
+            const { data } = await supabase.from('categories').select('*').order('sort_order');
+            content.innerHTML = `
+                <div class="admin-card">
+                    <div style="display:flex;justify-content:space-between;margin-bottom:1rem;">
+                        <input type="text" placeholder="Search..." oninput="filterTable('cat-table', this.value)" style="max-width:300px;" />
+                        <button class="btn btn-primary" onclick="showCatForm()">+ Add Category</button>
+                    </div>
+                    <table id="cat-table">
+                        <thead><tr><th>Icon</th><th>Name</th><th>Slug</th><th>Active</th><th>Actions</th></tr></thead>
+                        <tbody>
+                            ${(data || []).map(c => `
+                                <tr>
+                                    <td style="font-size:1.5rem;">${c.icon || '—'}</td>
+                                    <td>${c.name}</td>
+                                    <td>${c.slug}</td>
+                                    <td>${c.is_active ? '<span class="badge badge-green">Yes</span>' : '<span class="badge badge-red">No</span>'}</td>
+                                    <td>
+                                        <button class="btn btn-primary btn-sm" onclick='showCatForm(${JSON.stringify(c).replace(/'/g, "&#39;")})'>Edit</button>
+                                        <button class="btn btn-danger btn-sm" onclick="deleteCat('${c.id}')">Delete</button>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        function showCatForm(cat = null) {
+            document.getElementById('modal-content').innerHTML = `
+                <button class="modal-close" onclick="closeModal()">×</button>
+                <h3 style="margin-bottom:1rem;">${cat ? 'Edit' : 'Add'} Category</h3>
+                <input type="text" id="c-id" placeholder="ID (e.g. cat-watch)" value="${cat?.id || ''}" ${cat ? 'disabled' : ''} />
+                <input type="text" id="c-name" placeholder="Name" value="${cat?.name || ''}" />
+                <input type="text" id="c-slug" placeholder="Slug" value="${cat?.slug || ''}" />
+                <input type="text" id="c-icon" placeholder="Icon (emoji)" value="${cat?.icon || ''}" />
+                <input type="number" id="c-sort" placeholder="Sort order" value="${cat?.sort_order || 0}" />
+                <label style="display:flex;align-items:center;gap:0.5rem;margin-bottom:1rem;">
+                    <input type="checkbox" id="c-active" ${cat?.is_active !== false ? 'checked' : ''} style="width:auto;margin:0;" /> Active
+                </label>
+                <button class="btn btn-primary" style="width:100%;" onclick="saveCat(${cat ? `'${cat.id}'` : 'null'})">Save</button>
+            `;
+            document.getElementById('admin-modal').classList.remove('hidden');
+        }
+
+        async function saveCat(existingId) {
+            const payload = {
+                id: existingId || document.getElementById('c-id').value,
+                name: document.getElementById('c-name').value,
+                slug: document.getElementById('c-slug').value,
+                icon: document.getElementById('c-icon').value,
+                sort_order: parseInt(document.getElementById('c-sort').value) || 0,
+                is_active: document.getElementById('c-active').checked
+            };
+            let err;
+            if (existingId) ({ error: err } = await supabase.from('categories').update(payload).eq('id', existingId));
+            else ({ error: err } = await supabase.from('categories').insert(payload));
+            if (err) { alert(err.message); return; }
+            closeModal();
+            loadSection('categories');
+        }
+
+        async function deleteCat(id) {
+            if (!confirm('Delete category?')) return;
+            const { error } = await supabase.from('categories').delete().eq('id', id);
+            if (error) alert(error.message);
+            else loadSection('categories');
+        }
+
+        // ============================================================
+        // BRANDS
+        // ============================================================
+        async function loadBrands(content, title) {
+            title.textContent = 'Brands';
+            const { data } = await supabase.from('brands').select('*').order('name');
+            content.innerHTML = `
+                <div class="admin-card">
+                    <div style="display:flex;justify-content:space-between;margin-bottom:1rem;">
+                        <input placeholder="Search..." oninput="filterTable('brand-table', this.value)" style="max-width:300px;" />
+                        <button class="btn btn-primary" onclick="showBrandForm()">+ Add Brand</button>
+                    </div>
+                    <table id="brand-table">
+                        <thead><tr><th>Name</th><th>Slug</th><th>Actions</th></tr></thead>
+                        <tbody>
+                            ${(data || []).map(b => `
+                                <tr>
+                                    <td>${b.name}</td>
+                                    <td>${b.slug}</td>
+                                    <td>
+                                        <button class="btn btn-primary btn-sm" onclick='showBrandForm(${JSON.stringify(b).replace(/'/g, "&#39;")})'>Edit</button>
+                                        <button class="btn btn-danger btn-sm" onclick="deleteBrand('${b.id}')">Delete</button>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        function showBrandForm(brand = null) {
+            document.getElementById('modal-content').innerHTML = `
+                <button class="modal-close" onclick="closeModal()">×</button>
+                <h3 style="margin-bottom:1rem;">${brand ? 'Edit' : 'Add'} Brand</h3>
+                <input type="text" id="b-id" placeholder="ID (e.g. brand-nike)" value="${brand?.id || ''}" ${brand ? 'disabled' : ''} />
+                <input type="text" id="b-name" placeholder="Name" value="${brand?.name || ''}" />
+                <input type="text" id="b-slug" placeholder="Slug" value="${brand?.slug || ''}" />
+                <button class="btn btn-primary" style="width:100%;" onclick="saveBrand(${brand ? `'${brand.id}'` : 'null'})">Save</button>
+            `;
+            document.getElementById('admin-modal').classList.remove('hidden');
+        }
+
+        async function saveBrand(existingId) {
+            const payload = {
+                id: existingId || document.getElementById('b-id').value,
+                name: document.getElementById('b-name').value,
+                slug: document.getElementById('b-slug').value
+            };
+            let err;
+            if (existingId) ({ error: err } = await supabase.from('brands').update(payload).eq('id', existingId));
+            else ({ error: err } = await supabase.from('brands').insert(payload));
+            if (err) { alert(err.message); return; }
+            closeModal();
+            loadSection('brands');
+        }
+
+        async function deleteBrand(id) {
+            if (!confirm('Delete brand?')) return;
+            const { error } = await supabase.from('brands').delete().eq('id', id);
+            if (error) alert(error.message);
+            else loadSection('brands');
+        }
+
+        // ============================================================
+        // REVIEWS
+        // ============================================================
+        async function loadReviews(content, title) {
+            title.textContent = 'Reviews';
+            const { data } = await supabase
+                .from('user_reviews')
+                .select('*, items(name), profiles(email)')
+                .order('created_at', { ascending: false });
+
+            if (!data || data.length === 0) {
+                content.innerHTML = '<div class="admin-card empty-state">No reviews yet.</div>';
+                return;
+            }
+
+            content.innerHTML = `
+                <div class="admin-card">
+                    <table>
+                        <thead><tr><th>Item</th><th>User</th><th>Rating</th><th>Title</th><th>Status</th><th>Actions</th></tr></thead>
+                        <tbody>
+                            ${data.map(r => `
+                                <tr>
+                                    <td>${r.items?.name || '—'}</td>
+                                    <td>${r.profiles?.email || '—'}</td>
+                                    <td>${'⭐'.repeat(r.rating || 0)}</td>
+                                    <td>${r.title || '—'}</td>
+                                    <td>${r.is_hidden ? '<span class="badge badge-red">Hidden</span>' : '<span class="badge badge-green">Visible</span>'}</td>
+                                    <td>
+                                        <button class="btn btn-primary btn-sm" onclick="toggleReview('${r.id}', ${!r.is_hidden})">
+                                            ${r.is_hidden ? 'Show' : 'Hide'}
+                                        </button>
+                                        <button class="btn btn-danger btn-sm" onclick="deleteReview('${r.id}')">Delete</button>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        async function toggleReview(id, hide) {
+            const { error } = await supabase.from('user_reviews').update({ is_hidden: hide }).eq('id', id);
+            if (error) alert(error.message);
+            else loadSection('reviews');
+        }
+
+        async function deleteReview(id) {
+            if (!confirm('Delete review?')) return;
+            const { error } = await supabase.from('user_reviews').delete().eq('id', id);
+            if (error) alert(error.message);
+            else loadSection('reviews');
+        }
+
+        // ============================================================
+        // FEEDBACK
+        // ============================================================
+        async function loadFeedback(content, title) {
+            title.textContent = 'Feedback';
+            const { data } = await supabase.from('feedback').select('*').order('created_at', { ascending: false });
+
+            if (!data || data.length === 0) {
+                content.innerHTML = '<div class="admin-card empty-state">No feedback yet.</div>';
+                return;
+            }
+
+            content.innerHTML = data.map(f => `
+                <div class="admin-card">
+                    <div style="display:flex;justify-content:space-between;margin-bottom:0.5rem;">
+                        <h4>${f.subject || f.type}</h4>
+                        <span class="badge badge-blue">${f.status}</span>
+                    </div>
+                    <p style="margin-bottom:0.5rem;">${f.message}</p>
+                    <small style="color:#6b7280;">${f.email || 'No email'} — ${new Date(f.created_at).toLocaleString()}</small>
+                    <div style="margin-top:0.7rem;">
+                        <button class="btn btn-primary btn-sm" onclick="markFeedback('${f.id}', 'resolved')">Mark Resolved</button>
+                        <button class="btn btn-danger btn-sm" onclick="deleteFeedback('${f.id}')">Delete</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function markFeedback(id, status) {
+            await supabase.from('feedback').update({ status }).eq('id', id);
+            loadSection('feedback');
+        }
+
+        async function deleteFeedback(id) {
+            if (!confirm('Delete feedback?')) return;
+            await supabase.from('feedback').delete().eq('id', id);
+            loadSection('feedback');
+        }
+
+        // ============================================================
+        // USERS
+        // ============================================================
+        async function loadUsers(content, title) {
+            title.textContent = 'Users';
+            const { data } = await supabase
+                .from('profiles')
+                .select('*')
+                .order('created_at', { ascending: false });
+
+            if (!data || data.length === 0) {
+                content.innerHTML = '<div class="admin-card empty-state">No users yet.</div>';
+                return;
+            }
+
+            content.innerHTML = `
+                <div class="admin-card">
+                    <input placeholder="Search users..." oninput="filterTable('users-table', this.value)" style="max-width:300px;margin-bottom:1rem;" />
+                    <table id="users-table">
+                        <thead><tr><th>Email</th><th>Name</th><th>Premium</th><th>Joined</th><th>Actions</th></tr></thead>
+                        <tbody>
+                            ${data.map(u => `
+                                <tr>
+                                    <td>${u.email || '—'}</td>
+                                    <td>${u.full_name || '—'}</td>
+                                    <td>${u.is_premium ? '<span class="badge badge-green">Pro</span>' : '<span class="badge badge-yellow">Free</span>'}</td>
+                                    <td>${new Date(u.created_at).toLocaleDateString()}</td>
+                                    <td>
+                                        <button class="btn btn-primary btn-sm" onclick="togglePremium('${u.id}', ${!u.is_premium})">
+                                            ${u.is_premium ? 'Remove Pro' : 'Make Pro'}
+                                        </button>
+                                        <button class="btn btn-danger btn-sm" onclick="deleteUser('${u.id}')">Delete</button>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        async function togglePremium(userId, makePremium) {
+            await supabase.from('profiles').update({ is_premium: makePremium }).eq('id', userId);
+            loadSection('users');
+        }
+
+        async function deleteUser(userId) {
+            if (!confirm('Delete this user? This cannot be undone.')) return;
+            await supabase.from('profiles').delete().eq('id', userId);
+            loadSection('users');
+        }
+
+        // ============================================================
+        // SETTINGS
+        // ============================================================
+        async function loadSettings(content, title) {
+            title.textContent = 'Settings';
+            const { data } = await supabase.from('site_settings').select('*');
+            const settings = {};
+            (data || []).forEach(s => settings[s.key] = s.value);
+
+            content.innerHTML = `
+                <div class="admin-card">
+                    <h3 style="margin-bottom:1rem;">Site Settings</h3>
+                    <label>Site Name</label>
+                    <input id="s-site-name" value="${settings.site_name?.value || 'CHOZ'}" />
+                    
+                    <label>Tagline</label>
+                    <input id="s-tagline" value="${settings.tagline?.value || 'Choose without the noise.'}" />
+
+                    <label>Contact Email</label>
+                    <input id="s-contact-email" value="${settings.contact_email?.value || ''}" />
+
+                    <label>Affiliate Disclosure</label>
+                    <textarea id="s-affiliate">${settings.affiliate_disclosure?.value || 'CHOZ may earn commission from affiliate links at no extra cost to you.'}</textarea>
+
+                    <button class="btn btn-primary" onclick="saveSettings()">Save Settings</button>
+                </div>
+
+                <div class="admin-card">
+                    <h3 style="margin-bottom:1rem;">Payment Instructions (Public Display)</h3>
+                    <p style="color:#6b7280;font-size:0.85rem;margin-bottom:1rem;">
+                        ⚠️ These are shown only when "Show payment instructions" is enabled. Stored server-side.
+                    </p>
+                    <label>Meezan Bank Account</label>
+                    <input id="s-meezan" value="${settings.meezan_account?.value || ''}" placeholder="Account number + Title" />
+
+                    <label>JazzCash Number</label>
+                    <input id="s-jazzcash" value="${settings.jazzcash?.value || ''}" placeholder="03xxxxxxxxx - Title" />
+
+                    <label>Easypaisa Number</label>
+                    <input id="s-easypaisa" value="${settings.easypaisa?.value || ''}" placeholder="03xxxxxxxxx - Title" />
+
+                    <label style="display:flex;align-items:center;gap:0.5rem;margin:1rem 0;">
+                        <input type="checkbox" id="s-show-payment" ${settings.show_payment_instructions?.value ? 'checked' : ''} style="width:auto;margin:0;" />
+                        Show payment instructions publicly
+                    </label>
+
+                    <button class="btn btn-primary" onclick="savePaymentSettings()">Save Payment Settings</button>
+                </div>
+            `;
+        }
+
+        async function saveSettings() {
+            const updates = [
+                { key: 'site_name', value: { value: document.getElementById('s-site-name').value } },
+                { key: 'tagline', value: { value: document.getElementById('s-tagline').value } },
+                { key: 'contact_email', value: { value: document.getElementById('s-contact-email').value } },
+                { key: 'affiliate_disclosure', value: { value: document.getElementById('s-affiliate').value } }
+            ];
+            for (const u of updates) {
+                await supabase.from('site_settings').upsert(u);
+            }
+            alert('Settings saved!');
+        }
+
+        async function savePaymentSettings() {
+            const updates = [
+                { key: 'meezan_account', value: { value: document.getElementById('s-meezan').value } },
+                { key: 'jazzcash', value: { value: document.getElementById('s-jazzcash').value } },
+                { key: 'easypaisa', value: { value: document.getElementById('s-easypaisa').value } },
+                { key: 'show_payment_instructions', value: { value: document.getElementById('s-show-payment').checked } }
+            ];
+            for (const u of updates) {
+                await supabase.from('site_settings').upsert(u);
+            }
+            alert('Payment settings saved!');
+        }
+
+        // ============================================================
+        // HELPERS
+        // ============================================================
+        function closeModal() {
+            document.getElementById('admin-modal').classList.add('hidden');
+        }
+
+        function filterTable(tableId, query) {
+            const rows = document.querySelectorAll(`#${tableId} tbody tr`);
+            const q = query.toLowerCase();
+            rows.forEach(r => {
+                r.style.display = r.textContent.toLowerCase().includes(q) ? '' : 'none';
+            });
+        }
+
+        // Close modal on outside click
+        document.getElementById('admin-modal').addEventListener('click', (e) => {
+            if (e.target.id === 'admin-modal') closeModal();
+        });
     </script>
-
 </body>
 </html>
