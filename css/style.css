@@ -169,3 +169,41 @@ kbd { font-family: inherit; }
     background: var(--ac);
     transition: width 0.4s ease;
 }
+/* Category cards — better hover */
+.cats a {
+    display: flex;
+    flex-direction: column;
+    transition: all 0.2s;
+}
+.cats a:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+    border-color: var(--ac);
+}
+
+/* Modal animation */
+.modal-content {
+    animation: modalSlideUp 0.3s ease-out;
+}
+@keyframes modalSlideUp {
+    from {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/* Better button hover */
+.btn.p:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(58,63,217,0.25);
+}
+
+/* Onboard dots */
+.onboard-dot {
+    height: 8px !important;
+    transition: all 0.3s ease;
+}
