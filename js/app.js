@@ -126,3 +126,92 @@ if ('serviceWorker' in navigator) {
 // Init
 checkAuth();
 loadCategories();
+loadPulse();
+// ============================================================
+// CHOZ PULSE — Community aggregate trends
+// ============================================================
+async function loadPulse() {
+    const grid = document.getElementById('pulseGrid');
+    if (!grid) return;
+
+    try {
+        const { data: trends, error } = await sb
+            .from('pulse_category_trends')
+            .select('*')
+            .order('total_comparisons', { ascending: false })
+            .limit(8);
+
+        if (error) {
+            console.error('Pulse error:', error);
+            grid.innerHTML = `
+                <p style="color:var(--mute);text-align:center;grid-column:1/-1;padding:40px">
+                    Community trends are being collected. Complete a comparison to be part of it.
+                </p>
+            `;
+            return;
+        }
+
+        // Filter to categories with at least 1 comparison
+        const activeTrends = (trends || []).filter(t => t.total_comparisons > 0);
+
+        if (activeTrends.length === 0) {
+            grid.innerHTML = `
+                <div style="grid-column:1/-1;text-align:center;padding:40px 20px">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--mute)" stroke-width="1.5" style="opacity:0.4;margin-bottom:12px">
+                        <path d="M3 3v18h18"/>
+                        <path d="M18.7 8l-5.1 5.2-2.8-2.7L7 14.3"/>
+                    </svg>
+                    <p style="color:var(--ink);font-weight:500;margin-bottom:6px">Community trends loading</p>
+                    <p style="color:var(--mute);font-size:13px;max-width:400px;margin:0 auto">
+                        Be among the first to compare. Trends will show once enough decisions have been made.
+                    </p>
+                </div>
+            `;
+            return;
+        }
+
+        grid.innerHTML = activeTrends.map(t => `
+            <div style="background:var(--sf);border:1px solid var(--line);border-radius:14px;padding:20px">
+                <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+                    <span style="font-size:28px">${t.category_icon || '📦'}</span>
+                    <div>
+                        <div style="font-family:'Bricolage Grotesque';font-size:16px;font-weight:700">
+                            ${escapeHtmlPulse(t.category_name)}
+                        </div>
+                        <div style="font-size:11px;color:var(--mute);margin-top:2px">
+                            Last 30 days
+                        </div>
+                    </div>
+                </div>
+                <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--mute);margin-bottom:6px">
+                    <span>Comparisons</span>
+                    <span style="color:var(--ink);font-weight:600">${t.total_comparisons}</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--mute)">
+                    <span>Unique users</span>
+                    <span style="color:var(--ink);font-weight:600">${t.unique_users || 0}</span>
+                </div>
+            </div>
+        `).join('');
+
+    } catch (err) {
+        console.error('Pulse load failed:', err);
+        grid.innerHTML = `
+            <p style="color:var(--mute);text-align:center;grid-column:1/-1;padding:40px">
+                Community trends unavailable right now.
+            </p>
+        `;
+    }
+}
+
+// Escape helper (agar pehle se nahi hai)
+function escapeHtmlPulse(s) {
+    if (!s) return '';
+    return String(s).replace(/[&<>"']/g, c => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+    }[c]));
+}
