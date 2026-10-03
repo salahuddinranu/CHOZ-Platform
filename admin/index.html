@@ -802,28 +802,199 @@ if (data && data.length > 0) {
         }
 
         async function loadFeedback(content, title) {
-            title.textContent = 'Feedback';
-            const { data } = await sb.from('feedback').select('*').order('created_at', { ascending: false });
-            if (!data || data.length === 0) {
-                content.innerHTML = '<div class="admin-card empty-state">No feedback yet.</div>';
-                return;
-            }
-            content.innerHTML = data.map(f => `
-                <div class="admin-card">
-                    <div style="display:flex;justify-content:space-between;margin-bottom:0.5rem;">
-                        <h4>${f.subject || f.type}</h4>
-                        <span class="badge badge-blue">${f.status}</span>
+    title.textContent = 'Feedback';
+    content.innerHTML = '<p style="color:#6b7280">Loading...</p>';
+
+    const { data, error } = await sb
+        .from('feedback')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+    if (error) {
+        content.innerHTML = `<p style="color:#ef4444">Error: ${error.message}</p>`;
+        return;
+    }
+
+    if (!data || data.length === 0) {
+        content.innerHTML = `
+            <div class="admin-card" style="text-align:center;padding:40px;color:#6b7280">
+                <p style="font-size:14px">No feedback yet.</p>
+                <p style="font-size:12px;margin-top:8px">When users submit feedback, it will appear here.</p>
+            </div>
+        `;
+        return;
+    }
+
+    content.innerHTML = data.map(f => {
+        const isResolved = f.status === 'resolved';
+        const hasReply = f.admin_reply && f.admin_reply.trim() !== '';
+
+        return `
+            <div class="admin-card" style="margin-bottom:12px">
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:12px">
+                    <div style="flex:1">
+                        <h4 style="margin:0 0 6px 0;font-size:16px;font-weight:600">
+                            ${escapeHtmlAdmin(f.subject || f.type || 'Feedback')}
+                        </h4>
+                        <p style="color:#6b7280;font-size:14px;margin:0 0 10px 0;line-height:1.5">
+                            ${escapeHtmlAdmin(f.message || '')}
+                        </p>
+                        <div style="font-size:12px;color:#9ca3af">
+                            📧 ${escapeHtmlAdmin(f.email || 'No email')} 
+                            &nbsp;·&nbsp; 
+                            ${new Date(f.created_at).toLocaleString()}
+                        </div>
                     </div>
-                    <p style="margin-bottom:0.5rem;">${f.message}</p>
-                    <small style="color:#6b7280;">${f.email || 'No email'} — ${new Date(f.created_at).toLocaleString()}</small>
-                    <div style="margin-top:0.7rem;">
-                        <button class="btn btn-primary btn-sm" onclick="markFeedback('${f.id}', 'resolved')">Mark Resolved</button>
-                        <button class="btn btn-danger btn-sm" onclick="deleteFeedback('${f.id}')">Delete</button>
+                    <span class="badge ${isResolved ? 'badge-green' : 'badge-blue'}">
+                        ${isResolved ? 'Resolved' : 'Open'}
+                    </span>
+                </div>
+
+                ${hasReply ? `
+                    <div style="background:#E9EAFC;padding:12px 14px;border-radius:10px;margin-bottom:12px;border-left:3px solid #3A3FD9">
+                        <div style="font-size:11px;font-weight:700;color:#3A3FD9;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px">
+                            ✓ Your Reply
+                        </div>
+                        <p style="margin:0;font-size:13px;color:#1a1a1a;line-height:1.5;white-space:pre-wrap">${escapeHtmlAdmin(f.admin_reply)}</p>
+                        ${f.replied_at ? `<div style="font-size:11px;color:#6b7280;margin-top:6px">${new Date(f.replied_at).toLocaleString()}</div>` : ''}
+                    </div>
+                ` : ''}
+
+                <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+                    <button class="btn btn-primary btn-sm" onclick="showReplyForm('${f.id}')">
+                        💬 ${hasReply ? 'Edit Reply' : 'Reply'}
+                    </button>
+                    ${!isResolved ? `
+                        <button class="btn btn-sm" style="background:#22c55e;color:white" onclick="markFeedbackResolved('${f.id}')">
+                            ✓ Mark Resolved
+                        </button>
+                    ` : `
+                        <button class="btn btn-sm" style="background:#6b7280;color:white" onclick="markFeedbackOpen('${f.id}')">
+                            ↻ Reopen
+                        </button>
+                    `}
+                    <button class="btn btn-danger btn-sm" onclick="deleteFeedback('${f.id}')">
+                        Delete
+                    </button>
+                </div>
+
+                <div id="reply-form-${f.id}" style="display:none;margin-top:12px;padding-top:12px;border-top:1px solid #e5e7eb">
+                    <label style="display:block;font-size:13px;font-weight:600;margin-bottom:6px">Your Reply</label>
+                    <textarea id="reply-text-${f.id}" rows="4" 
+                        placeholder="Write your reply here..."
+                        style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:8px;font-family:inherit;font-size:14px;resize:vertical;background:#ffffff;color:#0F1720">${hasReply ? escapeHtmlAdmin(f.admin_reply) : ''}</textarea>
+                    <div style="display:flex;gap:8px;margin-top:10px">
+                        <button class="btn btn-primary btn-sm" onclick="submitReply('${f.id}')">
+                            Send Reply
+                        </button>
+                        <button class="btn btn-sm" style="background:#f3f4f6;color:#0F1720" onclick="hideReplyForm('${f.id}')">
+                            Cancel
+                        </button>
                     </div>
                 </div>
-            `).join('');
-        }
+            </div>
+        `;
+    }).join('');
+}
 
+// Helper: escape HTML
+function escapeHtmlAdmin(s) {
+    if (!s) return '';
+    return String(s).replace(/[&<>"']/g, c => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[c]));
+}
+
+// Show reply form
+function showReplyForm(id) {
+    const form = document.getElementById(`reply-form-${id}`);
+    if (form) {
+        form.style.display = 'block';
+        setTimeout(() => {
+            const textarea = document.getElementById(`reply-text-${id}`);
+            if (textarea) textarea.focus();
+        }, 100);
+    }
+}
+
+function hideReplyForm(id) {
+    const form = document.getElementById(`reply-form-${id}`);
+    if (form) form.style.display = 'none';
+}
+
+// Submit reply
+async function submitReply(feedbackId) {
+    const textarea = document.getElementById(`reply-text-${feedbackId}`);
+    const reply = textarea?.value.trim();
+
+    if (!reply) {
+        alert('Please write a reply first.');
+        return;
+    }
+
+    const { data: { session } } = await sb.auth.getSession();
+
+    const { error } = await sb
+        .from('feedback')
+        .update({
+            admin_reply: reply,
+            replied_at: new Date().toISOString(),
+            replied_by: session?.user?.id,
+            status: 'resolved'
+        })
+        .eq('id', feedbackId);
+
+    if (error) {
+        alert('Could not save reply: ' + error.message);
+        return;
+    }
+
+    loadSection('feedback');
+}
+
+// Mark resolved
+async function markFeedbackResolved(id) {
+    const { error } = await sb
+        .from('feedback')
+        .update({ status: 'resolved' })
+        .eq('id', id);
+
+    if (error) {
+        alert('Could not update: ' + error.message);
+        return;
+    }
+
+    loadSection('feedback');
+}
+
+// Mark open
+async function markFeedbackOpen(id) {
+    const { error } = await sb
+        .from('feedback')
+        .update({ status: 'open' })
+        .eq('id', id);
+
+    if (error) {
+        alert('Could not update: ' + error.message);
+        return;
+    }
+
+    loadSection('feedback');
+}
+
+// Delete feedback
+async function deleteFeedback(id) {
+    if (!confirm('Delete this feedback permanently?')) return;
+
+    const { error } = await sb.from('feedback').delete().eq('id', id);
+
+    if (error) {
+        alert('Could not delete: ' + error.message);
+        return;
+    }
+
+    loadSection('feedback');
+}
         async function markFeedback(id, status) {
             await sb.from('feedback').update({ status }).eq('id', id);
             loadSection('feedback');
