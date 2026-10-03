@@ -6,14 +6,17 @@
 // THEME TOGGLE
 // ============================================================
 const themeBtn = document.getElementById('themeBtn');
+
 function getTheme() {
     const stored = document.documentElement.getAttribute('data-theme');
     if (stored) return stored;
     return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 }
+
 function updateThemeBtn() {
     if (themeBtn) themeBtn.textContent = getTheme() === 'dark' ? '☀️' : '🌙';
 }
+
 if (themeBtn) {
     themeBtn.onclick = () => {
         const next = getTheme() === 'dark' ? 'light' : 'dark';
@@ -22,6 +25,7 @@ if (themeBtn) {
         updateThemeBtn();
     };
 }
+
 const savedTheme = localStorage.getItem('choz-theme');
 if (savedTheme) document.documentElement.setAttribute('data-theme', savedTheme);
 updateThemeBtn();
@@ -30,6 +34,7 @@ updateThemeBtn();
 // AUTH STATE
 // ============================================================
 let currentUser = null;
+let authMode = 'signin';
 
 async function checkAuth() {
     const { data: { session } } = await sb.auth.getSession();
@@ -62,8 +67,6 @@ sb.auth.onAuthStateChange((event, session) => {
 // ============================================================
 // AUTH MODAL
 // ============================================================
-let authMode = 'signin';
-
 function openAuth() {
     const modal = document.getElementById('authModal');
     if (modal) modal.classList.remove('hidden');
@@ -82,63 +85,8 @@ function closeAuth() {
     const terms = document.getElementById('termsCheck');
     if (terms) terms.checked = false;
 
-    if (typeof updatePasswordStrength === 'function') updatePasswordStrength();
+    updatePasswordStrength();
 }
-
-// Modal close handlers
-document.addEventListener('DOMContentLoaded', () => {
-    const closeBtn = document.getElementById('closeAuth');
-    if (closeBtn) closeBtn.onclick = closeAuth;
-
-    const modal = document.getElementById('authModal');
-    if (modal) {
-        modal.addEventListener('click', (e) => {
-            if (e.target.id === 'authModal') closeAuth();
-        });
-    }
-
-    // Auth switch (signin ↔ signup)
-    const switchBtn = document.getElementById('authSwitch');
-    if (switchBtn) switchBtn.onclick = toggleAuthMode;
-
-    // Password strength hook
-    const pwdInput = document.getElementById('authPass');
-    if (pwdInput) {
-        pwdInput.addEventListener('input', () => {
-            if (authMode === 'signup' && typeof updatePasswordStrength === 'function') {
-                updatePasswordStrength();
-            }
-        });
-    }
-
-    // Auth submit
-    const submitBtn = document.getElementById('authSubmit');
-    if (submitBtn) submitBtn.onclick = handleAuthSubmit;
-
-    // Google login
-    const googleBtn = document.getElementById('googleBtn');
-    if (googleBtn) googleBtn.onclick = handleGoogleLogin;
-
-    // Hero demo reveal
-    const revealBtn = document.getElementById('revealBtn');
-    if (revealBtn) {
-        revealBtn.onclick = function() {
-            const card = document.getElementById('heroCard');
-            if (!card) return;
-            const isRevealed = card.classList.toggle('rv');
-            this.textContent = isRevealed ? 'Hide brands again' : 'Lock choice & reveal';
-        };
-    }
-
-    // Start comparison button
-    const startBtn = document.getElementById('startBtn');
-    if (startBtn) {
-        startBtn.onclick = () => {
-            const cats = document.getElementById('cats');
-            if (cats) cats.scrollIntoView({ behavior: 'smooth' });
-        };
-    }
-});
 
 function toggleAuthMode(e) {
     if (e) e.preventDefault();
@@ -151,6 +99,7 @@ function toggleAuthMode(e) {
     const strength = document.getElementById('passwordStrength');
     const terms = document.getElementById('termsLabel');
     const pwdInput = document.getElementById('authPass');
+    const errEl = document.getElementById('authError');
 
     if (title) title.textContent = authMode === 'signin' ? 'Sign in' : 'Sign up';
     if (submit) submit.textContent = authMode === 'signin' ? 'Sign in' : 'Sign up';
@@ -159,9 +108,6 @@ function toggleAuthMode(e) {
     if (strength) strength.style.display = authMode === 'signup' ? 'block' : 'none';
     if (terms) terms.style.display = authMode === 'signup' ? 'flex' : 'none';
     if (pwdInput) pwdInput.setAttribute('autocomplete', authMode === 'signup' ? 'new-password' : 'current-password');
-
-    // Clear error
-    const errEl = document.getElementById('authError');
     if (errEl) errEl.textContent = '';
 }
 
@@ -181,16 +127,14 @@ async function handleAuthSubmit() {
 
     // Signup validations
     if (authMode === 'signup') {
-        if (typeof checkPasswordStrength === 'function') {
-            const checks = checkPasswordStrength(password);
-            if (!checks.length) {
-                errEl.textContent = 'Password must be at least 8 characters.';
-                return;
-            }
-            if (!checks.upper || !checks.number) {
-                errEl.textContent = 'Password must contain an uppercase letter and a number.';
-                return;
-            }
+        const checks = checkPasswordStrength(password);
+        if (!checks.length) {
+            errEl.textContent = 'Password must be at least 8 characters.';
+            return;
+        }
+        if (!checks.upper || !checks.number) {
+            errEl.textContent = 'Password must contain an uppercase letter and a number.';
+            return;
         }
 
         const termsCheck = document.getElementById('termsCheck');
@@ -214,11 +158,10 @@ async function handleAuthSubmit() {
             errEl.style.color = '#22c55e';
             errEl.textContent = 'Account created! Check your email to verify.';
 
-            // Reset form
             const termsCheck = document.getElementById('termsCheck');
             if (termsCheck) termsCheck.checked = false;
             document.getElementById('authPass').value = '';
-            if (typeof updatePasswordStrength === 'function') updatePasswordStrength();
+            updatePasswordStrength();
         }
     } catch (err) {
         errEl.style.color = '#ef4444';
@@ -243,7 +186,7 @@ async function handleGoogleLogin() {
 }
 
 // ============================================================
-// PASSWORD STRENGTH CHECKER
+// PASSWORD STRENGTH
 // ============================================================
 function checkPasswordStrength(pwd) {
     return {
@@ -260,7 +203,6 @@ function updatePasswordStrength() {
     const pwd = pwdEl.value || '';
     const checks = checkPasswordStrength(pwd);
 
-    // Update check icons
     document.querySelectorAll('#pwdChecks li').forEach(li => {
         const key = li.dataset.check;
         const icon = li.querySelector('.pwd-check-icon');
@@ -313,7 +255,6 @@ async function initNotifications() {
 
     btn.style.display = 'inline-flex';
 
-    // Toggle dropdown
     btn.onclick = (e) => {
         e.stopPropagation();
         const isOpen = dropdown.style.display === 'block';
@@ -321,23 +262,19 @@ async function initNotifications() {
         if (!isOpen) loadNotifications();
     };
 
-    // Close on outside click
     document.addEventListener('click', (e) => {
         if (!dropdown.contains(e.target) && e.target !== btn && !btn.contains(e.target)) {
             dropdown.style.display = 'none';
         }
     });
 
-    // Close on Escape
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') dropdown.style.display = 'none';
     });
 
-    // Initial load
     loadNotifications();
     updateNotifBadge();
 
-    // Realtime subscription
     if (notifListener) {
         try { sb.removeChannel(notifListener); } catch (e) {}
     }
@@ -475,10 +412,9 @@ async function loadPulse() {
             .limit(8);
 
         if (error) {
-            console.error('Pulse error:', error);
             grid.innerHTML = `
                 <p style="color:var(--mute);text-align:center;grid-column:1/-1;padding:40px">
-                    Community trends are being collected. Complete a comparison to be part of it.
+                    Community trends are being collected.
                 </p>
             `;
             return;
@@ -489,13 +425,9 @@ async function loadPulse() {
         if (activeTrends.length === 0) {
             grid.innerHTML = `
                 <div style="grid-column:1/-1;text-align:center;padding:40px 20px">
-                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--mute)" stroke-width="1.5" style="opacity:0.4;margin-bottom:12px">
-                        <path d="M3 3v18h18"/>
-                        <path d="M18.7 8l-5.1 5.2-2.8-2.7L7 14.3"/>
-                    </svg>
                     <p style="color:var(--ink);font-weight:500;margin-bottom:6px">Community trends loading</p>
                     <p style="color:var(--mute);font-size:13px;max-width:400px;margin:0 auto">
-                        Be among the first to compare. Trends will show once enough decisions have been made.
+                        Be among the first to compare.
                     </p>
                 </div>
             `;
@@ -510,9 +442,7 @@ async function loadPulse() {
                         <div style="font-family:'Bricolage Grotesque';font-size:16px;font-weight:700">
                             ${escapeHtmlPulse(t.category_name)}
                         </div>
-                        <div style="font-size:11px;color:var(--mute);margin-top:2px">
-                            Last 30 days
-                        </div>
+                        <div style="font-size:11px;color:var(--mute);margin-top:2px">Last 30 days</div>
                     </div>
                 </div>
                 <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--mute);margin-bottom:6px">
@@ -527,7 +457,6 @@ async function loadPulse() {
         `).join('');
 
     } catch (err) {
-        console.error('Pulse load failed:', err);
         grid.innerHTML = `
             <p style="color:var(--mute);text-align:center;grid-column:1/-1;padding:40px">
                 Community trends unavailable right now.
@@ -539,7 +468,7 @@ async function loadPulse() {
 function escapeHtmlPulse(s) {
     if (!s) return '';
     return String(s).replace(/[&<>"']/g, c => ({
-        '&': '&amp;', '&lt;': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
     }[c]));
 }
 
@@ -551,6 +480,62 @@ if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('/service-worker.js').catch(() => {});
     });
 }
+
+// ============================================================
+// EVENT LISTENERS
+// ============================================================
+document.addEventListener('DOMContentLoaded', () => {
+    // Auth modal close
+    const closeBtn = document.getElementById('closeAuth');
+    if (closeBtn) closeBtn.onclick = closeAuth;
+
+    const authModal = document.getElementById('authModal');
+    if (authModal) {
+        authModal.addEventListener('click', (e) => {
+            if (e.target.id === 'authModal') closeAuth();
+        });
+    }
+
+    // Auth switch
+    const switchBtn = document.getElementById('authSwitch');
+    if (switchBtn) switchBtn.onclick = toggleAuthMode;
+
+    // Password strength
+    const pwdInput = document.getElementById('authPass');
+    if (pwdInput) {
+        pwdInput.addEventListener('input', () => {
+            if (authMode === 'signup') updatePasswordStrength();
+        });
+    }
+
+    // Auth submit
+    const submitBtn = document.getElementById('authSubmit');
+    if (submitBtn) submitBtn.onclick = handleAuthSubmit;
+
+    // Google login
+    const googleBtn = document.getElementById('googleBtn');
+    if (googleBtn) googleBtn.onclick = handleGoogleLogin;
+
+    // Hero demo
+    const revealBtn = document.getElementById('revealBtn');
+    if (revealBtn) {
+        revealBtn.onclick = function() {
+            const card = document.getElementById('heroCard');
+            if (!card) return;
+            const isRevealed = card.classList.toggle('rv');
+            this.textContent = isRevealed ? 'Hide brands again' : 'Lock choice & reveal';
+        };
+    }
+
+    // Start comparison
+    const startBtn = document.getElementById('startBtn');
+    if (startBtn) {
+        startBtn.onclick = () => {
+            const cats = document.getElementById('cats');
+            if (cats) cats.scrollIntoView({ behavior: 'smooth' });
+        };
+    }
+});
 
 // ============================================================
 // INITIALIZE
