@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Category — CHOZ</title>
+<meta name="description" content="Browse items in this category on CHOZ.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700;12..96,800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/style.css">
+<style>
+    .cat-page { padding: 40px 0 80px; }
+    .cat-header { margin-bottom: 32px; }
+    .cat-breadcrumb { font-size: 13px; color: var(--mute); margin-bottom: 12px; }
+    .cat-breadcrumb a { color: var(--ac); }
+    .cat-title { font-size: clamp(28px, 4vw, 42px); font-weight: 800; letter-spacing: -0.03em; margin-bottom: 8px; }
+    .cat-desc { color: var(--mute); font-size: 15px; }
+    .cat-stats { display: flex; gap: 20px; margin-top: 16px; flex-wrap: wrap; }
+    .cat-stat { font-size: 13px; color: var(--mute); }
+    .cat-stat strong { color: var(--ink); font-weight: 600; }
+    .cat-filters { display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap; align-items: center; }
+    .cat-filters select, .cat-filters input {
+        padding: 10px 14px;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        background: var(--sf);
+        color: var(--ink);
+        font-family: inherit;
+        font-size: 14px;
+    }
+    .cat-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+        gap: 16px;
+    }
+    .item-card {
+        background: var(--sf);
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        padding: 20px;
+        transition: all 0.2s;
+        cursor: pointer;
+        display: flex;
+        flex-direction: column;
+    }
+    .item-card:hover {
+        transform: translateY(-4px);
+        border-color: var(--ac);
+        box-shadow: var(--shadow-lg);
+    }
+    .item-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        background: var(--ac-soft);
+        color: var(--ac);
+        display: grid;
+        place-items: center;
+        font-family: 'Bricolage Grotesque';
+        font-weight: 700;
+        font-size: 18px;
+        margin-bottom: 14px;
+    }
+    .item-name { font-family: 'Bricolage Grotesque'; font-size: 16px; font-weight: 700; margin-bottom: 4px; line-height: 1.3; }
+    .item-brand { font-size: 13px; color: var(--mute); margin-bottom: 12px; }
+    .item-price { font-size: 18px; font-weight: 700; color: var(--ac); margin-top: auto; }
+    .item-footer { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); font-size: 12px; color: var(--mute); display: flex; justify-content: space-between; }
+    .cat-empty { text-align: center; padding: 60px 20px; color: var(--mute); }
+    .skeleton-card {
+        background: var(--sf);
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        padding: 20px;
+        height: 180px;
+        animation: skeleton-pulse 1.5s ease-in-out infinite;
+    }
+    @keyframes skeleton-pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.5; }
+    }
+    .compare-bar {
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%) translateY(120px);
+        background: var(--ac);
+        color: white;
+        padding: 14px 24px;
+        border-radius: 100px;
+        box-shadow: 0 10px 30px rgba(58,63,217,0.4);
+        font-weight: 600;
+        font-size: 15px;
+        display: flex;
+        gap: 16px;
+        align-items: center;
+        transition: transform 0.3s;
+        z-index: 100;
+    }
+    .compare-bar.visible { transform: translateX(-50%) translateY(0); }
+    .compare-bar button {
+        background: white;
+        color: var(--ac);
+        border: none;
+        padding: 8px 16px;
+        border-radius: 100px;
+        font-weight: 600;
+        cursor: pointer;
+        font-family: inherit;
+        font-size: 14px;
+    }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+<nav><div class="w">
+<a class="logo" href="/" aria-label="CHOZ Home">
+<svg width="28" height="28" viewBox="0 0 512 512" style="vertical-align:middle;margin-right:8px">
+<defs><linearGradient id="lgc" x1="0" y1="0" x2="1" y2="1">
+<stop offset="0" stop-color="#3A3FD9"/><stop offset="1" stop-color="#7C3AED"/>
+</linearGradient></defs>
+<rect width="512" height="512" rx="112" fill="url(#lgc)"/>
+<path d="M 350 154 A 128 128 0 1 0 350 358" fill="none" stroke="#FFFFFF" stroke-width="52" stroke-linecap="round"/>
+<circle cx="376" cy="256" r="14" fill="#FFD25A"/>
+</svg>CHOZ</a>
+<div class="sp"></div>
+<button class="btn btn-icon" id="themeBtn" aria-label="Theme">🌙</button>
+<a class="btn" href="/">← Home</a>
+</div></nav>
+
+<div class="w cat-page">
+
+<div class="cat-header">
+    <div class="cat-breadcrumb">
+        <a href="/">Home</a> / <a href="/#categories">Categories</a> / <span id="catBreadName">...</span>
+    </div>
+    <h1 class="cat-title" id="catTitle">Loading...</h1>
+    <p class="cat-desc" id="catDesc"></p>
+    <div class="cat-stats" id="catStats"></div>
+</div>
+
+<div class="cat-filters">
+    <select id="sortFilter">
+        <option value="name">Sort: Name (A–Z)</option>
+        <option value="price_asc">Price: Low to High</option>
+        <option value="price_desc">Price: High to Low</option>
+    </select>
+    <input type="search" id="itemSearch" placeholder="🔍 Search items..." style="flex:1;min-width:200px;max-width:340px">
+</div>
+
+<div class="cat-grid" id="catGrid">
+    <div class="skeleton-card"></div>
+    <div class="skeleton-card"></div>
+    <div class="skeleton-card"></div>
+    <div class="skeleton-card"></div>
+    <div class="skeleton-card"></div>
+    <div class="skeleton-card"></div>
+</div>
+
+<div class="cat-empty hidden" id="catEmpty">
+    <h3 style="font-family:'Bricolage Grotesque';font-size:20px;color:var(--ink);margin-bottom:8px">No items found</h3>
+    <p>Try adjusting filters or search.</p>
+</div>
+
+</div>
+
+<footer style="border-top:1px solid var(--line);padding:40px 24px;margin-top:60px;text-align:center;color:var(--mute);font-size:14px">
+    <div style="max-width:1200px;margin:0 auto">
+        <strong style="color:var(--ink);font-family:'Bricolage Grotesque';font-size:18px">CHOZ</strong>
+        <p style="margin-top:8px">"Choose without the noise."</p>
+        <p style="margin-top:12px;font-size:12px">Web owned and created by Salahuddin Ranu.</p>
+    </div>
+</footer>
+
+<script src="/js/config.js"></script>
+<script src="/js/toast.js"></script>
+<script>
+// ============================================================
+// CATEGORY BROWSE PAGE
+// ============================================================
+let categoryId = null;
+let allItems = [];
+
+// Theme toggle
+const themeBtn = document.getElementById('themeBtn');
+function getTheme() {
+    const s = document.documentElement.getAttribute('data-theme');
+    return s || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+}
+themeBtn.textContent = getTheme() === 'dark' ? '☀️' : '🌙';
+themeBtn.onclick = () => {
+    const next = getTheme() === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('choz-theme', next);
+    themeBtn.textContent = next === 'dark' ? '☀️' : '🌙';
+};
+const saved = localStorage.getItem('choz-theme');
+if (saved) document.documentElement.setAttribute('data-theme', saved);
+
+// Init
+document.addEventListener('DOMContentLoaded', init);
+
+async function init() {
+    const params = new URLSearchParams(window.location.search);
+    categoryId = params.get('id');
+
+    if (!categoryId) {
+        document.getElementById('catTitle').textContent = 'Category not found';
+        return;
+    }
+
+    // Fetch category
+    const { data: cat, error } = await sb.from('categories').select('*').eq('id', categoryId).single();
+
+    if (error || !cat) {
+        document.getElementById('catTitle').textContent = 'Category not found';
+        document.getElementById('catDesc').textContent = 'This category may have been removed.';
+        return;
+    }
+
+    // Set header
+    document.title = `${cat.name} — CHOZ`;
+    document.getElementById('catBreadName').textContent = cat.name;
+    document.getElementById('catTitle').textContent = `${cat.icon || ''} ${cat.name}`;
+    document.getElementById('catDesc').textContent = cat.description || '';
+
+    // Fetch items
+    await loadItems();
+
+    // Setup filters
+    document.getElementById('sortFilter').addEventListener('change', applyFilters);
+    document.getElementById('itemSearch').addEventListener('input', applyFilters);
+}
+
+async function loadItems() {
+    const grid = document.getElementById('catGrid');
+
+    const { data: items, error } = await sb
+        .from('items')
+        .select('*, brands(name), item_attributes(*, attribute_definitions(name, unit))')
+        .eq('category_id', categoryId)
+        .eq('is_active', true);
+
+    if (error || !items) {
+        grid.innerHTML = '<p style="color:var(--mute);text-align:center;grid-column:1/-1;padding:40px">Could not load items.</p>';
+        return;
+    }
+
+    allItems = items;
+
+    // Update stats
+    document.getElementById('catStats').innerHTML = `
+        <div class="cat-stat"><strong>${items.length}</strong> items available</div>
+        <div class="cat-stat">Updated regularly</div>
+    `;
+
+    renderItems(items);
+}
+
+function renderItems(items) {
+    const grid = document.getElementById('catGrid');
+    const empty = document.getElementById('catEmpty');
+
+    if (items.length === 0) {
+        grid.innerHTML = '';
+        empty.classList.remove('hidden');
+        return;
+    }
+
+    empty.classList.add('hidden');
+
+    grid.innerHTML = items.map(item => {
+        const initial = (item.name || '?').charAt(0).toUpperCase();
+        const price = item.base_price ? `${item.currency} ${item.base_price.toLocaleString()}` : 'Price unavailable';
+        const brandName = item.brands?.name || '';
+        const attrCount = (item.item_attributes || []).length;
+
+        return `
+            <div class="item-card" onclick="viewItem('${item.id}')">
+                <div class="item-icon">${initial}</div>
+                <div class="item-name">${escapeH(item.name)}</div>
+                ${brandName ? `<div class="item-brand">${escapeH(brandName)}</div>` : '<div class="item-brand">&nbsp;</div>'}
+                <div class="item-price">${price}</div>
+                <div class="item-footer">
+                    <span>${attrCount} specs</span>
+                    <span style="color:var(--ac);font-weight:600">View →</span>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function applyFilters() {
+    const sort = document.getElementById('sortFilter').value;
+    const query = document.getElementById('itemSearch').value.trim().toLowerCase();
+
+    let filtered = [...allItems];
+
+    if (query) {
+        filtered = filtered.filter(i =>
+            (i.name || '').toLowerCase().includes(query) ||
+            (i.brands?.name || '').toLowerCase().includes(query)
+        );
+    }
+
+    if (sort === 'name') {
+        filtered.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    } else if (sort === 'price_asc') {
+        filtered.sort((a, b) => (a.base_price || Infinity) - (b.base_price || Infinity));
+    } else if (sort === 'price_desc') {
+        filtered.sort((a, b) => (b.base_price || 0) - (a.base_price || 0));
+    }
+
+    renderItems(filtered);
+}
+
+function viewItem(id) {
+    window.location.href = `/product.html?id=${encodeURIComponent(id)}`;
+}
+
+function escapeH(s) {
+    if (!s) return '';
+    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+</script>
+</body>
+</html>
