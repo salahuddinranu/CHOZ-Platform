@@ -306,6 +306,7 @@ function renderReveal(item, label) {
 
         <div class="reveal-actions">
             <button class="btn p" onclick="saveDecision('${item.id}')">💾 Save to Memory</button>
+            <button class="btn" onclick="bookmarkComparison('${item.id}', \`${item.name.replace(/`/g, '\\`')}\`)">🔖 Bookmark</button>
             <button class="btn" onclick="openReviewModal('${item.id}', \`${item.name.replace(/`/g, '\\`')}\`)">⭐ Write Review</button>
             <button class="btn" onclick="shareResult()">🔗 Share</button>
             <button class="btn" onclick="showWhereToBuy('${item.id}', \`${item.name.replace(/`/g, '\\`')}\`, '${currentComparison.categoryId}')">🛒 Where to Buy</button>
@@ -974,5 +975,54 @@ document.addEventListener('DOMContentLoaded', () => {
     if (closeComp) closeComp.onclick = closeCompModal;
     if (compModal) compModal.addEventListener('click', (e) => {
         if (e.target.id === 'compModal') closeCompModal();
+        // ============================================================
+// BOOKMARK COMPARISON
+// ============================================================
+async function bookmarkComparison(itemId, itemName) {
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) { openAuth(); return; }
+
+    // Check if already bookmarked
+    const { data: existing } = await sb
+        .from('saved_comparisons')
+        .select('id')
+        .eq('user_id', session.user.id)
+        .eq('item_id', itemId)
+        .maybeSingle();
+
+    if (existing) {
+        // Remove bookmark
+        const { error } = await sb
+            .from('saved_comparisons')
+            .delete()
+            .eq('id', existing.id);
+
+        if (error) { alert('Could not remove: ' + error.message); return; }
+
+        if (event?.target) {
+            event.target.textContent = '🔖 Bookmark';
+            event.target.style.background = '';
+            event.target.style.color = '';
+        }
+        return;
+    }
+
+    // Add bookmark
+    const { error } = await sb.from('saved_comparisons').insert({
+        user_id: session.user.id,
+        category_id: currentComparison.categoryId,
+        item_id: itemId,
+        item_name: itemName,
+        label: `Saved from ${currentComparison.options.length}-option comparison`
+    });
+
+    if (error) { alert('Could not save: ' + error.message); return; }
+
+    if (event?.target) {
+        event.target.textContent = '✅ Bookmarked';
+        event.target.style.background = 'var(--ac)';
+        event.target.style.color = 'white';
+    }
+}
     });
 });
