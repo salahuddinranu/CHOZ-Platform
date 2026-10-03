@@ -299,25 +299,229 @@ async function deleteAffiliateLink(linkId, itemId, itemName) {
             }
         }
 
-        async function loadDashboard(content, title) {
-            title.textContent = 'Dashboard';
-            const [users, items, reviews, feedback, comps] = await Promise.all([
-                sb.from('profiles').select('id', { count: 'exact', head: true }),
-sb.from('items').select('id', { count: 'exact', head: true }),
-sb.from('user_reviews').select('id', { count: 'exact', head: true }),
-sb.from('feedback').select('id', { count: 'exact', head: true }),
-sb.from('comparisons').select('id', { count: 'exact', head: true })
-            ]);
-            content.innerHTML = `
-                <div class="stats-grid">
-                    <div class="stat-card"><h3>${users.count || 0}</h3><p>Total Users</p></div>
-                    <div class="stat-card"><h3>${items.count || 0}</h3><p>Products</p></div>
-                    <div class="stat-card"><h3>${comps.count || 0}</h3><p>Comparisons</p></div>
-                    <div class="stat-card"><h3>${reviews.count || 0}</h3><p>Reviews</p></div>
-                    <div class="stat-card"><h3>${feedback.count || 0}</h3><p>Feedback</p></div>
-                </div>
-            `;
+  async function loadDashboard(content, title) {
+    title.textContent = 'Dashboard';
+    content.innerHTML = '<p style="color:#6b7280">Loading analytics...</p>';
+
+    try {
+        // Parallel fetch all stats
+        const [
+            profilesRes,
+            itemsRes,
+            reviewsRes,
+            feedbackRes,
+            comparisonsRes,
+            memoriesRes,
+            favoritesRes,
+            categoryStats,
+            dailyActivity
+        ] = await Promise.all([
+            sb.from('profiles').select('id'),
+            sb.from('items').select('id'),
+            sb.from('user_reviews').select('id'),
+            sb.from('feedback').select('id'),
+            sb.from('comparisons').select('id, status'),
+            sb.from('decision_memories').select('id'),
+            sb.from('favorites').select('id'),
+            sb.from('admin_category_stats').select('*'),
+            sb.from('admin_daily_activity').select('*').order('day', { ascending: false }).limit(60)
+        ]);
+
+        const usersCount = profilesRes.data?.length || 0;
+        const itemsCount = itemsRes.data?.length || 0;
+        const reviewsCount = reviewsRes.data?.length || 0;
+        const feedbackCount = feedbackRes.data?.length || 0;
+        const comparisonsCount = comparisonsRes.data?.length || 0;
+        const completedCount = (comparisonsRes.data || []).filter(c => c.status === 'completed').length;
+        const memoriesCount = memoriesRes.data?.length || 0;
+        const favoritesCount = favoritesRes.data?.length || 0;
+
+        // Recent signups
+        const recentUsersRes = await sb
+            .from('profiles')
+            .select('id, email, created_at')
+            .order('created_at', { ascending: false })
+            .limit(5);
+
+        // Recent reviews
+        const recentReviewsRes = await sb
+            .from('user_reviews')
+            .select('id, rating, title, created_at, item_id')
+            .order('created_at', { ascending: false })
+            .limit(5);
+
+        // Recent feedback
+        const recentFeedbackRes = await sb
+            .from('feedback')
+            .select('id, type, subject, created_at')
+            .order('created_at', { ascending: false })
+            .limit(5);
+
+        // Data quality issues
+        const itemsWithoutPrice = (itemsRes.data || []).filter(i => !i.base_price).length;
+
+        // Build daily chart (last 7 days)
+        const last7Days = [];
+        for (let i = 6; i >= 0; i--) {
+            const d = new Date();
+            d.setDate(d.getDate() - i);
+            last7Days.push(d.toISOString().split('T')[0]);
         }
+
+        const dailyMap = {};
+        (dailyActivity.data || []).forEach(row => {
+            if (!dailyMap[row.day]) dailyMap[row.day] = { comparisons: 0, users: 0, reviews: 0 };
+            dailyMap[row.day][row.type] = row.count;
+        });
+
+        const maxComparisons = Math.max(1, ...last7Days.map(d => dailyMap[d]?.comparisons || 0));
+
+        content.innerHTML = `
+            <!-- Top Stats -->
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:24px">
+                ${statCard('Total Users', usersCount, '#3A3FD9')}
+                ${statCard('Products', itemsCount, '#7C3AED')}
+                ${statCard('Comparisons', comparisonsCount, '#059669')}
+                ${statCard('Completed', completedCount, '#0891B2')}
+                ${statCard('Memories', memoriesCount, '#F59E0B')}
+                ${statCard('Reviews', reviewsCount, '#EF4444')}
+                ${statCard('Feedback', feedbackCount, '#8B5CF6')}
+                ${statCard('Favorites', favoritesCount, '#EC4899')}
+            </div>
+
+            <!-- Activity Chart -->
+            <div class="admin-card" style="margin-bottom:16px">
+                <h3 style="margin-bottom:16px;font-family:'Bricolage Grotesque';font-size:18px">Last 7 Days — Comparisons</h3>
+                <div style="display:flex;align-items:flex-end;gap:8px;height:120px;padding:0 4px">
+                    ${last7Days.map(day => {
+                        const count = dailyMap[day]?.comparisons || 0;
+                        const height = Math.max(4, (count / maxComparisons) * 100);
+                        const label = new Date(day).toLocaleDateString('en', { weekday: 'short' });
+                        return `
+                            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px">
+                                <div style="font-size:11px;color:#6b7280;font-weight:600">${count}</div>
+                                <div style="width:100%;height:${height}px;background:linear-gradient(180deg,#3A3FD9,#7C3AED);border-radius:4px;min-height:4px"></div>
+                                <div style="font-size:11px;color:#9ca3af">${label}</div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            </div>
+
+            <!-- Category Stats -->
+            <div class="admin-card" style="margin-bottom:16px">
+                <h3 style="margin-bottom:16px;font-family:'Bricolage Grotesque';font-size:18px">Categories</h3>
+                <table>
+                    <thead><tr>
+                        <th>Category</th><th>Items</th><th>Attributes</th><th>Comparisons</th><th>Status</th>
+                    </tr></thead>
+                    <tbody>
+                        ${(categoryStats.data || []).map(c => `
+                            <tr>
+                                <td>${c.icon || ''} ${c.name}</td>
+                                <td>${c.items_count}</td>
+                                <td>${c.attributes_count}</td>
+                                <td>${c.comparisons_count}</td>
+                                <td>${c.attributes_count === 0 
+                                    ? '<span style="color:#ef4444;font-size:12px">⚠ No attributes</span>' 
+                                    : '<span style="color:#22c55e;font-size:12px">✓ Ready</span>'}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Recent Activity -->
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;margin-bottom:16px">
+                <div class="admin-card">
+                    <h4 style="margin-bottom:12px;font-size:15px;font-weight:600">👥 Recent Signups</h4>
+                    ${(recentUsersRes.data || []).length === 0
+                        ? '<p style="color:#9ca3af;font-size:13px">No users yet</p>'
+                        : recentUsersRes.data.map(u => `
+                            <div style="padding:8px 0;border-bottom:1px solid #f3f4f6;font-size:13px">
+                                <div style="font-weight:500">${u.email || '—'}</div>
+                                <div style="color:#9ca3af;font-size:11px;margin-top:2px">${timeAgo(u.created_at)}</div>
+                            </div>
+                        `).join('')}
+                </div>
+
+                <div class="admin-card">
+                    <h4 style="margin-bottom:12px;font-size:15px;font-weight:600">⭐ Recent Reviews</h4>
+                    ${(recentReviewsRes.data || []).length === 0
+                        ? '<p style="color:#9ca3af;font-size:13px">No reviews yet</p>'
+                        : recentReviewsRes.data.map(r => `
+                            <div style="padding:8px 0;border-bottom:1px solid #f3f4f6;font-size:13px">
+                                <div style="color:#F59E0B">${'★'.repeat(r.rating || 0)}</div>
+                                <div style="font-weight:500;margin-top:2px">${r.title || 'No title'}</div>
+                                <div style="color:#9ca3af;font-size:11px;margin-top:2px">${timeAgo(r.created_at)}</div>
+                            </div>
+                        `).join('')}
+                </div>
+
+                <div class="admin-card">
+                    <h4 style="margin-bottom:12px;font-size:15px;font-weight:600">💬 Recent Feedback</h4>
+                    ${(recentFeedbackRes.data || []).length === 0
+                        ? '<p style="color:#9ca3af;font-size:13px">No feedback yet</p>'
+                        : recentFeedbackRes.data.map(f => `
+                            <div style="padding:8px 0;border-bottom:1px solid #f3f4f6;font-size:13px">
+                                <div style="font-weight:500">${f.subject || f.type}</div>
+                                <div style="color:#9ca3af;font-size:11px;margin-top:2px">${timeAgo(f.created_at)}</div>
+                            </div>
+                        `).join('')}
+                </div>
+            </div>
+
+            <!-- Data Quality -->
+            <div class="admin-card">
+                <h3 style="margin-bottom:16px;font-family:'Bricolage Grotesque';font-size:18px">Data Quality</h3>
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px">
+                    <div style="padding:12px;background:${itemsWithoutPrice === 0 ? '#dcfce7' : '#fef3c7'};border-radius:10px">
+                        <div style="font-size:12px;color:#6b7280;margin-bottom:4px">Items without price</div>
+                        <div style="font-size:20px;font-weight:700;color:${itemsWithoutPrice === 0 ? '#166534' : '#92400e'}">${itemsWithoutPrice}</div>
+                    </div>
+                    <div style="padding:12px;background:#dbeafe;border-radius:10px">
+                        <div style="font-size:12px;color:#6b7280;margin-bottom:4px">Total attributes</div>
+                        <div style="font-size:20px;font-weight:700;color:#1e40af">
+                            ${(categoryStats.data || []).reduce((sum, c) => sum + (c.attributes_count || 0), 0)}
+                        </div>
+                    </div>
+                    <div style="padding:12px;background:#f3e8ff;border-radius:10px">
+                        <div style="font-size:12px;color:#6b7280;margin-bottom:4px">Ready categories</div>
+                        <div style="font-size:20px;font-weight:700;color:#7c3aed">
+                            ${(categoryStats.data || []).filter(c => c.attributes_count > 0).length} / ${(categoryStats.data || []).length}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    } catch (err) {
+        console.error('Dashboard error:', err);
+        content.innerHTML = '<p style="color:#ef4444">Error loading dashboard: ' + err.message + '</p>';
+    }
+}
+
+// Helper: stat card
+function statCard(label, value, color) {
+    return `
+        <div style="background:white;padding:18px;border-radius:12px;border:1px solid #e5e7eb">
+            <div style="font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">${label}</div>
+            <div style="font-family:'Bricolage Grotesque';font-size:28px;font-weight:700;color:${color}">${value}</div>
+        </div>
+    `;
+}
+
+// Helper: time ago
+function timeAgo(iso) {
+    if (!iso) return '';
+    const d = new Date(iso);
+    const now = new Date();
+    const diff = Math.floor((now - d) / 1000);
+    if (diff < 60) return 'Just now';
+    if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
+    if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
+    if (diff < 604800) return Math.floor(diff / 86400) + 'd ago';
+    return d.toLocaleDateString();
+}
 
         async function loadItems(content, title) {
             title.textContent = 'Products';
