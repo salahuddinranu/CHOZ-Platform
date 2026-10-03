@@ -289,14 +289,19 @@ function renderReveal(item, label) {
 
        <div class="reveal-actions">
     <button class="btn p" onclick="saveDecision('${item.id}')">💾 Save to Memory</button>
+    <button class="btn" onclick="openReviewModal('${item.id}', \`${item.name.replace(/`/g, '\\`')}\`)">⭐ Write Review</button>
     <button class="btn" onclick="shareResult()">🔗 Share</button>
     <button class="btn" onclick="showWhereToBuy('${item.id}', \`${item.name.replace(/`/g, '\\`')}\`, '${currentComparison.categoryId}')">🛒 Where to Buy</button>
     <button class="btn" onclick="closeCompModal()">Close</button>
 </div>
+
+<div id="reviewsSection" style="margin-top:20px"></div>
 <div id="buySection" style="margin-top:20px"></div>
 <div id="buySection" style="margin-top:20px"></div>
     `;
 }
+// Load reviews for this item
+setTimeout(() => loadItemReviews(item.id, item.name), 100);
 
 async function saveDecision(itemId) {
     const { data: { session } } = await sb.auth.getSession();
@@ -593,4 +598,167 @@ async function trackAffiliateClick(linkId, itemId) {
             metadata: { link_id: linkId, item_id: itemId }
         });
     } catch (e) {}
+}
+// ============================================================
+// REVIEWS SYSTEM
+// ============================================================
+
+// Load existing reviews for an item
+async function loadItemReviews(itemId, itemName) {
+    const section = document.getElementById('reviewsSection');
+    if (!section) return;
+
+    const { data: reviews } = await sb
+        .from('user_reviews')
+        .select('*, profiles(email)')
+        .eq('item_id', itemId)
+        .eq('is_approved', true)
+        .eq('is_hidden', false)
+        .order('created_at', { ascending: false })
+        .limit(3);
+
+    if (!reviews || reviews.length === 0) {
+        section.innerHTML = `
+            <div style="background:var(--sf);border:1px solid var(--line);border-radius:14px;padding:18px">
+                <p style="color:var(--mute);font-size:13px;text-align:center">
+                    No reviews yet. Be the first to share your experience.
+                </p>
+            </div>
+        `;
+        return;
+    }
+
+    const avgRating = (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1);
+    const stars = '★'.repeat(Math.round(avgRating)) + '☆'.repeat(5 - Math.round(avgRating));
+
+    section.innerHTML = `
+        <div style="background:var(--sf);border:1px solid var(--line);border-radius:14px;padding:20px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+                <h4 style="font-family:'Bricolage Grotesque';font-size:17px">⭐ User Reviews</h4>
+                <span style="color:var(--hl);font-size:16px">${stars} <span style="color:var(--mute);font-size:13px">(${avgRating})</span></span>
+            </div>
+            ${reviews.map(r => `
+                <div style="border-top:1px solid var(--line);padding:12px 0">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+                        <span style="color:var(--hl);font-size:14px">${'★'.repeat(r.rating)}${'☆'.repeat(5 - r.rating)}</span>
+                        <span style="color:var(--mute);font-size:12px">${formatReviewDate(r.created_at)}</span>
+                    </div>
+                    ${r.title ? `<strong style="font-size:14px;display:block;margin-bottom:4px">${escapeHtml(r.title)}</strong>` : ''}
+                    <p style="color:var(--mute);font-size:13px;margin:0;line-height:1.5">${escapeHtml(r.content || '')}</p>
+                </div>
+            `).join('')}
+        </div>
+    `;
+}
+
+// Open review modal
+function openReviewModal(itemId, itemName) {
+    const section = document.getElementById('reviewsSection');
+    section.innerHTML = `
+        <div style="background:var(--sf);border:1px solid var(--line);border-radius:14px;padding:24px">
+            <h4 style="font-family:'Bricolage Grotesque';font-size:18px;margin-bottom:4px">Write a Review</h4>
+            <p style="color:var(--mute);font-size:13px;margin-bottom:16px">${escapeHtml(itemName)}</p>
+
+            <div style="margin-bottom:14px">
+                <label style="display:block;font-size:13px;font-weight:600;margin-bottom:8px">Your rating</label>
+                <div id="starPicker" style="font-size:32px;color:var(--line);cursor:pointer;user-select:none">
+                    <span data-star="1">★</span><span data-star="2">★</span><span data-star="3">★</span><span data-star="4">★</span><span data-star="5">★</span>
+                </div>
+            </div>
+
+            <label style="display:block;font-size:13px;font-weight:600;margin-bottom:6px">Title (optional)</label>
+            <input type="text" id="reviewTitle" placeholder="Summarize your experience" maxlength="80"
+                   style="width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);margin-bottom:14px;font-family:inherit;font-size:14px">
+
+            <label style="display:block;font-size:13px;font-weight:600;margin-bottom:6px">Your review</label>
+            <textarea id="reviewContent" placeholder="What did you like or dislike?" maxlength="500" rows="4"
+                      style="width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);margin-bottom:14px;font-family:inherit;font-size:14px;resize:vertical"></textarea>
+
+            <div style="display:flex;gap:8px">
+                <button class="btn p" style="flex:1" onclick="submitReview('${itemId}', \`${itemName.replace(/`/g, '\\`')}\`)">Submit Review</button>
+                <button class="btn" onclick="loadItemReviews('${itemId}', \`${itemName.replace(/`/g, '\\`')}\`)">Cancel</button>
+            </div>
+            <p id="reviewError" style="color:#ef4444;font-size:13px;margin-top:10px;text-align:center"></p>
+        </div>
+    `;
+
+    // Star picker logic
+    let selectedRating = 0;
+    const stars = section.querySelectorAll('#starPicker span');
+    stars.forEach(star => {
+        star.addEventListener('mouseenter', () => {
+            const val = parseInt(star.dataset.star);
+            stars.forEach(s => {
+                s.style.color = parseInt(s.dataset.star) <= val ? 'var(--hl)' : 'var(--line)';
+            });
+        });
+        star.addEventListener('click', () => {
+            selectedRating = parseInt(star.dataset.star);
+            stars.forEach(s => {
+                s.style.color = parseInt(s.dataset.star) <= selectedRating ? 'var(--hl)' : 'var(--line)';
+            });
+            stars.forEach(s => s.dataset.selected = 'true');
+        });
+    });
+    section.querySelector('#starPicker').addEventListener('mouseleave', () => {
+        stars.forEach(s => {
+            s.style.color = parseInt(s.dataset.star) <= selectedRating ? 'var(--hl)' : 'var(--line)';
+        });
+    });
+
+    // Store rating globally for submit
+    window.__currentRating = () => selectedRating;
+}
+
+async function submitReview(itemId, itemName) {
+    const rating = window.__currentRating ? window.__currentRating() : 0;
+    const title = document.getElementById('reviewTitle').value.trim();
+    const content = document.getElementById('reviewContent').value.trim();
+    const errEl = document.getElementById('reviewError');
+
+    if (rating < 1) {
+        errEl.textContent = 'Please select a rating (1-5 stars).';
+        return;
+    }
+
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) {
+        errEl.textContent = 'Please sign in to submit a review.';
+        return;
+    }
+
+    const { error } = await sb.from('user_reviews').insert({
+        user_id: session.user.id,
+        item_id: itemId,
+        rating: rating,
+        title: title || null,
+        content: content || null,
+        is_approved: true,
+        is_hidden: false
+    });
+
+    if (error) {
+        errEl.textContent = error.message;
+        return;
+    }
+
+    // Success — reload reviews
+    loadItemReviews(itemId, itemName);
+}
+
+// Helpers
+function formatReviewDate(iso) {
+    if (!iso) return '';
+    const d = new Date(iso);
+    const now = new Date();
+    const diff = Math.floor((now - d) / 86400);
+    if (diff < 1) return 'Today';
+    if (diff < 7) return diff + 'd ago';
+    if (diff < 30) return Math.floor(diff / 7) + 'w ago';
+    return d.toLocaleDateString();
+}
+
+function escapeHtml(s) {
+    if (!s) return '';
+    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
