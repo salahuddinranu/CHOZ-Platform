@@ -215,3 +215,168 @@ function escapeHtmlPulse(s) {
         "'": '&#39;'
     }[c]));
 }
+// ============================================================
+// NOTIFICATIONS
+// ============================================================
+let notifListener = null;
+
+async function initNotifications() {
+    const btn = document.getElementById('notifBtn');
+    const dropdown = document.getElementById('notifDropdown');
+    if (!btn || !dropdown) return;
+
+    // Check auth state
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) {
+        btn.style.display = 'none';
+        return;
+    }
+
+    btn.style.display = 'inline-flex';
+
+    // Toggle dropdown
+    btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isOpen = dropdown.style.display === 'block';
+        dropdown.style.display = isOpen ? 'none' : 'block';
+        if (!isOpen) loadNotifications();
+    });
+
+    // Close on outside click
+    document.addEventListener('click', (e) => {
+        if (!dropdown.contains(e.target) && e.target !== btn && !btn.contains(e.target)) {
+            dropdown.style.display = 'none';
+        }
+    });
+
+    // Close on Escape
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') dropdown.style.display = 'none';
+    });
+
+    // Initial load
+    loadNotifications();
+    updateNotifBadge();
+
+    // Realtime subscription (if supported)
+    if (notifListener) {
+        try { sb.removeChannel(notifListener); } catch(e) {}
+    }
+    notifListener = sb
+        .channel('notifications-' + session.user.id)
+        .on('postgres_changes', {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'user_notifications',
+            filter: `user_id=eq.${session.user.id}`
+        }, () => {
+            loadNotifications();
+            updateNotifBadge();
+        })
+        .subscribe();
+}
+
+async function loadNotifications() {
+    const list = document.getElementById('notifList');
+    if (!list) return;
+
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) return;
+
+    const { data, error } = await sb
+        .from('user_notifications')
+        .select('*')
+        .eq('user_id', session.user.id)
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+    if (error || !data || data.length === 0) {
+        list.innerHTML = `
+            <p style="text-align:center;color:var(--mute);font-size:13px;padding:32px 16px">
+                No notifications yet.
+            </p>
+        `;
+        return;
+    }
+
+    list.innerHTML = data.map(n => `
+        <div onclick="openNotification('${n.id}', '${(n.link || '').replace(/'/g, "\\'")}')"
+             style="padding:12px 16px;border-radius:10px;cursor:pointer;margin-bottom:4px;background:${n.is_read ? 'transparent' : 'var(--acbg)'};transition:background 0.15s"
+             onmouseover="this.style.background='var(--bg-alt)'"
+             onmouseout="this.style.background='${n.is_read ? 'transparent' : 'var(--acbg)'}'">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+                <strong style="font-size:13px;font-weight:600;color:var(--ink);line-height:1.4">${escapeNotif(n.title)}</strong>
+                ${!n.is_read ? '<span style="width:8px;height:8px;background:var(--ac);border-radius:50%;flex-shrink:0;margin-top:5px"></span>' : ''}
+            </div>
+            ${n.message ? `<p style="font-size:12px;color:var(--mute);margin:4px 0 0 0;line-height:1.5">${escapeNotif(n.message)}</p>` : ''}
+            <div style="font-size:11px;color:var(--mute);margin-top:6px">${notifTimeAgo(n.created_at)}</div>
+        </div>
+    `).join('');
+}
+
+async function updateNotifBadge() {
+    const badge = document.getElementById('notifBadge');
+    if (!badge) return;
+
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) return;
+
+    const { count } = await sb
+        .from('user_notifications')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', session.user.id)
+        .eq('is_read', false);
+
+    if (count && count > 0) {
+        badge.style.display = 'inline-block';
+        badge.textContent = count > 99 ? '99+' : count;
+    } else {
+        badge.style.display = 'none';
+    }
+}
+
+async function openNotification(id, link) {
+    await sb.from('user_notifications').update({ is_read: true }).eq('id', id);
+    updateNotifBadge();
+    if (link && link.trim()) {
+        window.location.href = link;
+    } else {
+        loadNotifications();
+    }
+}
+
+async function markAllNotifsRead() {
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) return;
+
+    await sb
+        .from('user_notifications')
+        .update({ is_read: true })
+        .eq('user_id', session.user.id)
+        .eq('is_read', false);
+
+    loadNotifications();
+    updateNotifBadge();
+}
+
+function notifTimeAgo(iso) {
+    if (!iso) return '';
+    const d = new Date(iso);
+    const now = new Date();
+    const diff = Math.floor((now - d) / 1000);
+    if (diff < 60) return 'Just now';
+    if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
+    if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
+    if (diff < 604800) return Math.floor(diff / 86400) + 'd ago';
+    return d.toLocaleDateString();
+}
+
+function escapeNotif(s) {
+    if (!s) return '';
+    return String(s).replace(/[&<>"']/g, c => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[c]));
+}
+
+// Update init to include notifications
+const _origCheckAuth = typeof checkAuth === 'function' ? checkAuth : null;
