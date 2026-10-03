@@ -7,6 +7,7 @@ let currentComparison = {
     options: [],
     labels: [],
     priorities: [],
+    priorityNames: [],
     choice: null,
     step: 'select'
 };
@@ -21,6 +22,7 @@ async function startComparison(categoryId) {
     currentComparison.categoryId = categoryId;
     currentComparison.step = 'select';
     currentComparison.choice = null;
+    currentComparison.priorityNames = [];
 
     const { data: items, error } = await sb
         .from('items')
@@ -83,7 +85,6 @@ function renderComparisonModal() {
         </button>
     `;
 
-    // Attach click listeners properly
     content.querySelectorAll('.option-card').forEach(card => {
         card.addEventListener('click', () => {
             const idx = parseInt(card.dataset.idx);
@@ -120,7 +121,6 @@ function goToPriorities() {
 function renderPrioritiesStep() {
     const content = document.getElementById('compContent');
 
-    // Collect all unique attributes from all options
     const allAttrs = new Map();
     currentComparison.options.forEach(item => {
         (item.item_attributes || []).forEach(a => {
@@ -132,6 +132,7 @@ function renderPrioritiesStep() {
 
     const attrsArray = [...allAttrs.values()];
     currentComparison.priorities = attrsArray.map(a => a.id);
+    currentComparison.priorityNames = attrsArray.map(a => a.name);
 
     content.innerHTML = `
         <div class="comp-header">
@@ -143,7 +144,7 @@ function renderPrioritiesStep() {
         </p>
         <div class="priority-list" id="priorityList">
             ${attrsArray.map((a, i) => `
-                <div class="priority-item" data-attr-id="${a.id}">
+                <div class="priority-item" data-attr-id="${a.id}" data-attr-name="${a.name}">
                     <div style="display:flex;align-items:center;gap:10px;">
                         <span class="rank">${i + 1}</span>
                         <span>${a.name}${a.unit ? ' (' + a.unit + ')' : ''}</span>
@@ -163,7 +164,6 @@ function renderPrioritiesStep() {
         </button>
     `;
 
-    // Attach listeners to priority items
     const list = document.getElementById('priorityList');
     list.querySelectorAll('.priority-item').forEach(item => {
         const upBtn = item.querySelector('.pri-up');
@@ -203,6 +203,7 @@ function updateRanks() {
         if (rankEl) rankEl.textContent = i + 1;
     });
     currentComparison.priorities = [...items].map(el => el.dataset.attrId);
+    currentComparison.priorityNames = [...items].map(el => el.dataset.attrName);
 }
 
 function backToSelect() {
@@ -315,7 +316,6 @@ function renderReveal(item, label) {
         <div id="buySection" style="margin-top:20px"></div>
     `;
 
-    // Load reviews after render
     setTimeout(() => {
         if (typeof loadItemReviews === 'function') {
             loadItemReviews(item.id, item.name);
@@ -366,7 +366,7 @@ async function shareResult() {
 
     const { data: fullItem } = await sb
         .from('items')
-        .select('*, brands(name), categories(name), item_attributes(*, attribute_definitions(name, id))')
+        .select('*, brands(name), categories(name)')
         .eq('id', item.id)
         .single();
 
@@ -384,13 +384,9 @@ function showShareModal(item) {
     const categoryName = item.categories?.name || 'Comparison';
     const brandName = item.brands?.name || 'Unknown brand';
     const price = item.base_price ? `${item.currency} ${item.base_price.toLocaleString()}` : 'Price unavailable';
-    const priorities = (currentComparison.priorities || []).slice(0, 5);
 
-    const priorityNames = priorities
-        .map(pid => item.item_attributes?.find(a => a.attribute_definitions?.id === pid))
-        .filter(Boolean)
-        .map(a => a.attribute_definitions?.name)
-        .filter(Boolean);
+    // Use stored priority names directly — no matching required
+    const priorityNames = (currentComparison.priorityNames || []).slice(0, 5);
 
     content.innerHTML = `
         <div class="comp-header">
@@ -480,7 +476,7 @@ function showShareModal(item) {
 async function downloadShareCard(itemId) {
     const { data: fullItem } = await sb
         .from('items')
-        .select('*, brands(name), categories(name), item_attributes(*, attribute_definitions(name, id))')
+        .select('*, brands(name), categories(name)')
         .eq('id', itemId)
         .single();
 
@@ -531,12 +527,8 @@ async function downloadShareCard(itemId) {
     const priceText = fullItem.base_price ? `${fullItem.currency} ${fullItem.base_price.toLocaleString()}` : '';
     ctx.fillText(priceText, 540, 740);
 
-    const priorities = (currentComparison.priorities || []).slice(0, 5);
-    const priorityNames = priorities
-        .map(pid => fullItem.item_attributes?.find(a => a.attribute_definitions?.id === pid))
-        .filter(Boolean)
-        .map(a => a.attribute_definitions?.name)
-        .filter(Boolean);
+    // Use stored priority names directly
+    const priorityNames = (currentComparison.priorityNames || []).slice(0, 5);
 
     if (priorityNames.length > 0) {
         ctx.font = 'bold 22px Arial';
@@ -942,7 +934,7 @@ function closeCompModal() {
     document.getElementById('compModal').classList.add('hidden');
     currentComparison = {
         categoryId: null, options: [], labels: [],
-        priorities: [], choice: null, step: 'select'
+        priorities: [], priorityNames: [], choice: null, step: 'select'
     };
 }
 
