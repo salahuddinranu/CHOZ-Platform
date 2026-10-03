@@ -47,6 +47,7 @@ function loadTab(tab) {
     if (tab === 'overview') loadOverview(content);
     else if (tab === 'history') loadHistory(content);
     else if (tab === 'memories') loadMemories(content);
+        else if (tab === 'saved') loadSavedComparisons(content);
     else if (tab === 'favorites') loadFavorites(content);
     else if (tab === 'reviews') loadMyReviews(content);
     else if (tab === 'profile') loadChoiceProfile(content);
@@ -769,3 +770,49 @@ updateThemeBtn();
 // INIT
 // ============================================================
 init();
+// ============================================================
+// SAVED COMPARISONS
+// ============================================================
+async function loadSavedComparisons(content) {
+    const { data, error } = await sb
+        .from('saved_comparisons')
+        .select('*')
+        .eq('user_id', currentUser.id)
+        .order('created_at', { ascending: false });
+
+    if (error) {
+        content.innerHTML = `<div class="empty"><h3>Error</h3><p>${error.message}</p></div>`;
+        return;
+    }
+
+    if (!data || data.length === 0) {
+        content.innerHTML = emptyState(
+            'No saved comparisons yet',
+            'When you bookmark a comparison, it will appear here.',
+            '/#cats',
+            'Start comparing'
+        );
+        return;
+    }
+
+    content.innerHTML = data.map(s => `
+        <div class="list-item">
+            <div style="flex:1">
+                <h4>🔖 ${escapeDash(s.item_name || 'Saved comparison')}</h4>
+                ${s.note ? `<p class="meta">${escapeDash(s.note)}</p>` : ''}
+                ${s.label ? `<p class="meta" style="font-size:12px">${escapeDash(s.label)}</p>` : ''}
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px">
+                <span class="time">${formatDate(s.created_at)}</span>
+                <button class="btn" style="padding:4px 12px;font-size:12px" onclick="deleteSaved('${s.id}')">Remove</button>
+            </div>
+        </div>
+    `).join('');
+}
+
+async function deleteSaved(id) {
+    if (!confirm('Remove this saved comparison?')) return;
+    const { error } = await sb.from('saved_comparisons').delete().eq('id', id).eq('user_id', currentUser.id);
+    if (error) { alert(error.message); return; }
+    loadTab('saved');
+}
