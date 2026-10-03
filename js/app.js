@@ -538,8 +538,75 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ============================================================
+// COOKIE CONSENT
+// ============================================================
+function initCookieBanner() {
+    const COOKIE_KEY = 'choz-cookie-consent';
+    const banner = document.getElementById('cookieBanner');
+    if (!banner) return;
+
+    // Check if user already chose
+    const consent = localStorage.getItem(COOKIE_KEY);
+    if (consent) {
+        // Already consented — don't show
+        applyCookieConsent(consent);
+        return;
+    }
+
+    // Show banner after small delay
+    setTimeout(() => {
+        banner.style.display = 'block';
+    }, 800);
+
+    // Accept button
+    const acceptBtn = document.getElementById('cookieAccept');
+    if (acceptBtn) {
+        acceptBtn.onclick = () => {
+            localStorage.setItem(COOKIE_KEY, 'accepted');
+            applyCookieConsent('accepted');
+            hideBanner(banner);
+        };
+    }
+
+    // Reject button
+    const rejectBtn = document.getElementById('cookieReject');
+    if (rejectBtn) {
+        rejectBtn.onclick = () => {
+            localStorage.setItem(COOKIE_KEY, 'rejected');
+            applyCookieConsent('rejected');
+            hideBanner(banner);
+        };
+    }
+}
+
+function hideBanner(banner) {
+    banner.style.transition = 'transform 0.3s ease, opacity 0.3s ease';
+    banner.style.transform = 'translateY(100%)';
+    banner.style.opacity = '0';
+    setTimeout(() => {
+        banner.style.display = 'none';
+    }, 300);
+}
+
+function applyCookieConsent(consent) {
+    // In future, this can conditionally load analytics or ads
+    if (consent === 'accepted') {
+        // console.log('Cookie consent: accepted (analytics may load)');
+    } else if (consent === 'rejected') {
+        // console.log('Cookie consent: rejected (only essential cookies)');
+    }
+}
+// ============================================================
 // INITIALIZE
 // ============================================================
+// ============================================================
+// INITIALIZE
+// ============================================================
+checkAuth();
+initNotifications();
+initCookieBanner();  // ← YEH ADD KARO
+loadCategories();
+loadPulse();
 checkAuth();
 initNotifications();
 loadCategories();
