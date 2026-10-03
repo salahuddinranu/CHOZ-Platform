@@ -1,11 +1,13 @@
 // ============================================================
-// CHOZ USER DASHBOARD
+// CHOZ USER DASHBOARD — Clean Version
 // ============================================================
 
 let currentUser = null;
 let currentTab = 'overview';
 
-// Auth check
+// ============================================================
+// INIT
+// ============================================================
 async function init() {
     const { data: { session } } = await sb.auth.getSession();
     if (!session) {
@@ -20,9 +22,12 @@ async function init() {
 function renderUserHead() {
     const email = currentUser.email || '';
     const initial = email.charAt(0).toUpperCase();
-    document.getElementById('avatar').textContent = initial;
-    document.getElementById('userName').textContent = email.split('@')[0];
-    document.getElementById('userEmail').textContent = email;
+    const avatarEl = document.getElementById('avatar');
+    const nameEl = document.getElementById('userName');
+    const emailEl = document.getElementById('userEmail');
+    if (avatarEl) avatarEl.textContent = initial;
+    if (nameEl) nameEl.textContent = email.split('@')[0];
+    if (emailEl) emailEl.textContent = email;
 }
 
 // Tabs
@@ -107,7 +112,7 @@ async function loadHistory(content) {
 async function loadMemories(content) {
     const { data, error } = await sb
         .from('decision_memories')
-        .select('*, categories(name, icon)')
+        .select('*')
         .eq('user_id', currentUser.id)
         .order('created_at', { ascending: false });
 
@@ -120,8 +125,8 @@ async function loadMemories(content) {
     content.innerHTML = data.map(m => `
         <div class="list-item">
             <div>
-                <h4>${m.categories?.icon || '📌'} ${m.title || 'Decision'}</h4>
-                <p class="meta">${m.categories?.name || ''}${m.note ? ' — ' + m.note : ''}</p>
+                <h4>📌 ${m.title || 'Decision'}</h4>
+                <p class="meta">${m.note || ''}</p>
             </div>
             <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px">
                 <span class="time">${formatDate(m.created_at)}</span>
@@ -172,66 +177,374 @@ async function removeFavorite(id) {
 }
 
 // ============================================================
-// SETTINGS
+// MY REVIEWS
 // ============================================================
-async function loadSettings(content) {
-    async function loadSettings(content) {
-    content.innerHTML = '<div class="loading">Loading profile...</div>';
+async function loadMyReviews(content) {
+    const { data, error } = await sb
+        .from('user_reviews')
+        .select('*, items(name, brands(name))')
+        .eq('user_id', currentUser.id)
+        .order('created_at', { ascending: false });
 
-    // Try fetching profile
-    let profile = null;
-    try {
-        const { data } = await sb
-            .from('profiles')
-            .select('*')
-            .eq('id', currentUser.id)
-            .maybeSingle();
-        profile = data;
-    } catch (e) {
-        console.warn('Profile fetch failed:', e);
+    if (error) { content.innerHTML = `<div class="empty"><h3>Error</h3><p>${error.message}</p></div>`; return; }
+    if (!data || data.length === 0) {
+        content.innerHTML = emptyState(
+            'No reviews yet',
+            'When you complete a comparison and write a review, it will appear here.',
+            '/#cats',
+            'Start comparing'
+        );
+        return;
     }
 
-    // If no profile, create a default one
-    if (!profile) {
-        profile = {
-            id: currentUser.id,
-            email: currentUser.email,
-            full_name: '',
-            bio: '',
-            avatar_url: ''
-        };
+    content.innerHTML = data.map(r => `
+        <div class="list-item">
+            <div style="flex:1">
+                <h4>${r.items?.name || 'Item'}</h4>
+                <div style="color:var(--hl);font-size:14px;margin:4px 0">${'★'.repeat(r.rating)}${'☆'.repeat(5 - r.rating)}</div>
+                ${r.title ? `<strong style="font-size:14px;display:block;margin:6px 0">${escapeDash(r.title)}</strong>` : ''}
+                <p class="meta">${escapeDash(r.content || '')}</p>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px">
+                <span class="time">${formatDate(r.created_at)}</span>
+                <div style="display:flex;gap:6px">
+                    <button class="btn" style="padding:4px 10px;font-size:12px" onclick="editReview('${r.id}')">Edit</button>
+                    <button class="btn" style="padding:4px 10px;font-size:12px;color:#ef4444" onclick="deleteReview('${r.id}')">Delete</button>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
 
-        // Try to create profile record
-        try {
-            await sb.from('profiles').insert(profile);
-        } catch (e) {
-            console.warn('Could not create profile:', e);
-        }
-    }
+async function deleteReview(id) {
+    if (!confirm('Delete this review? This cannot be undone.')) return;
+    const { error } = await sb.from('user_reviews').delete().eq('id', id).eq('user_id', currentUser.id);
+    if (error) { alert(error.message); return; }
+    loadTab('reviews');
+}
 
-    const initial = (profile.full_name || profile.email || '?').charAt(0).toUpperCase();
-    const avatarUrl = profile.avatar_url || '';
+async function editReview(id) {
+    const { data: review } = await sb.from('user_reviews').select('*').eq('id', id).eq('user_id', currentUser.id).single();
+    if (!review) { alert('Review not found.'); return; }
 
-    // ... rest of code as before
-    content.innerHTML = '<div class="loading">Loading profile...</div>';
+    const content = document.getElementById('tabContent');
 
-    // Fetch current profile
-    const { data: profile, error } = await sb
-        .from('profiles')
+    content.innerHTML = `
+        <div style="background:var(--sf);border:1px solid var(--line);border-radius:14px;padding:24px;max-width:600px;margin:0 auto">
+            <h3 style="font-family:'Bricolage Grotesque';font-size:20px;margin-bottom:16px">Edit Review</h3>
+
+            <label style="display:block;font-size:13px;font-weight:600;margin-bottom:6px">Rating</label>
+            <select id="editRating" style="width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);margin-bottom:14px;font-family:inherit;font-size:14px">
+                ${[1,2,3,4,5].map(n => `<option value="${n}" ${n === review.rating ? 'selected' : ''}>${'★'.repeat(n)} (${n}/5)</option>`).join('')}
+            </select>
+
+            <label style="display:block;font-size:13px;font-weight:600;margin-bottom:6px">Title</label>
+            <input type="text" id="editTitle" value="${escapeDash(review.title || '')}" maxlength="80"
+                   style="width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);margin-bottom:14px;font-family:inherit;font-size:14px">
+
+            <label style="display:block;font-size:13px;font-weight:600;margin-bottom:6px">Review</label>
+            <textarea id="editContent" rows="4" maxlength="500"
+                      style="width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);margin-bottom:14px;font-family:inherit;font-size:14px;resize:vertical">${escapeDash(review.content || '')}</textarea>
+
+            <div style="display:flex;gap:8px">
+                <button class="btn p" style="flex:1" id="saveReviewBtn">Save Changes</button>
+                <button class="btn" id="cancelReviewBtn">Cancel</button>
+            </div>
+        </div>
+    `;
+
+    document.getElementById('saveReviewBtn').onclick = async () => {
+        const rating = parseInt(document.getElementById('editRating').value);
+        const title = document.getElementById('editTitle').value.trim();
+        const content2 = document.getElementById('editContent').value.trim();
+
+        const { error } = await sb.from('user_reviews')
+            .update({ rating, title: title || null, content: content2 || null })
+            .eq('id', id)
+            .eq('user_id', currentUser.id);
+
+        if (error) { alert(error.message); return; }
+        loadTab('reviews');
+    };
+
+    document.getElementById('cancelReviewBtn').onclick = () => loadTab('reviews');
+}
+
+// ============================================================
+// CHOICE PROFILE
+// ============================================================
+async function loadChoiceProfile(content) {
+    content.innerHTML = '<div class="loading">Analyzing your choices...</div>';
+
+    const { data: memories, error } = await sb
+        .from('decision_memories')
         .select('*')
-        .eq('id', currentUser.id)
-.maybeSingle()
+        .eq('user_id', currentUser.id)
+        .order('created_at', { ascending: false });
 
     if (error) {
         content.innerHTML = `<div class="empty"><h3>Error</h3><p>${error.message}</p></div>`;
         return;
     }
 
-    const initial = (profile.full_name || profile.email || '?').charAt(0).toUpperCase();
-    const avatarUrl = profile.avatar_url || '';
+    if (!memories || memories.length < 2) {
+        content.innerHTML = `
+            <div class="empty">
+                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                    <circle cx="12" cy="7" r="4"/>
+                </svg>
+                <h3>Not enough data yet</h3>
+                <p style="margin-bottom:20px">Complete at least 2 comparisons and save them to Memory. Your Choice Profile will then show your priority patterns.</p>
+                <a class="btn p" href="/#cats">Start comparing →</a>
+            </div>
+        `;
+        return;
+    }
+
+    const priorityCounts = {};
+
+    memories.forEach(m => {
+        const priorities = m.priorities || [];
+        priorities.forEach(p => {
+            let pid;
+            if (typeof p === 'string') pid = p;
+            else if (typeof p === 'object' && p !== null) pid = p.id || p.attribute_id || p.attr_id;
+            else return;
+            if (!pid) return;
+            priorityCounts[pid] = (priorityCounts[pid] || 0) + 1;
+        });
+    });
+
+    const priorityIds = Object.keys(priorityCounts);
+    let priorityNameMap = {};
+
+    if (priorityIds.length > 0) {
+        const { data: attrDefs } = await sb
+            .from('attribute_definitions')
+            .select('id, name')
+            .in('id', priorityIds);
+
+        if (attrDefs) {
+            attrDefs.forEach(a => { priorityNameMap[a.id] = a.name; });
+        }
+    }
+
+    const insights = Object.entries(priorityCounts)
+        .map(([pid, count]) => ({
+            id: pid,
+            name: priorityNameMap[pid] || pid.substring(0, 8) + '...',
+            count,
+            percentage: Math.round((count / memories.length) * 100)
+        }))
+        .filter(i => i.percentage >= 40)
+        .sort((a, b) => b.percentage - a.percentage)
+        .slice(0, 5);
+
+    const topPriority = insights.length > 0 ? insights[0] : null;
 
     content.innerHTML = `
-        <!-- PROFILE SECTION -->
+        <div style="background:var(--sf);border:1px solid var(--line);border-radius:16px;padding:24px;margin-bottom:16px">
+            <h2 style="font-family:'Bricolage Grotesque';font-size:22px;margin-bottom:8px">Your Choice Profile</h2>
+            <p style="color:var(--mute);font-size:14px;margin-bottom:20px">
+                Based on your <strong>${memories.length} saved decisions</strong> on CHOZ.
+                This is a transparent observation of your own activity — not a personality assessment.
+            </p>
+
+            ${topPriority ? `
+                <div style="background:linear-gradient(135deg,var(--ac),#7C3AED);color:white;padding:20px;border-radius:14px;margin-bottom:20px">
+                    <div style="font-size:11px;letter-spacing:2px;text-transform:uppercase;opacity:0.8;margin-bottom:8px">
+                        Your #1 priority
+                    </div>
+                    <div style="font-family:'Bricolage Grotesque';font-size:24px;font-weight:700;margin-bottom:4px">
+                        ${escapeDash(topPriority.name)}
+                    </div>
+                    <div style="font-size:13px;opacity:0.9">
+                        Appeared in ${topPriority.percentage}% of your comparisons
+                    </div>
+                </div>
+            ` : ''}
+
+            ${insights.length > 0 ? `
+                <h3 style="font-family:'Bricolage Grotesque';font-size:16px;margin-bottom:12px">
+                    Patterns detected
+                </h3>
+                ${insights.map(i => `
+                    <div style="margin-bottom:14px">
+                        <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px">
+                            <span style="font-weight:500">${escapeDash(i.name)}</span>
+                            <span style="color:var(--mute)">${i.percentage}%</span>
+                        </div>
+                        <div style="height:6px;background:var(--line);border-radius:3px;overflow:hidden">
+                            <div style="height:100%;background:var(--ac);width:${i.percentage}%"></div>
+                        </div>
+                    </div>
+                `).join('')}
+            ` : `
+                <p style="color:var(--mute);font-size:14px;text-align:center;padding:20px">
+                    Your priorities vary too much to identify a clear pattern yet.
+                    Complete more comparisons to see insights.
+                </p>
+            `}
+        </div>
+
+        <div style="background:var(--sf);border:1px solid var(--line);border-radius:16px;padding:24px">
+            <h3 style="font-family:'Bricolage Grotesque';font-size:16px;margin-bottom:8px">
+                About this profile
+            </h3>
+            <p style="font-size:13px;color:var(--mute);line-height:1.7;margin-bottom:16px">
+                Choice Profile observes patterns in your own CHOZ activity. It does not diagnose
+                personality, psychology, or any sensitive trait.
+            </p>
+            <button class="btn" style="color:#ef4444;border-color:#ef4444" onclick="resetChoiceProfile()">
+                Reset Choice Profile
+            </button>
+        </div>
+    `;
+}
+
+async function resetChoiceProfile() {
+    if (!confirm('Reset your Choice Profile? This will clear your saved Decision Memories. This cannot be undone.')) {
+        return;
+    }
+
+    const { error } = await sb
+        .from('decision_memories')
+        .delete()
+        .eq('user_id', currentUser.id);
+
+    if (error) {
+        alert('Could not reset: ' + error.message);
+        return;
+    }
+
+    alert('Choice Profile reset.');
+    loadTab('profile');
+}
+
+// ============================================================
+// CHOZ PULSE
+// ============================================================
+async function loadPulseDashboard(content) {
+    content.innerHTML = '<div class="loading">Loading community trends...</div>';
+
+    try {
+        const { data: trends, error } = await sb
+            .from('pulse_category_trends')
+            .select('*')
+            .order('total_comparisons', { ascending: false });
+
+        if (error) {
+            content.innerHTML = `
+                <div class="empty">
+                    <h3>Could not load</h3>
+                    <p style="color:#6b7280;font-size:13px">${error.message}</p>
+                </div>
+            `;
+            return;
+        }
+
+        const activeTrends = (trends || []).filter(t => t.total_comparisons > 0);
+
+        if (activeTrends.length === 0) {
+            content.innerHTML = `
+                <div style="background:var(--sf);border:1px solid var(--line);border-radius:16px;padding:40px 24px;text-align:center">
+                    <h3 style="font-family:'Bricolage Grotesque';font-size:20px;margin-bottom:8px">No community data yet</h3>
+                    <p style="color:var(--mute);font-size:14px;max-width:400px;margin:0 auto 20px">
+                        Complete a few comparisons and community trends will appear here.
+                    </p>
+                    <a class="btn p" href="/#cats">Start comparing →</a>
+                </div>
+            `;
+            return;
+        }
+
+        content.innerHTML = `
+            <div style="background:var(--sf);border:1px solid var(--line);border-radius:16px;padding:24px;margin-bottom:16px">
+                <h2 style="font-family:'Bricolage Grotesque';font-size:22px;margin-bottom:8px">CHOZ Pulse</h2>
+                <p style="color:var(--mute);font-size:14px;margin-bottom:20px">
+                    Anonymous aggregate trends from the CHOZ community. No individual user data is shown.
+                </p>
+
+                ${activeTrends.slice(0, 10).map(t => `
+                    <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 0;border-top:1px solid var(--line)">
+                        <div style="display:flex;align-items:center;gap:12px">
+                            <span style="font-size:24px">${t.category_icon || '📦'}</span>
+                            <div>
+                                <div style="font-weight:600;font-size:15px">${escapeDash(t.category_name)}</div>
+                                <div style="font-size:12px;color:var(--mute);margin-top:2px">
+                                    ${t.unique_users || 0} unique users
+                                </div>
+                            </div>
+                        </div>
+                        <div style="text-align:right">
+                            <div style="font-family:'Bricolage Grotesque';font-size:22px;font-weight:700;color:var(--ac)">
+                                ${t.total_comparisons}
+                            </div>
+                            <div style="font-size:11px;color:var(--mute)">comparisons</div>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+
+            <div style="background:var(--sf);border:1px solid var(--line);border-radius:16px;padding:24px">
+                <h3 style="font-family:'Bricolage Grotesque';font-size:16px;margin-bottom:8px">
+                    About CHOZ Pulse
+                </h3>
+                <p style="font-size:13px;color:var(--mute);line-height:1.7">
+                    CHOZ Pulse shows anonymized trends from completed comparisons.
+                    Popularity in the community does not mean a product is objectively better —
+                    it only reflects what other users are choosing.
+                </p>
+            </div>
+        `;
+    } catch (err) {
+        content.innerHTML = `
+            <div class="empty">
+                <h3>Error</h3>
+                <p style="color:#6b7280">${err.message}</p>
+            </div>
+        `;
+    }
+}
+
+// ============================================================
+// SETTINGS
+// ============================================================
+async function loadSettings(content) {
+    content.innerHTML = '<div class="loading">Loading profile...</div>';
+
+    let userProfile = null;
+    try {
+        const { data } = await sb
+            .from('profiles')
+            .select('*')
+            .eq('id', currentUser.id)
+            .maybeSingle();
+        userProfile = data;
+    } catch (e) {
+        console.warn('Profile fetch failed:', e);
+    }
+
+    if (!userProfile) {
+        userProfile = {
+            id: currentUser.id,
+            email: currentUser.email,
+            full_name: '',
+            bio: '',
+            avatar_url: ''
+        };
+        try {
+            await sb.from('profiles').insert(userProfile);
+        } catch (e) {
+            console.warn('Could not create profile:', e);
+        }
+    }
+
+    const initial = (userProfile.full_name || userProfile.email || '?').charAt(0).toUpperCase();
+    const avatarUrl = userProfile.avatar_url || '';
+
+    content.innerHTML = `
         <div style="background:var(--sf);border:1px solid var(--line);border-radius:16px;padding:24px;margin-bottom:16px">
             <h3 style="font-family:'Bricolage Grotesque';font-size:18px;margin-bottom:16px">
                 Edit Profile
@@ -254,12 +567,12 @@ async function loadSettings(content) {
             </div>
 
             <label style="display:block;font-size:13px;font-weight:600;margin-bottom:6px">Display Name</label>
-            <input type="text" id="editName" placeholder="Your name" maxlength="50" value="${escapeDash(profile.full_name || '')}"
+            <input type="text" id="editName" placeholder="Your name" maxlength="50" value="${escapeDash(userProfile.full_name || '')}"
                    style="width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font-family:inherit;font-size:14px;margin-bottom:16px">
 
             <label style="display:block;font-size:13px;font-weight:600;margin-bottom:6px">Bio (optional)</label>
             <textarea id="editBio" placeholder="A short line about you" maxlength="160" rows="2"
-                      style="width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font-family:inherit;font-size:14px;resize:vertical;margin-bottom:16px">${escapeDash(profile.bio || '')}</textarea>
+                      style="width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font-family:inherit;font-size:14px;resize:vertical;margin-bottom:16px">${escapeDash(userProfile.bio || '')}</textarea>
 
             <div style="display:flex;gap:8px;flex-wrap:wrap">
                 <button class="btn p" id="saveProfileBtn">Save Changes</button>
@@ -267,7 +580,6 @@ async function loadSettings(content) {
             </div>
         </div>
 
-        <!-- ACCOUNT SECTION -->
         <div style="background:var(--sf);border:1px solid var(--line);border-radius:16px;padding:24px;margin-bottom:16px">
             <h3 style="font-family:'Bricolage Grotesque';font-size:18px;margin-bottom:16px">Account</h3>
             
@@ -287,7 +599,6 @@ async function loadSettings(content) {
             </div>
         </div>
 
-        <!-- DANGER ZONE -->
         <div style="background:var(--sf);border:1px solid #fecaca;border-radius:16px;padding:24px">
             <h3 style="font-family:'Bricolage Grotesque';font-size:18px;margin-bottom:8px;color:#dc2626">Danger Zone</h3>
             <p style="font-size:13px;color:var(--mute);margin-bottom:16px">
@@ -299,9 +610,8 @@ async function loadSettings(content) {
         </div>
     `;
 
-    // Save profile
-    document.getElementById('saveProfileBtn').addEventListener('click', async () => {
-        const btn = document.getElementById('saveProfileBtn');
+    document.getElementById('saveProfileBtn').onclick = async (e) => {
+        const btn = e.target;
         const msg = document.getElementById('profileSaveMsg');
         const name = document.getElementById('editName').value.trim();
         const bio = document.getElementById('editBio').value.trim();
@@ -336,17 +646,15 @@ async function loadSettings(content) {
         msg.textContent = '✓ Saved!';
         setTimeout(() => { msg.style.display = 'none'; }, 3000);
 
-        // Update avatar preview
         const avatarEl = document.getElementById('profileAvatar');
         if (avatar) {
-            avatarEl.innerHTML = `<img src="${escapeDash(avatar)}" alt="" style="width:100%;height:100%;object-fit:cover" onerror="this.parentElement.textContent='${escapeDash(name.charAt(0).toUpperCase() || '?')}'">`;
+            avatarEl.innerHTML = `<img src="${escapeDash(avatar)}" alt="" style="width:100%;height:100%;object-fit:cover">`;
         } else {
             avatarEl.textContent = (name || currentUser.email || '?').charAt(0).toUpperCase();
         }
-    });
+    };
 
-    // Password reset
-    document.getElementById('resetPwdBtn').addEventListener('click', async (e) => {
+    document.getElementById('resetPwdBtn').onclick = async (e) => {
         const btn = e.target;
         btn.disabled = true;
         btn.textContent = 'Sending...';
@@ -364,62 +672,22 @@ async function loadSettings(content) {
         }
 
         alert('✓ Reset link sent to ' + currentUser.email);
-    });
+    };
 
-    // Delete account
-    document.getElementById('deleteAccBtn').addEventListener('click', async () => {
+    document.getElementById('deleteAccBtn').onclick = async () => {
         const confirmText = prompt('This will permanently delete your account and all data.\n\nType DELETE to confirm:');
         if (confirmText !== 'DELETE') return;
 
-        // Delete user data
         await sb.from('decision_memories').delete().eq('user_id', currentUser.id);
         await sb.from('favorites').delete().eq('user_id', currentUser.id);
         await sb.from('comparisons').delete().eq('user_id', currentUser.id);
         await sb.from('user_reviews').delete().eq('user_id', currentUser.id);
         await sb.from('user_notifications').delete().eq('user_id', currentUser.id);
 
-        // Sign out and redirect
         await sb.auth.signOut();
         alert('Your account has been deleted.');
         window.location.href = '/';
-    });
-}
-
-function escapeDash(s) {
-    if (!s) return '';
-    return String(s).replace(/[&<>"']/g, c => ({
-        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
-    }[c]));
-}
-
-async function resetPassword() {
-    const { error } = await sb.auth.resetPasswordForEmail(currentUser.email, {
-        redirectTo: window.location.origin + '/dashboard.html'
-    });
-    if (error) { alert(error.message); return; }
-    alert('Password reset link sent to ' + currentUser.email);
-}
-
-async function deleteAccount() {
-    const confirmText = prompt('Type DELETE to confirm account deletion:');
-    if (confirmText !== 'DELETE') return;
-
-    // Delete user data (RLS ensures only own data)
-    await sb.from('decision_memories').delete().eq('user_id', currentUser.id);
-    await sb.from('favorites').delete().eq('user_id', currentUser.id);
-    await sb.from('comparisons').delete().eq('user_id', currentUser.id);
-
-    const { error } = await sb.rpc('delete_user');
-    if (error) {
-        // Fallback: just sign out
-        await sb.auth.signOut();
-        window.location.href = '/';
-        return;
-    }
-
-    await sb.auth.signOut();
-    alert('Account deleted.');
-    window.location.href = '/';
+    };
 }
 
 // ============================================================
@@ -451,516 +719,53 @@ function emptyState(title, text, link, linkText) {
     `;
 }
 
-// Sign out
-document.getElementById('signOutBtn').onclick = async () => {
-    await sb.auth.signOut();
-    window.location.href = '/';
-};
-
-// Theme toggle
-const themeBtn = document.getElementById('themeBtn');
-function getTheme() {
-    const stored = document.documentElement.getAttribute('data-theme');
-    if (stored) return stored;
-    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-}
-function updateThemeBtn() { themeBtn.textContent = getTheme() === 'dark' ? '☀️' : '🌙'; }
-themeBtn.onclick = () => {
-    const next = getTheme() === 'dark' ? 'light' : 'dark';
-    document.documentElement.setAttribute('data-theme', next);
-    localStorage.setItem('choz-theme', next);
-    updateThemeBtn();
-};
-const savedTheme = localStorage.getItem('choz-theme');
-if (savedTheme) document.documentElement.setAttribute('data-theme', savedTheme);
-updateThemeBtn();
-
-// Init
-init();
-// ============================================================
-// MY REVIEWS
-// ============================================================
-async function loadMyReviews(content) {
-    const { data, error } = await sb
-        .from('user_reviews')
-        .select('*, items(name, brands(name))')
-        .eq('user_id', currentUser.id)
-        .order('created_at', { ascending: false });
-
-    if (error) { content.innerHTML = `<div class="empty"><h3>Error</h3><p>${error.message}</p></div>`; return; }
-    if (!data || data.length === 0) {
-        content.innerHTML = emptyState(
-            'No reviews yet',
-            'When you complete a comparison and write a review, it will appear here.',
-            '/#cats',
-            'Start comparing'
-        );
-        return;
-    }
-
-    content.innerHTML = data.map(r => `
-        <div class="list-item">
-            <div style="flex:1">
-                <h4>${r.items?.name || 'Item'}</h4>
-                <div style="color:var(--hl);font-size:14px;margin:4px 0">${'★'.repeat(r.rating)}${'☆'.repeat(5 - r.rating)}</div>
-                ${r.title ? `<strong style="font-size:14px;display:block;margin:6px 0">${escapeHtmlDashboard(r.title)}</strong>` : ''}
-                <p class="meta">${escapeHtmlDashboard(r.content || '')}</p>
-            </div>
-            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px">
-                <span class="time">${formatDate(r.created_at)}</span>
-                <div style="display:flex;gap:6px">
-                    <button class="btn" style="padding:4px 10px;font-size:12px" onclick="editReview('${r.id}', ${r.rating}, \`${(r.title || '').replace(/`/g, '\\`')}\`, \`${(r.content || '').replace(/`/g, '\\`')}\`)">Edit</button>
-                    <button class="btn" style="padding:4px 10px;font-size:12px;color:#ef4444" onclick="deleteReview('${r.id}')">Delete</button>
-                </div>
-            </div>
-        </div>
-    `).join('');
-}
-
-async function deleteReview(id) {
-    if (!confirm('Delete this review? This cannot be undone.')) return;
-    const { error } = await sb.from('user_reviews').delete().eq('id', id).eq('user_id', currentUser.id);
-    if (error) { alert(error.message); return; }
-    loadTab('reviews');
-}
-
-async function editReview(id, currentRating, currentTitle, currentContent) {
-    const content = document.getElementById('tabContent');
-
-    content.innerHTML = `
-        <div style="background:var(--sf);border:1px solid var(--line);border-radius:14px;padding:24px;max-width:600px;margin:0 auto">
-            <h3 style="font-family:'Bricolage Grotesque';font-size:20px;margin-bottom:16px">Edit Review</h3>
-
-            <label style="display:block;font-size:13px;font-weight:600;margin-bottom:6px">Rating</label>
-            <select id="editRating" style="width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);margin-bottom:14px;font-family:inherit;font-size:14px">
-                ${[1,2,3,4,5].map(n => `<option value="${n}" ${n === currentRating ? 'selected' : ''}>${'★'.repeat(n)} (${n}/5)</option>`).join('')}
-            </select>
-
-            <label style="display:block;font-size:13px;font-weight:600;margin-bottom:6px">Title</label>
-            <input type="text" id="editTitle" value="${escapeHtmlDashboard(currentTitle)}" maxlength="80"
-                   style="width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);margin-bottom:14px;font-family:inherit;font-size:14px">
-
-            <label style="display:block;font-size:13px;font-weight:600;margin-bottom:6px">Review</label>
-            <textarea id="editContent" rows="4" maxlength="500"
-                      style="width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);margin-bottom:14px;font-family:inherit;font-size:14px;resize:vertical">${escapeHtmlDashboard(currentContent)}</textarea>
-
-            <div style="display:flex;gap:8px">
-                <button class="btn p" style="flex:1" onclick="saveReviewEdit('${id}')">Save Changes</button>
-                <button class="btn" onclick="loadTab('reviews')">Cancel</button>
-            </div>
-        </div>
-    `;
-}
-
-async function saveReviewEdit(id) {
-    const rating = parseInt(document.getElementById('editRating').value);
-    const title = document.getElementById('editTitle').value.trim();
-    const content = document.getElementById('editContent').value.trim();
-
-    const { error } = await sb.from('user_reviews')
-        .update({ rating, title: title || null, content: content || null })
-        .eq('id', id)
-        .eq('user_id', currentUser.id);
-
-    if (error) { alert(error.message); return; }
-    loadTab('reviews');
-}
-
-function escapeHtmlDashboard(s) {
-    if (!s) return '';
-    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-}
-// ============================================================
-// CHOICE PROFILE — Preference patterns from user activity
-// ============================================================
-async function loadChoiceProfile(content) {
-    content.innerHTML = '<div class="loading">Analyzing your choices...</div>';
-
-    // Fetch all decision memories for this user
-    const { data: memories, error } = await sb
-        .from('decision_memories')
-        .select('*')
-        .eq('user_id', currentUser.id)
-        .order('created_at', { ascending: false });
-
-    if (error) {
-        content.innerHTML = `<div class="empty"><h3>Error</h3><p>${error.message}</p></div>`;
-        return;
-    }
-
-    if (!memories || memories.length < 2) {
-        content.innerHTML = `
-            <div class="empty">
-                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                    <circle cx="12" cy="7" r="4"/>
-                </svg>
-                <h3>Not enough data yet</h3>
-                <p style="margin-bottom:20px">Complete at least 2 comparisons and save them to Memory. Your Choice Profile will then show your priority patterns.</p>
-                <a class="btn p" href="/#cats">Start comparing →</a>
-            </div>
-        `;
-        return;
-    }
-
-    // Analyze priorities across all memories
-    const priorityCounts = {};
-    const priorityRanks = {}; // Track average rank for each priority
-
-    memories.forEach(m => {
-        const priorities = m.priorities || [];
-        priorities.forEach((p, idx) => {
-            // p is a priority object or an ID — normalize
-            let pid;
-            if (typeof p === 'string') pid = p;
-            else if (typeof p === 'object' && p !== null) pid = p.id || p.attribute_id || p.attr_id;
-            else return;
-
-            if (!pid) return;
-
-            if (!priorityCounts[pid]) {
-                priorityCounts[pid] = 0;
-                priorityRanks[pid] = [];
-            }
-            priorityCounts[pid]++;
-            priorityRanks[pid].push(idx + 1);
-        });
-    });
-
-    // If priorities are stored as IDs, we need to fetch their names
-    const priorityIds = Object.keys(priorityCounts);
-    let priorityNameMap = {};
-
-    if (priorityIds.length > 0) {
-        const { data: attrDefs } = await sb
-            .from('attribute_definitions')
-            .select('id, name')
-            .in('id', priorityIds);
-
-        if (attrDefs) {
-            attrDefs.forEach(a => { priorityNameMap[a.id] = a.name; });
-        }
-    }
-
-    // Build insights
-    const insights = Object.entries(priorityCounts)
-        .map(([pid, count]) => ({
-            id: pid,
-            name: priorityNameMap[pid] || pid.substring(0, 8) + '...',
-            count,
-            percentage: Math.round((count / memories.length) * 100),
-            avgRank: priorityRanks[pid].reduce((a, b) => a + b, 0) / priorityRanks[pid].length
-        }))
-        .filter(i => i.percentage >= 40) // Only show if 40%+ of comparisons
-        .sort((a, b) => b.percentage - a.percentage)
-        .slice(0, 5);
-
-    // Generate natural-language insights
-    const insightsText = generateInsightsText(insights, memories.length);
-
-    // Determine the top priority
-    const topPriority = insights.length > 0 ? insights[0] : null;
-
-    content.innerHTML = `
-        <div style="background:var(--sf);border:1px solid var(--line);border-radius:16px;padding:24px;margin-bottom:16px">
-            <h2 style="font-family:'Bricolage Grotesque';font-size:22px;margin-bottom:8px">Your Choice Profile</h2>
-            <p style="color:var(--mute);font-size:14px;margin-bottom:20px">
-                Based on your <strong>${memories.length} saved decisions</strong> on CHOZ.
-                This is a transparent observation of your own activity — not a personality assessment.
-            </p>
-
-            ${topPriority ? `
-                <div style="background:linear-gradient(135deg,var(--ac),#7C3AED);color:white;padding:20px;border-radius:14px;margin-bottom:20px">
-                    <div style="font-size:11px;letter-spacing:2px;text-transform:uppercase;opacity:0.8;margin-bottom:8px">
-                        Your #1 priority
-                    </div>
-                    <div style="font-family:'Bricolage Grotesque';font-size:24px;font-weight:700;margin-bottom:4px">
-                        ${escapeHtmlProfile(topPriority.name)}
-                    </div>
-                    <div style="font-size:13px;opacity:0.9">
-                        Appeared in ${topPriority.percentage}% of your comparisons
-                    </div>
-                </div>
-            ` : ''}
-
-            ${insights.length > 0 ? `
-                <h3 style="font-family:'Bricolage Grotesque';font-size:16px;margin-bottom:12px">
-                    Patterns detected
-                </h3>
-                ${insights.map(i => `
-                    <div style="margin-bottom:14px">
-                        <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px">
-                            <span style="font-weight:500">${escapeHtmlProfile(i.name)}</span>
-                            <span style="color:var(--mute)">${i.percentage}%</span>
-                        </div>
-                        <div style="height:6px;background:var(--line);border-radius:3px;overflow:hidden">
-                            <div style="height:100%;background:var(--ac);width:${i.percentage}%"></div>
-                        </div>
-                    </div>
-                `).join('')}
-            ` : `
-                <p style="color:var(--mute);font-size:14px;text-align:center;padding:20px">
-                    Your priorities vary too much to identify a clear pattern yet.
-                    Complete more comparisons to see insights.
-                </p>
-            `}
-        </div>
-
-        ${insightsText.length > 0 ? `
-            <div style="background:var(--sf);border:1px solid var(--line);border-radius:16px;padding:24px;margin-bottom:16px">
-                <h3 style="font-family:'Bricolage Grotesque';font-size:16px;margin-bottom:12px">
-                    What this suggests
-                </h3>
-                ${insightsText.map(t => `
-                    <p style="font-size:14px;color:var(--mute);line-height:1.7;margin-bottom:10px">
-                        ${t}
-                    </p>
-                `).join('')}
-            </div>
-        ` : ''}
-
-        <div style="background:var(--sf);border:1px solid var(--line);border-radius:16px;padding:24px">
-            <h3 style="font-family:'Bricolage Grotesque';font-size:16px;margin-bottom:8px">
-                About this profile
-            </h3>
-            <p style="font-size:13px;color:var(--mute);line-height:1.7;margin-bottom:16px">
-                Choice Profile observes patterns in your own CHOZ activity. It does not diagnose
-                personality, psychology, or any sensitive trait. It only reflects what you chose
-                to prioritize when comparing options on CHOZ.
-            </p>
-            <button class="btn" style="color:#ef4444;border-color:#ef4444" onclick="resetChoiceProfile()">
-                Reset Choice Profile
-            </button>
-        </div>
-    `;
-}
-
-// Generate natural-language insights
-function generateInsightsText(insights, totalComparisons) {
-    const text = [];
-
-    if (insights.length === 0) return text;
-
-    const top = insights[0];
-    const second = insights[1];
-
-    if (top.percentage >= 70) {
-        text.push(`Across most of your decisions, <strong>${escapeHtmlProfile(top.name)}</strong> has been one of your top priorities.`);
-    } else if (top.percentage >= 50) {
-        text.push(`You frequently prioritize <strong>${escapeHtmlProfile(top.name)}</strong> when comparing options.`);
-    }
-
-    if (second && second.percentage >= 40) {
-        text.push(`You also consistently consider <strong>${escapeHtmlProfile(second.name)}</strong> — it appeared in ${second.percentage}% of your comparisons.`);
-    }
-
-    if (insights.length >= 3) {
-        text.push(`Overall, your decisions tend to balance ${insights.slice(0, 3).map(i => `<strong>${escapeHtmlProfile(i.name)}</strong>`).join(', ')}.`);
-    }
-
-    if (totalComparisons >= 5) {
-        text.push(`This analysis is based on ${totalComparisons} saved decisions — a growing picture of what matters to you.`);
-    }
-
-    return text;
-}
-
-// Reset choice profile
-async function resetChoiceProfile() {
-    if (!confirm('Reset your Choice Profile? This will clear your saved Decision Memories. This cannot be undone.')) {
-        return;
-    }
-
-    const { error } = await sb
-        .from('decision_memories')
-        .delete()
-        .eq('user_id', currentUser.id);
-
-    if (error) {
-        alert('Could not reset: ' + error.message);
-        return;
-    }
-
-    alert('Choice Profile reset.');
-    loadTab('profile');
-}
-
-// Escape helper (agar pehle se nahi hai)
-function escapeHtmlProfile(s) {
-    if (!s) return '';
-    return String(s).replace(/[&<>"']/g, c => ({
-        '&': '&amp;',
-        '<': '&lt;',
-        '>': '&gt;',
-        '"': '&quot;',
-        "'": '&#39;'
-    }[c]));
-}
-// ============================================================
-// CHOZ PULSE — Dashboard view
-// ============================================================
-async function loadPulseDashboard(content) {
-    content.innerHTML = '<div class="loading">Loading community trends...</div>';
-
-    const { data: trends, error } = await sb
-        .from('pulse_category_trends')
-        .select('*')
-        .order('total_comparisons', { ascending: false });
-
-    if (error) {
-        content.innerHTML = `<div class="empty"><h3>Could not load</h3><p>${error.message}</p></div>`;
-        return;
-    }
-
-    const activeTrends = (trends || []).filter(t => t.total_comparisons > 0);
-
-    if (activeTrends.length === 0) {
-        content.innerHTML = `
-            <div class="empty">
-                <h3>No community data yet</h3>
-                <p style="margin-bottom:20px">Community trends will appear here once enough comparisons have been completed.</p>
-                <a class="btn p" href="/#cats">Start comparing →</a>
-            </div>
-        `;
-        return;
-    }
-
-    content.innerHTML = `
-        <div style="background:var(--sf);border:1px solid var(--line);border-radius:16px;padding:24px;margin-bottom:16px">
-            <h2 style="font-family:'Bricolage Grotesque';font-size:22px;margin-bottom:8px">CHOZ Pulse</h2>
-            <p style="color:var(--mute);font-size:14px;margin-bottom:20px">
-                Anonymous aggregate trends from the CHOZ community. No individual user data is shown.
-            </p>
-
-            ${activeTrends.slice(0, 10).map(t => `
-                <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-top:1px solid var(--line)">
-                    <div style="display:flex;align-items:center;gap:12px">
-                        <span style="font-size:22px">${t.category_icon || '📦'}</span>
-                        <div>
-                            <div style="font-weight:500;font-size:15px">${escapeHtmlPulse(t.category_name)}</div>
-                            <div style="font-size:12px;color:var(--mute);margin-top:2px">
-                                ${t.unique_users || 0} unique users
-                            </div>
-                        </div>
-                    </div>
-                    <div style="text-align:right">
-                        <div style="font-family:'Bricolage Grotesque';font-size:20px;font-weight:700;color:var(--ac)">
-                            ${t.total_comparisons}
-                        </div>
-                        <div style="font-size:11px;color:var(--mute)">comparisons</div>
-                    </div>
-                </div>
-            `).join('')}
-        </div>
-
-        <div style="background:var(--sf);border:1px solid var(--line);border-radius:16px;padding:24px">
-            <h3 style="font-family:'Bricolage Grotesque';font-size:16px;margin-bottom:8px">
-                About CHOZ Pulse
-            </h3>
-            <p style="font-size:13px;color:var(--mute);line-height:1.7">
-                CHOZ Pulse shows anonymized trends from completed comparisons.
-                Popularity in the community does not mean a product is objectively better —
-                it only reflects what other users are choosing.
-                Trends are updated as new comparisons are completed.
-            </p>
-        </div>
-    `;
-}
-// ============================================================
-// CHOZ PULSE — Dashboard view
-// ============================================================
-async function loadPulseDashboard(content) {
-    content.innerHTML = '<div class="loading">Loading community trends...</div>';
-
-    try {
-        const { data: trends, error } = await sb
-            .from('pulse_category_trends')
-            .select('*')
-            .order('total_comparisons', { ascending: false });
-
-        if (error) {
-            content.innerHTML = `
-                <div class="empty">
-                    <h3>Could not load</h3>
-                    <p style="color:#6b7280;font-size:13px">${error.message}</p>
-                    <p style="color:#6b7280;font-size:12px;margin-top:8px">Make sure the pulse_category_trends view exists in Supabase.</p>
-                </div>
-            `;
-            return;
-        }
-
-        const activeTrends = (trends || []).filter(t => t.total_comparisons > 0);
-
-        if (activeTrends.length === 0) {
-            content.innerHTML = `
-                <div style="background:var(--sf);border:1px solid var(--line);border-radius:16px;padding:40px 24px;text-align:center">
-                    <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="var(--mute)" stroke-width="1.5" style="opacity:0.4;margin-bottom:16px">
-                        <path d="M3 3v18h18"/>
-                        <path d="M18.7 8l-5.1 5.2-2.8-2.7L7 14.3"/>
-                    </svg>
-                    <h3 style="font-family:'Bricolage Grotesque';font-size:20px;margin-bottom:8px">No community data yet</h3>
-                    <p style="color:var(--mute);font-size:14px;max-width:400px;margin:0 auto 20px">
-                        Complete a few comparisons and community trends will appear here.
-                    </p>
-                    <a class="btn p" href="/#cats">Start comparing →</a>
-                </div>
-            `;
-            return;
-        }
-
-        content.innerHTML = `
-            <div style="background:var(--sf);border:1px solid var(--line);border-radius:16px;padding:24px;margin-bottom:16px">
-                <h2 style="font-family:'Bricolage Grotesque';font-size:22px;margin-bottom:8px">CHOZ Pulse</h2>
-                <p style="color:var(--mute);font-size:14px;margin-bottom:20px">
-                    Anonymous aggregate trends from the CHOZ community. No individual user data is shown.
-                </p>
-
-                ${activeTrends.slice(0, 10).map(t => `
-                    <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 0;border-top:1px solid var(--line)">
-                        <div style="display:flex;align-items:center;gap:12px">
-                            <span style="font-size:24px">${t.category_icon || '📦'}</span>
-                            <div>
-                                <div style="font-weight:600;font-size:15px">${escapeHtmlPulse(t.category_name)}</div>
-                                <div style="font-size:12px;color:var(--mute);margin-top:2px">
-                                    ${t.unique_users || 0} unique users
-                                </div>
-                            </div>
-                        </div>
-                        <div style="text-align:right">
-                            <div style="font-family:'Bricolage Grotesque';font-size:22px;font-weight:700;color:var(--ac)">
-                                ${t.total_comparisons}
-                            </div>
-                            <div style="font-size:11px;color:var(--mute)">comparisons</div>
-                        </div>
-                    </div>
-                `).join('')}
-            </div>
-
-            <div style="background:var(--sf);border:1px solid var(--line);border-radius:16px;padding:24px">
-                <h3 style="font-family:'Bricolage Grotesque';font-size:16px;margin-bottom:8px">
-                    About CHOZ Pulse
-                </h3>
-                <p style="font-size:13px;color:var(--mute);line-height:1.7">
-                    CHOZ Pulse shows anonymized trends from completed comparisons.
-                    Popularity in the community does not mean a product is objectively better —
-                    it only reflects what other users are choosing.
-                    Trends are updated as new comparisons are completed.
-                </p>
-            </div>
-        `;
-    } catch (err) {
-        content.innerHTML = `
-            <div class="empty">
-                <h3>Error</h3>
-                <p style="color:#6b7280">${err.message}</p>
-            </div>
-        `;
-    }
-}
-
-function escapeHtmlPulse(s) {
+function escapeDash(s) {
     if (!s) return '';
     return String(s).replace(/[&<>"']/g, c => ({
         '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
     }[c]));
 }
+
+// ============================================================
+// SIGN OUT
+// ============================================================
+const signOutBtn = document.getElementById('signOutBtn');
+if (signOutBtn) {
+    signOutBtn.onclick = async () => {
+        await sb.auth.signOut();
+        window.location.href = '/';
+    };
+}
+
+// ============================================================
+// THEME TOGGLE
+// ============================================================
+const themeBtn = document.getElementById('themeBtn');
+
+function getTheme() {
+    const stored = document.documentElement.getAttribute('data-theme');
+    if (stored) return stored;
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+}
+
+function updateThemeBtn() {
+    if (themeBtn) themeBtn.textContent = getTheme() === 'dark' ? '☀️' : '🌙';
+}
+
+if (themeBtn) {
+    themeBtn.onclick = () => {
+        const next = getTheme() === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', next);
+        localStorage.setItem('choz-theme', next);
+        updateThemeBtn();
+    };
+}
+
+const savedTheme = localStorage.getItem('choz-theme');
+if (savedTheme) document.documentElement.setAttribute('data-theme', savedTheme);
+updateThemeBtn();
+
+// ============================================================
+// INIT
+// ============================================================
+init();
