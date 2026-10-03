@@ -58,12 +58,12 @@ function renderComparisonModal() {
 
     content.innerHTML = `
         <div class="comp-header">
-        <span class="badge" style="background:#dcfce7;color:#166534">Step 3 of 3: Result</span>
             <h3 style="font-family:'Bricolage Grotesque';font-size:22px">Blind Comparison</h3>
             <span class="badge">Step 1 of 3: Pick an option</span>
         </div>
-        <p style="color:var(--mute);font-size:14px;margin-bottom:16px">
-            Brand names are hidden. Review the specs and pick the option that feels right.
+        <p style="color:var(--mute);font-size:14px;margin-bottom:16px;line-height:1.6">
+            <strong style="color:var(--ink)">Brand names are hidden.</strong><br>
+            Review the specs and pick the option that feels right to you.
         </p>
         <div class="options-grid" id="optionsGrid">
             ${options.map((item, i) => {
@@ -140,8 +140,9 @@ function renderPrioritiesStep() {
             <h3 style="font-family:'Bricolage Grotesque';font-size:22px">Your Priorities</h3>
             <span class="badge">Step 2 of 3: Set your priorities</span>
         </div>
-        <p style="color:var(--mute);font-size:14px;margin-bottom:16px">
-            <strong style="color:var(--ink)">Click ↑ ↓ to move items.</strong> Top = most important.
+        <p style="color:var(--mute);font-size:14px;margin-bottom:16px;line-height:1.6">
+            <strong style="color:var(--ink)">What matters most to you?</strong><br>
+            Click ↑↓ to rank. Top = highest priority.
         </p>
         <div class="priority-list" id="priorityList">
             ${attrsArray.map((a, i) => `
@@ -224,7 +225,7 @@ function backToSelect() {
 }
 
 // ============================================================
-// LOCK CHOICE + REVEAL
+// STEP 3: LOCK CHOICE + REVEAL
 // ============================================================
 async function lockChoice() {
     if (currentComparison.choice === null) return;
@@ -274,6 +275,11 @@ function renderReveal(item, label) {
     }).filter(Boolean);
 
     content.innerHTML = `
+        <div class="comp-header">
+            <h3 style="font-family:'Bricolage Grotesque';font-size:22px">Your Result</h3>
+            <span class="badge" style="background:#dcfce7;color:#166534">Step 3 of 3: Result</span>
+        </div>
+
         <div class="reveal-card">
             <h2>🎉 Revealed</h2>
             <p style="opacity:0.9">You chose Option ${label}</p>
@@ -360,6 +366,53 @@ async function saveDecision(itemId) {
 }
 
 // ============================================================
+// BOOKMARK COMPARISON
+// ============================================================
+async function bookmarkComparison(itemId, itemName) {
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) { openAuth(); return; }
+
+    const { data: existing } = await sb
+        .from('saved_comparisons')
+        .select('id')
+        .eq('user_id', session.user.id)
+        .eq('item_id', itemId)
+        .maybeSingle();
+
+    if (existing) {
+        const { error } = await sb
+            .from('saved_comparisons')
+            .delete()
+            .eq('id', existing.id);
+
+        if (error) { alert('Could not remove: ' + error.message); return; }
+
+        if (event?.target) {
+            event.target.textContent = '🔖 Bookmark';
+            event.target.style.background = '';
+            event.target.style.color = '';
+        }
+        return;
+    }
+
+    const { error } = await sb.from('saved_comparisons').insert({
+        user_id: session.user.id,
+        category_id: currentComparison.categoryId,
+        item_id: itemId,
+        item_name: itemName,
+        label: `Saved from ${currentComparison.options.length}-option comparison`
+    });
+
+    if (error) { alert('Could not save: ' + error.message); return; }
+
+    if (event?.target) {
+        event.target.textContent = '✅ Bookmarked';
+        event.target.style.background = 'var(--ac)';
+        event.target.style.color = 'white';
+    }
+}
+
+// ============================================================
 // SHARE RESULT
 // ============================================================
 async function shareResult() {
@@ -387,7 +440,6 @@ function showShareModal(item) {
     const brandName = item.brands?.name || 'Unknown brand';
     const price = item.base_price ? `${item.currency} ${item.base_price.toLocaleString()}` : 'Price unavailable';
 
-    // Use stored priority names directly — no matching required
     const priorityNames = (currentComparison.priorityNames || []).slice(0, 5);
 
     content.innerHTML = `
@@ -529,7 +581,6 @@ async function downloadShareCard(itemId) {
     const priceText = fullItem.base_price ? `${fullItem.currency} ${fullItem.base_price.toLocaleString()}` : '';
     ctx.fillText(priceText, 540, 740);
 
-    // Use stored priority names directly
     const priorityNames = (currentComparison.priorityNames || []).slice(0, 5);
 
     if (priorityNames.length > 0) {
@@ -958,13 +1009,58 @@ async function loadCategories() {
         return;
     }
 
-    grid.innerHTML = cats.map(c => `
-        <a onclick="startComparison('${c.id}')" style="cursor:pointer">
-            <span class="icon">${c.icon || '📦'}</span>
-            <b>${c.name}</b>
-            <small>${c.description || 'Compare options'}</small>
-        </a>
-    `).join('');
+    // Category-specific hints
+    const hints = {
+        'cat-phone': 'Battery • Camera • Display',
+        'cat-bike': 'Engine • Mileage • Comfort',
+        'cat-hotel': 'Location • Rating • Price',
+        'cat-laptop': 'CPU • Battery • Weight',
+        'cat-headphone': 'Sound • ANC • Battery',
+        'cat-car': 'Fuel • Safety • Seating',
+        'cat-tablet': 'Screen • Battery • Storage',
+        'cat-smartwatch': 'Health • Battery • Display',
+        'cat-speaker': 'Power • Battery • Waterproof',
+        'cat-tv': 'Resolution • Size • Smart OS',
+        'cat-camera': 'Sensor • Video • Megapixels',
+        'cat-console': 'Storage • Exclusives • Price',
+        'cat-fridge': 'Capacity • Energy • Type',
+        'cat-washing': 'Load • Energy • Speed',
+        'cat-ac': 'Tonnage • Inverter • Rating',
+        'cat-restaurant': 'Cuisine • Rating • Distance',
+        'cat-internet': 'Speed • Price • Data',
+        'cat-mobile-pkg': 'Data • Minutes • Price',
+        'cat-course': 'Duration • Level • Price',
+        'cat-software': 'Platform • Pricing • Support'
+    };
+
+    // Get item counts
+    const { data: counts } = await sb
+        .from('items')
+        .select('category_id')
+        .eq('is_active', true);
+
+    const countMap = {};
+    (counts || []).forEach(item => {
+        countMap[item.category_id] = (countMap[item.category_id] || 0) + 1;
+    });
+
+    grid.innerHTML = cats.map(c => {
+        const itemCount = countMap[c.id] || 0;
+        const hasEnough = itemCount >= 2;
+        const hint = hints[c.id] || c.description || 'Compare options';
+
+        return `
+            <a onclick="startComparison('${c.id}')" style="cursor:pointer;${!hasEnough ? 'opacity:0.6' : ''}">
+                <span class="icon">${c.icon || '📦'}</span>
+                <b>${c.name}</b>
+                <small>${hint}</small>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding-top:10px;border-top:1px solid var(--line);font-size:11px">
+                    <span style="color:var(--mute)">${itemCount} options</span>
+                    <span style="color:var(--ac);font-weight:600">Compare →</span>
+                </div>
+            </a>
+        `;
+    }).join('');
 }
 
 // ============================================================
@@ -976,54 +1072,5 @@ document.addEventListener('DOMContentLoaded', () => {
     if (closeComp) closeComp.onclick = closeCompModal;
     if (compModal) compModal.addEventListener('click', (e) => {
         if (e.target.id === 'compModal') closeCompModal();
-        // ============================================================
-// BOOKMARK COMPARISON
-// ============================================================
-async function bookmarkComparison(itemId, itemName) {
-    const { data: { session } } = await sb.auth.getSession();
-    if (!session) { openAuth(); return; }
-
-    // Check if already bookmarked
-    const { data: existing } = await sb
-        .from('saved_comparisons')
-        .select('id')
-        .eq('user_id', session.user.id)
-        .eq('item_id', itemId)
-        .maybeSingle();
-
-    if (existing) {
-        // Remove bookmark
-        const { error } = await sb
-            .from('saved_comparisons')
-            .delete()
-            .eq('id', existing.id);
-
-        if (error) { alert('Could not remove: ' + error.message); return; }
-
-        if (event?.target) {
-            event.target.textContent = '🔖 Bookmark';
-            event.target.style.background = '';
-            event.target.style.color = '';
-        }
-        return;
-    }
-
-    // Add bookmark
-    const { error } = await sb.from('saved_comparisons').insert({
-        user_id: session.user.id,
-        category_id: currentComparison.categoryId,
-        item_id: itemId,
-        item_name: itemName,
-        label: `Saved from ${currentComparison.options.length}-option comparison`
-    });
-
-    if (error) { alert('Could not save: ' + error.message); return; }
-
-    if (event?.target) {
-        event.target.textContent = '✅ Bookmarked';
-        event.target.style.background = 'var(--ac)';
-        event.target.style.color = 'white';
-    }
-}
     });
 });
