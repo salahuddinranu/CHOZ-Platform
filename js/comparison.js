@@ -1,5 +1,5 @@
 // ============================================================
-// CHOZ BLIND COMPARISON ENGINE — Clean Version
+// CHOZ BLIND COMPARISON ENGINE — Clean Final Version
 // ============================================================
 
 let currentComparison = {
@@ -58,7 +58,7 @@ function renderComparisonModal() {
 
     content.innerHTML = `
         <div class="comp-header">
-            <h3 style="font-family:'Bricolage Grotesque';font-size:22px">Blind Comparison</h3>
+            <h3>Blind Comparison</h3>
             <span class="badge">Step 1 of 3: Pick an option</span>
         </div>
         <p style="color:var(--mute);font-size:14px;margin-bottom:16px;line-height:1.6">
@@ -137,7 +137,7 @@ function renderPrioritiesStep() {
 
     content.innerHTML = `
         <div class="comp-header">
-            <h3 style="font-family:'Bricolage Grotesque';font-size:22px">Your Priorities</h3>
+            <h3>Your Priorities</h3>
             <span class="badge">Step 2 of 3: Set your priorities</span>
         </div>
         <p style="color:var(--mute);font-size:14px;margin-bottom:16px;line-height:1.6">
@@ -276,7 +276,7 @@ function renderReveal(item, label) {
 
     content.innerHTML = `
         <div class="comp-header">
-            <h3 style="font-family:'Bricolage Grotesque';font-size:22px">Your Result</h3>
+            <h3>Your Result</h3>
             <span class="badge" style="background:#dcfce7;color:#166534">Step 3 of 3: Result</span>
         </div>
 
@@ -288,7 +288,7 @@ function renderReveal(item, label) {
             <div class="price">${item.currency} ${item.base_price?.toLocaleString() || '—'}</div>
         </div>
 
-        <div class="why-section" style="background:var(--acbg);color:var(--ink)">
+        <div class="why-section-box">
             <h4 style="font-family:'Bricolage Grotesque';font-size:18px;margin-bottom:12px">Why I Chose This</h4>
             <p style="margin-bottom:12px;font-size:14px">
                 You ranked these priorities (top = most important):
@@ -444,7 +444,7 @@ function showShareModal(item) {
 
     content.innerHTML = `
         <div class="comp-header">
-            <h3 style="font-family:'Bricolage Grotesque';font-size:22px">Share Your Decision</h3>
+            <h3>Share Your Decision</h3>
             <button class="modal-close" style="position:static;font-size:20px" onclick="closeCompModal()">×</button>
         </div>
 
@@ -762,7 +762,7 @@ async function showWhereToBuy(itemId, itemName, categoryId) {
     `;
 
     if (adminLinks && adminLinks.length > 0) {
-        html += `<p style="color:var(--mute);font-size:13px;margin-bottom:12px;padding:10px;background:var(--acbg);border-radius:8px">
+        html += `<p style="color:var(--mute);font-size:13px;margin-bottom:12px;padding:10px;background:var(--ac-soft);border-radius:8px">
             ⓘ Some links below are affiliate links. We may earn a commission — this never affects your comparison result.
         </p>`;
         html += `<div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">`;
@@ -771,7 +771,7 @@ async function showWhereToBuy(itemId, itemName, categoryId) {
             html += `
                 <a href="${l.url}" target="_blank" rel="noopener noreferrer nofollow sponsored"
                    onclick="trackAffiliateClick('${l.id}', '${itemId}')"
-                   style="display:flex;justify-content:space-between;align-items:center;padding:14px 18px;background:var(--acbg);color:var(--ink);border-radius:10px;text-decoration:none;font-weight:500">
+                   style="display:flex;justify-content:space-between;align-items:center;padding:14px 18px;background:var(--ac-soft);color:var(--ink);border-radius:10px;text-decoration:none;font-weight:500">
                     <span>${safeLabel}</span>
                     <span style="color:var(--ac);font-size:13px">Visit →</span>
                 </a>
@@ -992,7 +992,7 @@ function closeCompModal() {
 }
 
 // ============================================================
-// LOAD CATEGORIES
+// LOAD CATEGORIES — Premium version
 // ============================================================
 async function loadCategories() {
     const grid = document.getElementById('catGrid');
@@ -1005,11 +1005,10 @@ async function loadCategories() {
         .order('sort_order');
 
     if (error || !cats || cats.length === 0) {
-        grid.innerHTML = '<p style="color:var(--mute)">No categories available.</p>';
+        grid.innerHTML = '<p style="color:var(--mute);text-align:center;padding:40px">No categories available.</p>';
         return;
     }
 
-    // Category-specific hints
     const hints = {
         'cat-phone': 'Battery • Camera • Display',
         'cat-bike': 'Engine • Mileage • Comfort',
@@ -1033,7 +1032,6 @@ async function loadCategories() {
         'cat-software': 'Platform • Pricing • Support'
     };
 
-    // Get item counts
     const { data: counts } = await sb
         .from('items')
         .select('category_id')
@@ -1050,13 +1048,13 @@ async function loadCategories() {
         const hint = hints[c.id] || c.description || 'Compare options';
 
         return `
-            <a onclick="startComparison('${c.id}')" style="cursor:pointer;${!hasEnough ? 'opacity:0.6' : ''}">
+            <a onclick="startComparison('${c.id}')" style="${!hasEnough ? 'opacity:0.6' : ''}">
                 <span class="icon">${c.icon || '📦'}</span>
                 <b>${c.name}</b>
                 <small>${hint}</small>
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding-top:10px;border-top:1px solid var(--line);font-size:11px">
-                    <span style="color:var(--mute)">${itemCount} options</span>
-                    <span style="color:var(--ac);font-weight:600">Compare →</span>
+                <div class="cat-footer">
+                    <span class="cat-count">${itemCount} options</span>
+                    <span class="cat-arrow">Compare →</span>
                 </div>
             </a>
         `;
