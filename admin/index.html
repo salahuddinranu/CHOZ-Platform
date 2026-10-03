@@ -4,169 +4,491 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CHOZ Admin</title>
+
     <link rel="stylesheet" href="/css/style.css">
+
     <style>
-        .admin-layout { display: flex; min-height: 100vh; }
-        .admin-sidebar { width: 250px; background: #1a1a1a; color: white; padding: 1.5rem; }
-        .admin-sidebar a { display: block; color: #9ca3af; padding: 0.8rem; text-decoration: none; border-radius: 8px; }
-        .admin-sidebar a:hover, .admin-sidebar a.active { background: #2d2d2d; color: white; }
-        .admin-main { flex: 1; padding: 2rem; background: var(--bg-alt); }
-        .admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
-        .admin-card { background: white; padding: 1.5rem; border-radius: 12px; margin-bottom: 1rem; box-shadow: var(--shadow); }
+        .admin-layout {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .admin-sidebar {
+            width: 250px;
+            background: #1a1a1a;
+            color: white;
+            padding: 1.5rem;
+        }
+
+        .admin-sidebar a {
+            display: block;
+            color: #9ca3af;
+            padding: 0.8rem;
+            text-decoration: none;
+            border-radius: 8px;
+        }
+
+        .admin-sidebar a:hover,
+        .admin-sidebar a.active {
+            background: #2d2d2d;
+            color: white;
+        }
+
+        .admin-main {
+            flex: 1;
+            padding: 2rem;
+            background: var(--bg-alt);
+        }
+
+        .admin-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .admin-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            margin-bottom: 1rem;
+            box-shadow: var(--shadow);
+        }
     </style>
+
+    <!-- Supabase JS -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <!-- CHOZ Supabase Configuration -->
+    <script src="/js/config.js"></script>
 </head>
+
 <body>
+
     <div id="admin-login" class="modal" style="display:flex;">
         <div class="modal-content">
             <h3>Admin Login</h3>
+
             <form id="admin-form">
-                <input type="email" id="admin-email" placeholder="Admin Email" required>
-                <input type="password" id="admin-password" placeholder="Password" required>
-                <button type="submit" class="btn btn-primary">Login</button>
+                <input
+                    type="email"
+                    id="admin-email"
+                    placeholder="Admin Email"
+                    required
+                >
+
+                <input
+                    type="password"
+                    id="admin-password"
+                    placeholder="Password"
+                    required
+                >
+
+                <button
+                    type="submit"
+                    class="btn btn-primary"
+                >
+                    Login
+                </button>
             </form>
         </div>
     </div>
 
     <div id="admin-app" class="admin-layout hidden">
+
         <aside class="admin-sidebar">
-            <h3 style="margin-bottom:1.5rem;">CHOZ Admin</h3>
-            <a href="#" class="active" data-section="dashboard">Dashboard</a>
-            <a href="#" data-section="items">Products</a>
-            <a href="#" data-section="categories">Categories</a>
-            <a href="#" data-section="reviews">Reviews</a>
-            <a href="#" data-section="feedback">Feedback</a>
-            <a href="#" data-section="users">Users</a>
-            <a href="#" data-section="settings">Settings</a>
-            <a href="#" onclick="adminSignOut()">Sign Out</a>
+
+            <h3 style="margin-bottom:1.5rem;">
+                CHOZ Admin
+            </h3>
+
+            <a href="#" class="active" data-section="dashboard">
+                Dashboard
+            </a>
+
+            <a href="#" data-section="items">
+                Products
+            </a>
+
+            <a href="#" data-section="categories">
+                Categories
+            </a>
+
+            <a href="#" data-section="reviews">
+                Reviews
+            </a>
+
+            <a href="#" data-section="feedback">
+                Feedback
+            </a>
+
+            <a href="#" data-section="users">
+                Users
+            </a>
+
+            <a href="#" data-section="settings">
+                Settings
+            </a>
+
+            <a href="#" onclick="adminSignOut()">
+                Sign Out
+            </a>
+
         </aside>
+
         <main class="admin-main">
+
             <header class="admin-header">
-                <h2 id="admin-title">Dashboard</h2>
+                <h2 id="admin-title">
+                    Dashboard
+                </h2>
+
                 <span id="admin-user"></span>
             </header>
+
             <div id="admin-content"></div>
+
         </main>
+
     </div>
 
     <script>
-        const supabase = window.supabase.createClient(
-            'YOUR_SUPABASE_URL',
-            'YOUR_ANON_KEY'
-        );
 
         let adminUser = null;
 
         async function adminLogin(email, password) {
-            const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-            if (error) throw error;
 
-            // Check admin_users table
-            const { data: adminData, error: adminError } = await supabase
-                .from('admin_users')
-                .select('*')
-                .eq('user_id', data.user.id)
-                .eq('is_active', true)
-                .single();
+            const { data, error } =
+                await chozSupabase.auth.signInWithPassword({
+                    email: email,
+                    password: password
+                });
 
-            if (adminError || !adminData) {
-                await supabase.auth.signOut();
-                throw new Error('You are not authorized as admin.');
+            if (error) {
+                throw error;
             }
 
-            adminUser = { ...data.user, role: adminData.role };
+            // Check admin_users table
+            const { data: adminData, error: adminError } =
+                await chozSupabase
+                    .from('admin_users')
+                    .select('*')
+                    .eq('user_id', data.user.id)
+                    .single();
+
+            if (adminError || !adminData) {
+
+                await chozSupabase.auth.signOut();
+
+                throw new Error(
+                    'You are not authorized as admin.'
+                );
+            }
+
+            adminUser = {
+                ...data.user,
+                role: adminData.role
+            };
+
             document.getElementById('admin-login').style.display = 'none';
-            document.getElementById('admin-app').classList.remove('hidden');
-            document.getElementById('admin-user').textContent = data.user.email;
+
+            document
+                .getElementById('admin-app')
+                .classList.remove('hidden');
+
+            document.getElementById('admin-user').textContent =
+                data.user.email;
+
             loadAdminSection('dashboard');
         }
 
+
         async function adminSignOut() {
-            await supabase.auth.signOut();
+
+            await chozSupabase.auth.signOut();
+
             adminUser = null;
+
             document.getElementById('admin-login').style.display = 'flex';
-            document.getElementById('admin-app').classList.add('hidden');
+
+            document
+                .getElementById('admin-app')
+                .classList.add('hidden');
         }
 
-        document.getElementById('admin-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            try {
-                await adminLogin(
-                    document.getElementById('admin-email').value,
-                    document.getElementById('admin-password').value
-                );
-            } catch (err) {
-                alert(err.message);
-            }
-        });
 
-        document.querySelectorAll('.admin-sidebar a[data-section]').forEach(link => {
-            link.addEventListener('click', (e) => {
+        document
+            .getElementById('admin-form')
+            .addEventListener('submit', async (e) => {
+
                 e.preventDefault();
-                document.querySelectorAll('.admin-sidebar a').forEach(a => a.classList.remove('active'));
-                link.classList.add('active');
-                loadAdminSection(link.dataset.section);
+
+                const button = e.target.querySelector('button');
+
+                button.disabled = true;
+                button.textContent = 'Logging in...';
+
+                try {
+
+                    await adminLogin(
+                        document.getElementById('admin-email').value,
+                        document.getElementById('admin-password').value
+                    );
+
+                } catch (err) {
+
+                    console.error('Admin login error:', err);
+
+                    alert(err.message);
+
+                } finally {
+
+                    button.disabled = false;
+                    button.textContent = 'Login';
+                }
             });
-        });
+
+
+        document
+            .querySelectorAll('.admin-sidebar a[data-section]')
+            .forEach(link => {
+
+                link.addEventListener('click', (e) => {
+
+                    e.preventDefault();
+
+                    document
+                        .querySelectorAll('.admin-sidebar a')
+                        .forEach(a => a.classList.remove('active'));
+
+                    link.classList.add('active');
+
+                    loadAdminSection(link.dataset.section);
+                });
+            });
+
 
         async function loadAdminSection(section) {
-            const content = document.getElementById('admin-content');
-            const title = document.getElementById('admin-title');
+
+            const content =
+                document.getElementById('admin-content');
+
+            const title =
+                document.getElementById('admin-title');
+
             content.innerHTML = '<p>Loading...</p>';
 
+
             if (section === 'dashboard') {
+
                 title.textContent = 'Dashboard';
-                const { count: users } = await supabase.from('profiles').select('*', { count: 'exact', head: true });
-                const { count: items } = await supabase.from('items').select('*', { count: 'exact', head: true });
-                const { count: reviews } = await supabase.from('user_reviews').select('*', { count: 'exact', head: true });
+
+                const { count: users } =
+                    await chozSupabase
+                        .from('profiles')
+                        .select('*', {
+                            count: 'exact',
+                            head: true
+                        });
+
+                const { count: items } =
+                    await chozSupabase
+                        .from('items')
+                        .select('*', {
+                            count: 'exact',
+                            head: true
+                        });
+
+                const { count: reviews } =
+                    await chozSupabase
+                        .from('user_reviews')
+                        .select('*', {
+                            count: 'exact',
+                            head: true
+                        });
+
                 content.innerHTML = `
-                    <div class="stats-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;">
-                        <div class="admin-card"><h3>${users || 0}</h3><p>Total Users</p></div>
-                        <div class="admin-card"><h3>${items || 0}</h3><p>Products</p></div>
-                        <div class="admin-card"><h3>${reviews || 0}</h3><p>Reviews</p></div>
+
+                    <div
+                        class="stats-grid"
+                        style="
+                            display:grid;
+                            grid-template-columns:repeat(3,1fr);
+                            gap:1rem;
+                        "
+                    >
+
+                        <div class="admin-card">
+                            <h3>${users || 0}</h3>
+                            <p>Total Users</p>
+                        </div>
+
+                        <div class="admin-card">
+                            <h3>${items || 0}</h3>
+                            <p>Products</p>
+                        </div>
+
+                        <div class="admin-card">
+                            <h3>${reviews || 0}</h3>
+                            <p>Reviews</p>
+                        </div>
+
                     </div>
                 `;
+
             } else if (section === 'items') {
+
                 title.textContent = 'Products';
-                const { data } = await supabase.from('items').select('*, categories(name), brands(name)').order('created_at', { ascending: false }).limit(50);
+
+                const { data } =
+                    await chozSupabase
+                        .from('items')
+                        .select(
+                            '*, categories(name), brands(name)'
+                        )
+                        .order('created_at', {
+                            ascending: false
+                        })
+                        .limit(50);
+
                 content.innerHTML = `
+
                     <div class="admin-card">
-                        <table style="width:100%;border-collapse:collapse;">
-                            <thead><tr style="text-align:left;border-bottom:1px solid #eee;">
-                                <th style="padding:0.5rem;">Name</th>
-                                <th style="padding:0.5rem;">Category</th>
-                                <th style="padding:0.5rem;">Brand</th>
-                                <th style="padding:0.5rem;">Price</th>
-                                <th style="padding:0.5rem;">Demo</th>
-                            </tr></thead>
+
+                        <table
+                            style="
+                                width:100%;
+                                border-collapse:collapse;
+                            "
+                        >
+
+                            <thead>
+
+                                <tr
+                                    style="
+                                        text-align:left;
+                                        border-bottom:1px solid #eee;
+                                    "
+                                >
+
+                                    <th style="padding:0.5rem;">
+                                        Name
+                                    </th>
+
+                                    <th style="padding:0.5rem;">
+                                        Category
+                                    </th>
+
+                                    <th style="padding:0.5rem;">
+                                        Brand
+                                    </th>
+
+                                    <th style="padding:0.5rem;">
+                                        Price
+                                    </th>
+
+                                    <th style="padding:0.5rem;">
+                                        Demo
+                                    </th>
+
+                                </tr>
+
+                            </thead>
+
                             <tbody>
+
                                 ${(data || []).map(i => `
-                                    <tr style="border-bottom:1px solid #f5f5f5;">
-                                        <td style="padding:0.5rem;">${i.name}</td>
-                                        <td style="padding:0.5rem;">${i.categories?.name || '—'}</td>
-                                        <td style="padding:0.5rem;">${i.brands?.name || '—'}</td>
-                                        <td style="padding:0.5rem;">${i.currency} ${i.base_price?.toLocaleString() || '—'}</td>
-                                        <td style="padding:0.5rem;">${i.is_demo ? '✅' : '❌'}</td>
+
+                                    <tr
+                                        style="
+                                            border-bottom:1px solid #f5f5f5;
+                                        "
+                                    >
+
+                                        <td style="padding:0.5rem;">
+                                            ${i.name}
+                                        </td>
+
+                                        <td style="padding:0.5rem;">
+                                            ${i.categories?.name || '—'}
+                                        </td>
+
+                                        <td style="padding:0.5rem;">
+                                            ${i.brands?.name || '—'}
+                                        </td>
+
+                                        <td style="padding:0.5rem;">
+                                            ${i.currency}
+                                            ${i.base_price?.toLocaleString() || '—'}
+                                        </td>
+
+                                        <td style="padding:0.5rem;">
+                                            ${i.is_demo ? '✅' : '❌'}
+                                        </td>
+
                                     </tr>
+
                                 `).join('')}
+
                             </tbody>
+
                         </table>
+
                     </div>
                 `;
+
             } else if (section === 'feedback') {
+
                 title.textContent = 'Feedback';
-                const { data } = await supabase.from('feedback').select('*').order('created_at', { ascending: false });
-                content.innerHTML = (data || []).map(f => `
-                    <div class="admin-card">
-                        <h4>${f.subject || f.type}</h4>
-                        <p>${f.message}</p>
-                        <small>${f.email || 'No email'} — ${new Date(f.created_at).toLocaleString()}</small>
-                    </div>
-                `).join('') || '<p>No feedback yet.</p>';
+
+                const { data } =
+                    await chozSupabase
+                        .from('feedback')
+                        .select('*')
+                        .order('created_at', {
+                            ascending: false
+                        });
+
+                content.innerHTML =
+                    (data || [])
+                        .map(f => `
+
+                            <div class="admin-card">
+
+                                <h4>
+                                    ${f.subject || f.type}
+                                </h4>
+
+                                <p>
+                                    ${f.message}
+                                </p>
+
+                                <small>
+                                    ${f.email || 'No email'}
+                                    —
+                                    ${new Date(
+                                        f.created_at
+                                    ).toLocaleString()}
+                                </small>
+
+                            </div>
+
+                        `)
+                        .join('') ||
+                    '<p>No feedback yet.</p>';
+
             } else {
-                content.innerHTML = `<p>${section} section — coming soon.</p>`;
+
+                title.textContent =
+                    section.charAt(0).toUpperCase() +
+                    section.slice(1);
+
+                content.innerHTML =
+                    `<p>${section} section — coming soon.</p>`;
             }
         }
+
     </script>
+
 </body>
 </html>
