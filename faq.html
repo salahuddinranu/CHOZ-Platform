@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FAQ — CHOZ</title>
+<meta name="description" content="Frequently asked questions about CHOZ.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/style.css">
+<style>
+.faq-wrap{padding:60px 0;max-width:760px;margin:0 auto}
+.faq-wrap h1{font-size:clamp(32px,5vw,48px);margin-bottom:12px;letter-spacing:-1px}
+.faq-wrap .lead{color:var(--mute);font-size:16px;margin-bottom:32px}
+.faq-search{width:100%;padding:14px 18px;border:1px solid var(--line);border-radius:12px;font-size:15px;margin-bottom:24px;background:var(--sf);color:var(--ink);font-family:inherit}
+.faq-item{border:1px solid var(--line);border-radius:12px;padding:20px;margin-bottom:10px;background:var(--sf);transition:border-color 0.15s}
+.faq-item:hover{border-color:var(--ac)}
+.faq-item summary{cursor:pointer;font-weight:600;font-family:'Bricolage Grotesque';font-size:16px;list-style:none;display:flex;justify-content:space-between;align-items:center}
+.faq-item summary::after{content:'+';font-size:22px;color:var(--ac);transition:transform 0.2s;font-weight:400}
+.faq-item[open] summary::after{transform:rotate(45deg)}
+.faq-item p{color:var(--mute);font-size:14px;line-height:1.7;margin-top:14px;padding-top:14px;border-top:1px solid var(--line)}
+.no-results{text-align:center;padding:40px;color:var(--mute)}
+</style>
+</head>
+<body>
+<nav><div class="w">
+<a class="logo" href="/">CHOZ</a>
+<div class="sp"></div>
+<a class="btn" href="/">← Back to CHOZ</a>
+</div></nav>
+
+<div class="w faq-wrap">
+<h1>Frequently Asked Questions</h1>
+<p class="lead">Quick answers about how CHOZ works, privacy, and accounts.</p>
+
+<input type="search" class="faq-search" id="faqSearch" placeholder="🔍 Search FAQs...">
+
+<div id="faqList">
+<details class="faq-item" open><summary>What is CHOZ?</summary><p>CHOZ is a blind decision and comparison platform. You compare options without seeing brand names, so you choose based on what actually matters to you.</p></details>
+
+<details class="faq-item"><summary>How does blind comparison work?</summary><p>When you start a comparison, CHOZ shows you anonymous options labeled A, B, and C. Brand names stay hidden until you lock your choice and reveal the result.</p></details>
+
+<details class="faq-item"><summary>Why do brands stay hidden?</summary><p>Brand names, logos, and popularity influence decisions before people evaluate what they actually need. Hiding them helps you focus on what matters to you.</p></details>
+
+<details class="faq-item"><summary>How is the result calculated?</summary><p>CHOZ compares attributes based on the priorities you set. The result is based on stored data and your priorities — never on advertising or affiliate commissions.</p></details>
+
+<details class="faq-item"><summary>Is CHOZ free?</summary><p>Yes, CHOZ is free to use. You can create an account, compare options, and save decision memories without paying.</p></details>
+
+<details class="faq-item"><summary>How is my data handled?</summary><p>See the <a href="/privacy.html" style="color:var(--ac)">Privacy Policy</a>. Your comparisons, memories, and favorites are private to you.</p></details>
+
+<details class="faq-item"><summary>Can I delete my account?</summary><p>Yes. Go to Dashboard → Settings → Delete Account. This permanently removes your account and associated data.</p></details>
+
+<details class="faq-item"><summary>What is Decision Memory?</summary><p>Decision Memory lets you save what you chose, why, and when. You can revisit past decisions any time.</p></details>
+
+<details class="faq-item"><summary>Is CHOZ a shopping site?</summary><p>No. CHOZ is a decision platform, not a store. We help you decide — you buy wherever you choose.</p></details>
+
+<details class="faq-item"><summary>How do I report a problem?</summary><p>Use the <a href="/contact.html" style="color:var(--ac)">Contact page</a>. We review all reports.</p></details>
+
+<details class="faq-item"><summary>Do you use my data to train AI?</summary><p>No. Your private comparisons and memories are not used for AI training.</p></details>
+
+<details class="faq-item"><summary>Can I suggest new categories?</summary><p>Yes! Use the Contact page and choose "Feedback" — we review all suggestions.</p></details>
+</div>
+
+<p class="no-results" id="noResults" style="display:none">No FAQs match your search.</p>
+</div>
+
+<footer><div class="w">
+<div><span class="logo">CHOZ</span><br>"Choose without the noise."<br>Web owned and created by Salahuddin Ranu.</div>
+<div class="ln">
+<a href="/privacy.html">Privacy</a>
+<a href="/terms.html">Terms</a>
+<a href="/contact.html">Contact</a>
+<a href="/about.html">About</a>
+<a href="/faq.html">FAQ</a>
+</div>
+</div></footer>
+
+<script>
+const search = document.getElementById('faqSearch');
+const items = document.querySelectorAll('.faq-item');
+const noResults = document.getElementById('noResults');
+
+search.addEventListener('input', () => {
+    const q = search.value.toLowerCase().trim();
+    let visible = 0;
+    items.forEach(item => {
+        const match = item.textContent.toLowerCase().includes(q);
+        item.style.display = match ? '' : 'none';
+        if (match) visible++;
+    });
+    noResults.style.display = visible === 0 ? 'block' : 'none';
+});
+</script>
+</body>
+</html>
