@@ -175,28 +175,183 @@ async function removeFavorite(id) {
 // SETTINGS
 // ============================================================
 async function loadSettings(content) {
+    content.innerHTML = '<div class="loading">Loading profile...</div>';
+
+    // Fetch current profile
+    const { data: profile, error } = await sb
+        .from('profiles')
+        .select('*')
+        .eq('id', currentUser.id)
+        .single();
+
+    if (error) {
+        content.innerHTML = `<div class="empty"><h3>Error</h3><p>${error.message}</p></div>`;
+        return;
+    }
+
+    const initial = (profile.full_name || profile.email || '?').charAt(0).toUpperCase();
+    const avatarUrl = profile.avatar_url || '';
+
     content.innerHTML = `
-        <div class="setting-row">
-            <div>
-                <h4>Email</h4>
-                <p>${currentUser.email}</p>
+        <!-- PROFILE SECTION -->
+        <div style="background:var(--sf);border:1px solid var(--line);border-radius:16px;padding:24px;margin-bottom:16px">
+            <h3 style="font-family:'Bricolage Grotesque';font-size:18px;margin-bottom:16px">
+                Edit Profile
+            </h3>
+
+            <div style="display:flex;align-items:center;gap:20px;margin-bottom:24px;flex-wrap:wrap">
+                <div id="profileAvatar" style="width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,var(--ac),#8b5cf6);display:grid;place-items:center;color:white;font-family:'Bricolage Grotesque';font-size:32px;font-weight:700;flex-shrink:0;overflow:hidden">
+                    ${avatarUrl 
+                        ? `<img src="${escapeDash(avatarUrl)}" alt="" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display='none';this.parentElement.textContent='${initial}'">` 
+                        : initial}
+                </div>
+                <div style="flex:1;min-width:200px">
+                    <label style="display:block;font-size:13px;font-weight:600;margin-bottom:6px">Avatar URL (optional)</label>
+                    <input type="url" id="editAvatar" placeholder="https://example.com/avatar.jpg" value="${escapeDash(avatarUrl)}"
+                           style="width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font-family:inherit;font-size:14px">
+                    <p style="font-size:11px;color:var(--mute);margin-top:6px">
+                        Paste an image URL. Leave empty to use your initial.
+                    </p>
+                </div>
+            </div>
+
+            <label style="display:block;font-size:13px;font-weight:600;margin-bottom:6px">Display Name</label>
+            <input type="text" id="editName" placeholder="Your name" maxlength="50" value="${escapeDash(profile.full_name || '')}"
+                   style="width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font-family:inherit;font-size:14px;margin-bottom:16px">
+
+            <label style="display:block;font-size:13px;font-weight:600;margin-bottom:6px">Bio (optional)</label>
+            <textarea id="editBio" placeholder="A short line about you" maxlength="160" rows="2"
+                      style="width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font-family:inherit;font-size:14px;resize:vertical;margin-bottom:16px">${escapeDash(profile.bio || '')}</textarea>
+
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+                <button class="btn p" id="saveProfileBtn">Save Changes</button>
+                <span id="profileSaveMsg" style="display:none;font-size:13px;color:#22c55e;padding:10px 0;align-self:center"></span>
             </div>
         </div>
-        <div class="setting-row">
-            <div>
-                <h4>Change password</h4>
-                <p>Send a password reset link to your email.</p>
+
+        <!-- ACCOUNT SECTION -->
+        <div style="background:var(--sf);border:1px solid var(--line);border-radius:16px;padding:24px;margin-bottom:16px">
+            <h3 style="font-family:'Bricolage Grotesque';font-size:18px;margin-bottom:16px">Account</h3>
+            
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--line);gap:12px;flex-wrap:wrap">
+                <div>
+                    <div style="font-size:14px;font-weight:500">Email</div>
+                    <div style="font-size:13px;color:var(--mute);margin-top:2px">${escapeDash(currentUser.email)}</div>
+                </div>
             </div>
-            <button class="btn" onclick="resetPassword()">Send reset link</button>
+
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;gap:12px;flex-wrap:wrap">
+                <div>
+                    <div style="font-size:14px;font-weight:500">Change password</div>
+                    <div style="font-size:13px;color:var(--mute);margin-top:2px">Send a reset link to your email</div>
+                </div>
+                <button class="btn" id="resetPwdBtn">Send reset link</button>
+            </div>
         </div>
-        <div class="setting-row">
-            <div>
-                <h4 style="color:#ef4444">Delete account</h4>
-                <p>Permanently delete your account and all associated data.</p>
-            </div>
-            <button class="btn danger" onclick="deleteAccount()">Delete account</button>
+
+        <!-- DANGER ZONE -->
+        <div style="background:var(--sf);border:1px solid #fecaca;border-radius:16px;padding:24px">
+            <h3 style="font-family:'Bricolage Grotesque';font-size:18px;margin-bottom:8px;color:#dc2626">Danger Zone</h3>
+            <p style="font-size:13px;color:var(--mute);margin-bottom:16px">
+                Permanently delete your account and all associated data.
+            </p>
+            <button class="btn" style="background:#ef4444;border-color:#ef4444;color:white" id="deleteAccBtn">
+                Delete Account
+            </button>
         </div>
     `;
+
+    // Save profile
+    document.getElementById('saveProfileBtn').addEventListener('click', async () => {
+        const btn = document.getElementById('saveProfileBtn');
+        const msg = document.getElementById('profileSaveMsg');
+        const name = document.getElementById('editName').value.trim();
+        const bio = document.getElementById('editBio').value.trim();
+        const avatar = document.getElementById('editAvatar').value.trim();
+
+        btn.disabled = true;
+        btn.textContent = 'Saving...';
+        msg.style.display = 'none';
+
+        const { error: updateErr } = await sb
+            .from('profiles')
+            .update({
+                full_name: name || null,
+                bio: bio || null,
+                avatar_url: avatar || null,
+                updated_at: new Date().toISOString()
+            })
+            .eq('id', currentUser.id);
+
+        btn.disabled = false;
+        btn.textContent = 'Save Changes';
+
+        if (updateErr) {
+            msg.style.display = 'block';
+            msg.style.color = '#ef4444';
+            msg.textContent = 'Error: ' + updateErr.message;
+            return;
+        }
+
+        msg.style.display = 'block';
+        msg.style.color = '#22c55e';
+        msg.textContent = '✓ Saved!';
+        setTimeout(() => { msg.style.display = 'none'; }, 3000);
+
+        // Update avatar preview
+        const avatarEl = document.getElementById('profileAvatar');
+        if (avatar) {
+            avatarEl.innerHTML = `<img src="${escapeDash(avatar)}" alt="" style="width:100%;height:100%;object-fit:cover" onerror="this.parentElement.textContent='${escapeDash(name.charAt(0).toUpperCase() || '?')}'">`;
+        } else {
+            avatarEl.textContent = (name || currentUser.email || '?').charAt(0).toUpperCase();
+        }
+    });
+
+    // Password reset
+    document.getElementById('resetPwdBtn').addEventListener('click', async (e) => {
+        const btn = e.target;
+        btn.disabled = true;
+        btn.textContent = 'Sending...';
+
+        const { error: resetErr } = await sb.auth.resetPasswordForEmail(currentUser.email, {
+            redirectTo: window.location.origin + '/dashboard.html'
+        });
+
+        btn.disabled = false;
+        btn.textContent = 'Send reset link';
+
+        if (resetErr) {
+            alert('Error: ' + resetErr.message);
+            return;
+        }
+
+        alert('✓ Reset link sent to ' + currentUser.email);
+    });
+
+    // Delete account
+    document.getElementById('deleteAccBtn').addEventListener('click', async () => {
+        const confirmText = prompt('This will permanently delete your account and all data.\n\nType DELETE to confirm:');
+        if (confirmText !== 'DELETE') return;
+
+        // Delete user data
+        await sb.from('decision_memories').delete().eq('user_id', currentUser.id);
+        await sb.from('favorites').delete().eq('user_id', currentUser.id);
+        await sb.from('comparisons').delete().eq('user_id', currentUser.id);
+        await sb.from('user_reviews').delete().eq('user_id', currentUser.id);
+        await sb.from('user_notifications').delete().eq('user_id', currentUser.id);
+
+        // Sign out and redirect
+        await sb.auth.signOut();
+        alert('Your account has been deleted.');
+        window.location.href = '/';
+    });
+}
+
+function escapeDash(s) {
+    if (!s) return '';
+    return String(s).replace(/[&<>"']/g, c => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[c]));
 }
 
 async function resetPassword() {
