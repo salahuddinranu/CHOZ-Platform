@@ -1,13 +1,42 @@
 {
     "name": "CHOZ — Choose without the noise",
     "short_name": "CHOZ",
-    "description": "Blind decision and comparison platform.",
+    "description": "Blind decision and comparison platform. Compare without brand bias.",
     "start_url": "/",
+    "scope": "/",
     "display": "standalone",
-    "background_color": "#0a0a0a",
-    "theme_color": "#6366f1",
+    "orientation": "portrait",
+    "background_color": "#0C1017",
+    "theme_color": "#3A3FD9",
+    "categories": ["productivity", "utilities"],
+    "lang": "en",
+    "dir": "ltr",
     "icons": [
-        { "src": "/assets/icon-192.png", "sizes": "192x192", "type": "image/png" },
-        { "src": "/assets/icon-512.png", "sizes": "512x512", "type": "image/png" }
+        {
+            "src": "/assets/icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "/assets/icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any maskable"
+        }
+    ],
+    "shortcuts": [
+        {
+            "name": "Start Comparing",
+            "short_name": "Compare",
+            "url": "/#cats",
+            "description": "Jump directly to categories"
+        },
+        {
+            "name": "My Dashboard",
+            "short_name": "Dashboard",
+            "url": "/dashboard.html",
+            "description": "View your decisions and memories"
+        }
     ]
 }
