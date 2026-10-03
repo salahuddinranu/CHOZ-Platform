@@ -1,223 +1,300 @@
 // ============================================================
-// CHOZ MAIN APP
+// CHOZ MAIN APP — Clean Version
 // ============================================================
 
-// Theme toggle
+// ============================================================
+// THEME TOGGLE
+// ============================================================
 const themeBtn = document.getElementById('themeBtn');
 function getTheme() {
-  const stored = document.documentElement.getAttribute('data-theme');
-  if (stored) return stored;
-  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    const stored = document.documentElement.getAttribute('data-theme');
+    if (stored) return stored;
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 }
 function updateThemeBtn() {
-  themeBtn.textContent = getTheme() === 'dark' ? '☀️' : '🌙';
+    if (themeBtn) themeBtn.textContent = getTheme() === 'dark' ? '☀️' : '🌙';
 }
-themeBtn.onclick = () => {
-  const next = getTheme() === 'dark' ? 'light' : 'dark';
-  document.documentElement.setAttribute('data-theme', next);
-  localStorage.setItem('choz-theme', next);
-  updateThemeBtn();
-};
+if (themeBtn) {
+    themeBtn.onclick = () => {
+        const next = getTheme() === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', next);
+        localStorage.setItem('choz-theme', next);
+        updateThemeBtn();
+    };
+}
 const savedTheme = localStorage.getItem('choz-theme');
 if (savedTheme) document.documentElement.setAttribute('data-theme', savedTheme);
 updateThemeBtn();
 
-// Auth state
+// ============================================================
+// AUTH STATE
+// ============================================================
 let currentUser = null;
 
 async function checkAuth() {
-  const { data: { session } } = await sb.auth.getSession();
-  currentUser = session?.user || null;
-  updateAuthUI();
+    const { data: { session } } = await sb.auth.getSession();
+    currentUser = session?.user || null;
+    updateAuthUI();
 }
+
 function updateAuthUI() {
-  const authBtn = document.getElementById('authBtn');
-  const dashBtn = document.getElementById('dashBtn');
-  if (currentUser) {
-    authBtn.style.display = 'none';
-    dashBtn.style.display = 'inline-block';
-    dashBtn.onclick = () => window.location.href = '/dashboard.html';
-  } else {
-    authBtn.style.display = 'inline-block';
-    dashBtn.style.display = 'none';
-    authBtn.onclick = openAuth;
-  }
-}
-sb.auth.onAuthStateChange((event, session) => {
-  currentUser = session?.user || null;
-  updateAuthUI();
-});
+    const authBtn = document.getElementById('authBtn');
+    const dashBtn = document.getElementById('dashBtn');
+    if (!authBtn || !dashBtn) return;
 
-// Auth modal
-let authMode = 'signin';
-function openAuth() {
-  document.getElementById('authModal').classList.remove('hidden');
-}
-function closeAuth() {
-  document.getElementById('authModal').classList.add('hidden');
-  document.getElementById('authError').textContent = '';
-}
-document.getElementById('closeAuth').onclick = closeAuth;
-document.getElementById('authModal').addEventListener('click', (e) => {
-  if (e.target.id === 'authModal') closeAuth();
-});
-
-document.getElementById('authSwitch').onclick = (e) => {
-  e.preventDefault();
-  authMode = authMode === 'signin' ? 'signup' : 'signin';
-  document.getElementById('authTitle').textContent = authMode === 'signin' ? 'Sign in' : 'Sign up';
-  document.getElementById('authSubmit').textContent = authMode === 'signin' ? 'Sign in' : 'Sign up';
-  document.getElementById('authSwitchText').textContent = authMode === 'signin' ? 'No account?' : 'Already have account?';
-  document.getElementById('authSwitch').textContent = authMode === 'signin' ? 'Sign up' : 'Sign in';
-};
-
-document.getElementById('authSubmit').onclick = async () => {
-  const email = document.getElementById('authEmail').value.trim();
-  const password = document.getElementById('authPass').value;
-  const errEl = document.getElementById('authError');
-  errEl.textContent = '';
-
-  if (!email || !password) { errEl.textContent = 'Email and password required.'; return; }
-
-  try {
-    if (authMode === 'signin') {
-      const { error } = await sb.auth.signInWithPassword({ email, password });
-      if (error) throw error;
-      closeAuth();
+    if (currentUser) {
+        authBtn.style.display = 'none';
+        dashBtn.style.display = 'inline-block';
+        dashBtn.onclick = () => window.location.href = '/dashboard.html';
     } else {
-      const { error } = await sb.auth.signUp({ email, password });
-      if (error) throw error;
-      errEl.style.color = '#22c55e';
-      errEl.textContent = 'Account created! Check your email to verify.';
+        authBtn.style.display = 'inline-block';
+        dashBtn.style.display = 'none';
+        authBtn.onclick = openAuth;
     }
-  } catch (err) {
-    errEl.style.color = '#ef4444';
-    errEl.textContent = err.message;
-  }
-};
-
-document.getElementById('googleBtn').onclick = async () => {
-  const { error } = await sb.auth.signInWithOAuth({
-    provider: 'google',
-    options: { redirectTo: window.location.origin }
-  });
-  if (error) document.getElementById('authError').textContent = error.message;
-};
-
-// Hero demo reveal
-document.getElementById('revealBtn').onclick = function() {
-  const card = document.getElementById('heroCard');
-  const isRevealed = card.classList.toggle('rv');
-  this.textContent = isRevealed ? 'Hide brands again' : 'Lock choice & reveal';
-};
-
-// Start comparison button
-document.getElementById('startBtn').onclick = () => {
-  document.getElementById('cats').scrollIntoView({ behavior: 'smooth' });
-};
-
-// PWA Service Worker
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/service-worker.js').catch(() => {});
-  });
 }
 
-// Init
-checkAuth();
-checkAuth();
-initNotifications();  // ← yeh add karo
-loadCategories();
-loadCategories();
-loadPulse();
+sb.auth.onAuthStateChange((event, session) => {
+    currentUser = session?.user || null;
+    updateAuthUI();
+    if (typeof initNotifications === 'function') initNotifications();
+});
+
 // ============================================================
-// CHOZ PULSE — Community aggregate trends
+// AUTH MODAL
 // ============================================================
-async function loadPulse() {
-    const grid = document.getElementById('pulseGrid');
-    if (!grid) return;
+let authMode = 'signin';
+
+function openAuth() {
+    const modal = document.getElementById('authModal');
+    if (modal) modal.classList.remove('hidden');
+}
+
+function closeAuth() {
+    const modal = document.getElementById('authModal');
+    if (modal) modal.classList.add('hidden');
+
+    const errEl = document.getElementById('authError');
+    if (errEl) errEl.textContent = '';
+
+    const passEl = document.getElementById('authPass');
+    if (passEl) passEl.value = '';
+
+    const terms = document.getElementById('termsCheck');
+    if (terms) terms.checked = false;
+
+    if (typeof updatePasswordStrength === 'function') updatePasswordStrength();
+}
+
+// Modal close handlers
+document.addEventListener('DOMContentLoaded', () => {
+    const closeBtn = document.getElementById('closeAuth');
+    if (closeBtn) closeBtn.onclick = closeAuth;
+
+    const modal = document.getElementById('authModal');
+    if (modal) {
+        modal.addEventListener('click', (e) => {
+            if (e.target.id === 'authModal') closeAuth();
+        });
+    }
+
+    // Auth switch (signin ↔ signup)
+    const switchBtn = document.getElementById('authSwitch');
+    if (switchBtn) switchBtn.onclick = toggleAuthMode;
+
+    // Password strength hook
+    const pwdInput = document.getElementById('authPass');
+    if (pwdInput) {
+        pwdInput.addEventListener('input', () => {
+            if (authMode === 'signup' && typeof updatePasswordStrength === 'function') {
+                updatePasswordStrength();
+            }
+        });
+    }
+
+    // Auth submit
+    const submitBtn = document.getElementById('authSubmit');
+    if (submitBtn) submitBtn.onclick = handleAuthSubmit;
+
+    // Google login
+    const googleBtn = document.getElementById('googleBtn');
+    if (googleBtn) googleBtn.onclick = handleGoogleLogin;
+
+    // Hero demo reveal
+    const revealBtn = document.getElementById('revealBtn');
+    if (revealBtn) {
+        revealBtn.onclick = function() {
+            const card = document.getElementById('heroCard');
+            if (!card) return;
+            const isRevealed = card.classList.toggle('rv');
+            this.textContent = isRevealed ? 'Hide brands again' : 'Lock choice & reveal';
+        };
+    }
+
+    // Start comparison button
+    const startBtn = document.getElementById('startBtn');
+    if (startBtn) {
+        startBtn.onclick = () => {
+            const cats = document.getElementById('cats');
+            if (cats) cats.scrollIntoView({ behavior: 'smooth' });
+        };
+    }
+});
+
+function toggleAuthMode(e) {
+    if (e) e.preventDefault();
+    authMode = authMode === 'signin' ? 'signup' : 'signin';
+
+    const title = document.getElementById('authTitle');
+    const submit = document.getElementById('authSubmit');
+    const switchText = document.getElementById('authSwitchText');
+    const switchLink = document.getElementById('authSwitch');
+    const strength = document.getElementById('passwordStrength');
+    const terms = document.getElementById('termsLabel');
+    const pwdInput = document.getElementById('authPass');
+
+    if (title) title.textContent = authMode === 'signin' ? 'Sign in' : 'Sign up';
+    if (submit) submit.textContent = authMode === 'signin' ? 'Sign in' : 'Sign up';
+    if (switchText) switchText.textContent = authMode === 'signin' ? 'No account?' : 'Already have account?';
+    if (switchLink) switchLink.textContent = authMode === 'signin' ? 'Sign up' : 'Sign in';
+    if (strength) strength.style.display = authMode === 'signup' ? 'block' : 'none';
+    if (terms) terms.style.display = authMode === 'signup' ? 'flex' : 'none';
+    if (pwdInput) pwdInput.setAttribute('autocomplete', authMode === 'signup' ? 'new-password' : 'current-password');
+
+    // Clear error
+    const errEl = document.getElementById('authError');
+    if (errEl) errEl.textContent = '';
+}
+
+async function handleAuthSubmit() {
+    const email = document.getElementById('authEmail').value.trim();
+    const password = document.getElementById('authPass').value;
+    const errEl = document.getElementById('authError');
+    const submitBtn = document.getElementById('authSubmit');
+
+    errEl.textContent = '';
+    errEl.style.color = '#ef4444';
+
+    if (!email || !password) {
+        errEl.textContent = 'Email and password required.';
+        return;
+    }
+
+    // Signup validations
+    if (authMode === 'signup') {
+        if (typeof checkPasswordStrength === 'function') {
+            const checks = checkPasswordStrength(password);
+            if (!checks.length) {
+                errEl.textContent = 'Password must be at least 8 characters.';
+                return;
+            }
+            if (!checks.upper || !checks.number) {
+                errEl.textContent = 'Password must contain an uppercase letter and a number.';
+                return;
+            }
+        }
+
+        const termsCheck = document.getElementById('termsCheck');
+        if (!termsCheck || !termsCheck.checked) {
+            errEl.textContent = 'Please agree to Terms and Privacy Policy.';
+            return;
+        }
+    }
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Please wait...';
 
     try {
-        const { data: trends, error } = await sb
-            .from('pulse_category_trends')
-            .select('*')
-            .order('total_comparisons', { ascending: false })
-            .limit(8);
+        if (authMode === 'signin') {
+            const { error } = await sb.auth.signInWithPassword({ email, password });
+            if (error) throw error;
+            closeAuth();
+        } else {
+            const { error } = await sb.auth.signUp({ email, password });
+            if (error) throw error;
+            errEl.style.color = '#22c55e';
+            errEl.textContent = 'Account created! Check your email to verify.';
 
-        if (error) {
-            console.error('Pulse error:', error);
-            grid.innerHTML = `
-                <p style="color:var(--mute);text-align:center;grid-column:1/-1;padding:40px">
-                    Community trends are being collected. Complete a comparison to be part of it.
-                </p>
-            `;
-            return;
+            // Reset form
+            const termsCheck = document.getElementById('termsCheck');
+            if (termsCheck) termsCheck.checked = false;
+            document.getElementById('authPass').value = '';
+            if (typeof updatePasswordStrength === 'function') updatePasswordStrength();
         }
-
-        // Filter to categories with at least 1 comparison
-        const activeTrends = (trends || []).filter(t => t.total_comparisons > 0);
-
-        if (activeTrends.length === 0) {
-            grid.innerHTML = `
-                <div style="grid-column:1/-1;text-align:center;padding:40px 20px">
-                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--mute)" stroke-width="1.5" style="opacity:0.4;margin-bottom:12px">
-                        <path d="M3 3v18h18"/>
-                        <path d="M18.7 8l-5.1 5.2-2.8-2.7L7 14.3"/>
-                    </svg>
-                    <p style="color:var(--ink);font-weight:500;margin-bottom:6px">Community trends loading</p>
-                    <p style="color:var(--mute);font-size:13px;max-width:400px;margin:0 auto">
-                        Be among the first to compare. Trends will show once enough decisions have been made.
-                    </p>
-                </div>
-            `;
-            return;
-        }
-
-        grid.innerHTML = activeTrends.map(t => `
-            <div style="background:var(--sf);border:1px solid var(--line);border-radius:14px;padding:20px">
-                <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
-                    <span style="font-size:28px">${t.category_icon || '📦'}</span>
-                    <div>
-                        <div style="font-family:'Bricolage Grotesque';font-size:16px;font-weight:700">
-                            ${escapeHtmlPulse(t.category_name)}
-                        </div>
-                        <div style="font-size:11px;color:var(--mute);margin-top:2px">
-                            Last 30 days
-                        </div>
-                    </div>
-                </div>
-                <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--mute);margin-bottom:6px">
-                    <span>Comparisons</span>
-                    <span style="color:var(--ink);font-weight:600">${t.total_comparisons}</span>
-                </div>
-                <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--mute)">
-                    <span>Unique users</span>
-                    <span style="color:var(--ink);font-weight:600">${t.unique_users || 0}</span>
-                </div>
-            </div>
-        `).join('');
-
     } catch (err) {
-        console.error('Pulse load failed:', err);
-        grid.innerHTML = `
-            <p style="color:var(--mute);text-align:center;grid-column:1/-1;padding:40px">
-                Community trends unavailable right now.
-            </p>
-        `;
+        errEl.style.color = '#ef4444';
+        errEl.textContent = err.message;
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = authMode === 'signin' ? 'Sign in' : 'Sign up';
     }
 }
 
-// Escape helper (agar pehle se nahi hai)
-function escapeHtmlPulse(s) {
-    if (!s) return '';
-    return String(s).replace(/[&<>"']/g, c => ({
-        '&': '&amp;',
-        '<': '&lt;',
-        '>': '&gt;',
-        '"': '&quot;',
-        "'": '&#39;'
-    }[c]));
+async function handleGoogleLogin() {
+    const errEl = document.getElementById('authError');
+    try {
+        const { error } = await sb.auth.signInWithOAuth({
+            provider: 'google',
+            options: { redirectTo: window.location.origin }
+        });
+        if (error) throw error;
+    } catch (err) {
+        if (errEl) errEl.textContent = err.message;
+    }
 }
+
+// ============================================================
+// PASSWORD STRENGTH CHECKER
+// ============================================================
+function checkPasswordStrength(pwd) {
+    return {
+        length: pwd.length >= 8,
+        upper: /[A-Z]/.test(pwd),
+        number: /[0-9]/.test(pwd),
+        symbol: /[^A-Za-z0-9]/.test(pwd)
+    };
+}
+
+function updatePasswordStrength() {
+    const pwdEl = document.getElementById('authPass');
+    if (!pwdEl) return;
+    const pwd = pwdEl.value || '';
+    const checks = checkPasswordStrength(pwd);
+
+    // Update check icons
+    document.querySelectorAll('#pwdChecks li').forEach(li => {
+        const key = li.dataset.check;
+        const icon = li.querySelector('.pwd-check-icon');
+        if (!icon) return;
+
+        if (checks[key]) {
+            icon.textContent = '✓';
+            icon.style.color = '#22c55e';
+            icon.style.fontWeight = 'bold';
+            li.style.color = 'var(--ink)';
+        } else {
+            icon.textContent = '○';
+            icon.style.color = 'var(--mute)';
+            icon.style.fontWeight = 'normal';
+            li.style.color = 'var(--mute)';
+        }
+    });
+
+    const score = Object.values(checks).filter(Boolean).length;
+    const colors = ['#ef4444', '#f59e0b', '#eab308', '#22c55e', '#16a34a'];
+    const labels = ['Very weak', 'Weak', 'Fair', 'Strong', 'Very strong'];
+
+    document.querySelectorAll('.pwd-bar').forEach((bar, idx) => {
+        bar.style.background = idx < score ? (colors[score - 1] || '#22c55e') : 'var(--line)';
+    });
+
+    const label = document.getElementById('pwdStrengthLabel');
+    if (label) {
+        label.textContent = pwd.length === 0 ? 'Password strength' : (labels[score] || 'Password strength');
+        label.style.color = pwd.length === 0 ? 'var(--mute)' : (colors[score - 1] || '#22c55e');
+        label.style.fontWeight = pwd.length > 0 ? '600' : 'normal';
+    }
+}
+
 // ============================================================
 // NOTIFICATIONS
 // ============================================================
@@ -228,7 +305,6 @@ async function initNotifications() {
     const dropdown = document.getElementById('notifDropdown');
     if (!btn || !dropdown) return;
 
-    // Check auth state
     const { data: { session } } = await sb.auth.getSession();
     if (!session) {
         btn.style.display = 'none';
@@ -238,12 +314,12 @@ async function initNotifications() {
     btn.style.display = 'inline-flex';
 
     // Toggle dropdown
-    btn.addEventListener('click', (e) => {
+    btn.onclick = (e) => {
         e.stopPropagation();
         const isOpen = dropdown.style.display === 'block';
         dropdown.style.display = isOpen ? 'none' : 'block';
         if (!isOpen) loadNotifications();
-    });
+    };
 
     // Close on outside click
     document.addEventListener('click', (e) => {
@@ -261,9 +337,9 @@ async function initNotifications() {
     loadNotifications();
     updateNotifBadge();
 
-    // Realtime subscription (if supported)
+    // Realtime subscription
     if (notifListener) {
-        try { sb.removeChannel(notifListener); } catch(e) {}
+        try { sb.removeChannel(notifListener); } catch (e) {}
     }
     notifListener = sb
         .channel('notifications-' + session.user.id)
@@ -302,19 +378,22 @@ async function loadNotifications() {
         return;
     }
 
-    list.innerHTML = data.map(n => `
-        <div onclick="openNotification('${n.id}', '${(n.link || '').replace(/'/g, "\\'")}')"
-             style="padding:12px 16px;border-radius:10px;cursor:pointer;margin-bottom:4px;background:${n.is_read ? 'transparent' : 'var(--acbg)'};transition:background 0.15s"
-             onmouseover="this.style.background='var(--bg-alt)'"
-             onmouseout="this.style.background='${n.is_read ? 'transparent' : 'var(--acbg)'}'">
-            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
-                <strong style="font-size:13px;font-weight:600;color:var(--ink);line-height:1.4">${escapeNotif(n.title)}</strong>
-                ${!n.is_read ? '<span style="width:8px;height:8px;background:var(--ac);border-radius:50%;flex-shrink:0;margin-top:5px"></span>' : ''}
+    list.innerHTML = data.map(n => {
+        const safeLink = (n.link || '').replace(/'/g, "\\'");
+        return `
+            <div onclick="openNotification('${n.id}', '${safeLink}')"
+                 style="padding:12px 16px;border-radius:10px;cursor:pointer;margin-bottom:4px;background:${n.is_read ? 'transparent' : 'var(--acbg)'};transition:background 0.15s"
+                 onmouseover="this.style.background='var(--bg-alt)'"
+                 onmouseout="this.style.background='${n.is_read ? 'transparent' : 'var(--acbg)'}'">
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+                    <strong style="font-size:13px;font-weight:600;color:var(--ink);line-height:1.4">${escapeNotif(n.title)}</strong>
+                    ${!n.is_read ? '<span style="width:8px;height:8px;background:var(--ac);border-radius:50%;flex-shrink:0;margin-top:5px"></span>' : ''}
+                </div>
+                ${n.message ? `<p style="font-size:12px;color:var(--mute);margin:4px 0 0 0;line-height:1.5">${escapeNotif(n.message)}</p>` : ''}
+                <div style="font-size:11px;color:var(--mute);margin-top:6px">${notifTimeAgo(n.created_at)}</div>
             </div>
-            ${n.message ? `<p style="font-size:12px;color:var(--mute);margin:4px 0 0 0;line-height:1.5">${escapeNotif(n.message)}</p>` : ''}
-            <div style="font-size:11px;color:var(--mute);margin-top:6px">${notifTimeAgo(n.created_at)}</div>
-        </div>
-    `).join('');
+        `;
+    }).join('');
 }
 
 async function updateNotifBadge() {
@@ -381,5 +460,102 @@ function escapeNotif(s) {
     }[c]));
 }
 
-// Update init to include notifications
-const _origCheckAuth = typeof checkAuth === 'function' ? checkAuth : null;
+// ============================================================
+// CHOZ PULSE
+// ============================================================
+async function loadPulse() {
+    const grid = document.getElementById('pulseGrid');
+    if (!grid) return;
+
+    try {
+        const { data: trends, error } = await sb
+            .from('pulse_category_trends')
+            .select('*')
+            .order('total_comparisons', { ascending: false })
+            .limit(8);
+
+        if (error) {
+            console.error('Pulse error:', error);
+            grid.innerHTML = `
+                <p style="color:var(--mute);text-align:center;grid-column:1/-1;padding:40px">
+                    Community trends are being collected. Complete a comparison to be part of it.
+                </p>
+            `;
+            return;
+        }
+
+        const activeTrends = (trends || []).filter(t => t.total_comparisons > 0);
+
+        if (activeTrends.length === 0) {
+            grid.innerHTML = `
+                <div style="grid-column:1/-1;text-align:center;padding:40px 20px">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--mute)" stroke-width="1.5" style="opacity:0.4;margin-bottom:12px">
+                        <path d="M3 3v18h18"/>
+                        <path d="M18.7 8l-5.1 5.2-2.8-2.7L7 14.3"/>
+                    </svg>
+                    <p style="color:var(--ink);font-weight:500;margin-bottom:6px">Community trends loading</p>
+                    <p style="color:var(--mute);font-size:13px;max-width:400px;margin:0 auto">
+                        Be among the first to compare. Trends will show once enough decisions have been made.
+                    </p>
+                </div>
+            `;
+            return;
+        }
+
+        grid.innerHTML = activeTrends.map(t => `
+            <div style="background:var(--sf);border:1px solid var(--line);border-radius:14px;padding:20px">
+                <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+                    <span style="font-size:28px">${t.category_icon || '📦'}</span>
+                    <div>
+                        <div style="font-family:'Bricolage Grotesque';font-size:16px;font-weight:700">
+                            ${escapeHtmlPulse(t.category_name)}
+                        </div>
+                        <div style="font-size:11px;color:var(--mute);margin-top:2px">
+                            Last 30 days
+                        </div>
+                    </div>
+                </div>
+                <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--mute);margin-bottom:6px">
+                    <span>Comparisons</span>
+                    <span style="color:var(--ink);font-weight:600">${t.total_comparisons}</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--mute)">
+                    <span>Unique users</span>
+                    <span style="color:var(--ink);font-weight:600">${t.unique_users || 0}</span>
+                </div>
+            </div>
+        `).join('');
+
+    } catch (err) {
+        console.error('Pulse load failed:', err);
+        grid.innerHTML = `
+            <p style="color:var(--mute);text-align:center;grid-column:1/-1;padding:40px">
+                Community trends unavailable right now.
+            </p>
+        `;
+    }
+}
+
+function escapeHtmlPulse(s) {
+    if (!s) return '';
+    return String(s).replace(/[&<>"']/g, c => ({
+        '&': '&amp;', '&lt;': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[c]));
+}
+
+// ============================================================
+// SERVICE WORKER
+// ============================================================
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/service-worker.js').catch(() => {});
+    });
+}
+
+// ============================================================
+// INITIALIZE
+// ============================================================
+checkAuth();
+initNotifications();
+loadCategories();
+loadPulse();
