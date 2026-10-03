@@ -235,8 +235,40 @@ Web owned and created by Salahuddin Ranu.
 <div class="modal-content" style="max-width:420px">
 <button class="modal-close" id="closeAuth">×</button>
 <h3 id="authTitle" style="margin-bottom:1rem">Sign in</h3>
-<input type="email" id="authEmail" placeholder="Email">
-<input type="password" id="authPass" placeholder="Password">
+<input type="email" id="authEmail" placeholder="Email" autocomplete="email">
+<input type="password" id="authPass" placeholder="Password" autocomplete="current-password">
+
+<!-- Password Strength (only shows in signup mode) -->
+<div id="passwordStrength" style="display:none;margin-bottom:14px">
+    <div style="display:flex;gap:4px;margin-bottom:8px">
+        <div class="pwd-bar" data-bar="1" style="flex:1;height:4px;background:var(--line);border-radius:2px;transition:background 0.2s"></div>
+        <div class="pwd-bar" data-bar="2" style="flex:1;height:4px;background:var(--line);border-radius:2px;transition:background 0.2s"></div>
+        <div class="pwd-bar" data-bar="3" style="flex:1;height:4px;background:var(--line);border-radius:2px;transition:background 0.2s"></div>
+        <div class="pwd-bar" data-bar="4" style="flex:1;height:4px;background:var(--line);border-radius:2px;transition:background 0.2s"></div>
+    </div>
+    <div id="pwdStrengthLabel" style="font-size:12px;color:var(--mute);margin-bottom:8px">Password strength</div>
+    <ul id="pwdChecks" style="list-style:none;padding:0;margin:0;font-size:12px;color:var(--mute);display:grid;gap:4px">
+        <li data-check="length" style="display:flex;align-items:center;gap:6px">
+            <span class="pwd-check-icon" style="width:14px;text-align:center">○</span> At least 8 characters
+        </li>
+        <li data-check="upper" style="display:flex;align-items:center;gap:6px">
+            <span class="pwd-check-icon" style="width:14px;text-align:center">○</span> Uppercase letter (A-Z)
+        </li>
+        <li data-check="number" style="display:flex;align-items:center;gap:6px">
+            <span class="pwd-check-icon" style="width:14px;text-align:center">○</span> Number (0-9)
+        </li>
+        <li data-check="symbol" style="display:flex;align-items:center;gap:6px">
+            <span class="pwd-check-icon" style="width:14px;text-align:center">○</span> Symbol (!@#$)
+        </li>
+    </ul>
+</div>
+
+<!-- Terms checkbox (only shows in signup mode) -->
+<label id="termsLabel" style="display:none;align-items:flex-start;gap:8px;margin:14px 0;font-size:13px;color:var(--mute);line-height:1.5;cursor:pointer">
+    <input type="checkbox" id="termsCheck" style="width:16px;height:16px;margin:2px 0 0 0;flex-shrink:0;cursor:pointer">
+    <span>I agree to CHOZ's <a href="/terms.html" target="_blank" style="color:var(--ac);text-decoration:underline">Terms</a> and <a href="/privacy.html" target="_blank" style="color:var(--ac);text-decoration:underline">Privacy Policy</a></span>
+</label>
+
 <button class="btn p" style="width:100%" id="authSubmit">Sign in</button>
 <div class="divider">OR</div>
 <button class="btn" style="width:100%" id="googleBtn">Continue with Google</button>
