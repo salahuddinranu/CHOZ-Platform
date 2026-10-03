@@ -536,7 +536,52 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
 });
+// ============================================================
+// ONBOARDING TOUR
+// ============================================================
+function initOnboarding() {
+    const KEY = 'choz-onboarded';
+    if (localStorage.getItem(KEY)) return;
 
+    const modal = document.getElementById('onboardModal');
+    if (!modal) return;
+
+    setTimeout(() => {
+        modal.classList.remove('hidden');
+    }, 1200);
+}
+
+function nextOnboardStep(step) {
+    showOnboardStep(step);
+}
+
+function prevOnboardStep(step) {
+    showOnboardStep(step);
+}
+
+function showOnboardStep(step) {
+    document.querySelectorAll('.onboard-step').forEach(el => {
+        el.style.display = el.dataset.step === String(step) ? 'block' : 'none';
+    });
+    document.querySelectorAll('.onboard-dot').forEach(dot => {
+        const isActive = parseInt(dot.dataset.dot) <= step;
+        dot.style.background = isActive ? 'var(--ac)' : 'var(--line)';
+        dot.style.width = dot.dataset.dot === String(step) ? '24px' : '8px';
+        dot.style.borderRadius = dot.dataset.dot === String(step) ? '4px' : '50%';
+    });
+}
+
+function finishOnboarding() {
+    localStorage.setItem('choz-onboarded', '1');
+    document.getElementById('onboardModal').classList.add('hidden');
+    const cats = document.getElementById('cats');
+    if (cats) cats.scrollIntoView({ behavior: 'smooth' });
+}
+
+function skipOnboarding() {
+    localStorage.setItem('choz-onboarded', '1');
+    document.getElementById('onboardModal').classList.add('hidden');
+}
 // ============================================================
 // COOKIE CONSENT
 // ============================================================
@@ -611,6 +656,7 @@ checkAuth();
 initNotifications();
 loadCategories();
 loadPulse();
+initOnboarding();
 // ============================================================
 // RESET COOKIE CONSENT
 // ============================================================
