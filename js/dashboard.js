@@ -175,6 +175,44 @@ async function removeFavorite(id) {
 // SETTINGS
 // ============================================================
 async function loadSettings(content) {
+    async function loadSettings(content) {
+    content.innerHTML = '<div class="loading">Loading profile...</div>';
+
+    // Try fetching profile
+    let profile = null;
+    try {
+        const { data } = await sb
+            .from('profiles')
+            .select('*')
+            .eq('id', currentUser.id)
+            .maybeSingle();
+        profile = data;
+    } catch (e) {
+        console.warn('Profile fetch failed:', e);
+    }
+
+    // If no profile, create a default one
+    if (!profile) {
+        profile = {
+            id: currentUser.id,
+            email: currentUser.email,
+            full_name: '',
+            bio: '',
+            avatar_url: ''
+        };
+
+        // Try to create profile record
+        try {
+            await sb.from('profiles').insert(profile);
+        } catch (e) {
+            console.warn('Could not create profile:', e);
+        }
+    }
+
+    const initial = (profile.full_name || profile.email || '?').charAt(0).toUpperCase();
+    const avatarUrl = profile.avatar_url || '';
+
+    // ... rest of code as before
     content.innerHTML = '<div class="loading">Loading profile...</div>';
 
     // Fetch current profile
