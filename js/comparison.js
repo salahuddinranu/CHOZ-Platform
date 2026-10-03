@@ -1,5 +1,5 @@
 // ============================================================
-// CHOZ BLIND COMPARISON ENGINE — Priority Aware
+// CHOZ BLIND COMPARISON ENGINE — Clean Version
 // ============================================================
 
 let currentComparison = {
@@ -8,9 +8,12 @@ let currentComparison = {
     labels: [],
     priorities: [],
     choice: null,
-    step: 'select' // 'select' | 'priorities' | 'revealed'
+    step: 'select'
 };
 
+// ============================================================
+// START COMPARISON
+// ============================================================
 async function startComparison(categoryId) {
     const { data: { session } } = await sb.auth.getSession();
     if (!session) { openAuth(); return; }
@@ -30,7 +33,6 @@ async function startComparison(categoryId) {
         return;
     }
 
-    // Filter items that have at least 2 attributes
     const validItems = items.filter(i => (i.item_attributes || []).length >= 2);
     if (validItems.length < 2) {
         alert('Not enough items with complete data in this category.');
@@ -44,6 +46,9 @@ async function startComparison(categoryId) {
     renderComparisonModal();
 }
 
+// ============================================================
+// STEP 1: RENDER OPTIONS
+// ============================================================
 function renderComparisonModal() {
     const modal = document.getElementById('compModal');
     const content = document.getElementById('compContent');
@@ -61,7 +66,7 @@ function renderComparisonModal() {
             ${options.map((item, i) => {
                 const attrs = (item.item_attributes || []).slice(0, 6);
                 return `
-                    <div class="option-card" data-idx="${i}" onclick="selectOption(${i})">
+                    <div class="option-card" data-idx="${i}" style="cursor:pointer">
                         <h3>Option ${labels[i]}</h3>
                         ${attrs.map(a => `
                             <div class="attr-row">
@@ -73,10 +78,21 @@ function renderComparisonModal() {
                 `;
             }).join('')}
         </div>
-        <button class="btn p" style="width:100%;padding:14px" id="lockBtn" onclick="goToPriorities()" disabled>
+        <button type="button" class="btn p" style="width:100%;padding:14px" id="lockBtn" disabled>
             Select an option first
         </button>
     `;
+
+    // Attach click listeners properly
+    content.querySelectorAll('.option-card').forEach(card => {
+        card.addEventListener('click', () => {
+            const idx = parseInt(card.dataset.idx);
+            selectOption(idx);
+        });
+    });
+
+    document.getElementById('lockBtn').addEventListener('click', goToPriorities);
+
     modal.classList.remove('hidden');
 }
 
@@ -86,8 +102,10 @@ function selectOption(idx) {
         el.classList.toggle('selected', i === idx);
     });
     const lockBtn = document.getElementById('lockBtn');
-    lockBtn.disabled = false;
-    lockBtn.textContent = 'Next: Set Your Priorities →';
+    if (lockBtn) {
+        lockBtn.disabled = false;
+        lockBtn.textContent = 'Next: Set Your Priorities →';
+    }
 }
 
 function goToPriorities() {
@@ -96,9 +114,11 @@ function goToPriorities() {
     renderPrioritiesStep();
 }
 
+// ============================================================
+// STEP 2: RENDER PRIORITIES
+// ============================================================
 function renderPrioritiesStep() {
     const content = document.getElementById('compContent');
-    const chosenItem = currentComparison.options[currentComparison.choice];
 
     // Collect all unique attributes from all options
     const allAttrs = new Map();
@@ -111,7 +131,6 @@ function renderPrioritiesStep() {
     });
 
     const attrsArray = [...allAttrs.values()];
-    // Initialize priorities with all attributes
     currentComparison.priorities = attrsArray.map(a => a.id);
 
     content.innerHTML = `
@@ -119,95 +138,92 @@ function renderPrioritiesStep() {
             <h3 style="font-family:'Bricolage Grotesque';font-size:22px">Your Priorities</h3>
             <span class="badge">Step 2 of 2: Rank what matters</span>
         </div>
-        <p style="color:var(--mute);font-size:14px;margin-bottom:8px">
-            Drag to reorder. Top = most important to you.
-        </p>
-        <p style="color:var(--mute);font-size:12px;margin-bottom:16px">
-            <em>Tip: Click the ↑ ↓ buttons to move items.</em>
+        <p style="color:var(--mute);font-size:14px;margin-bottom:16px">
+            <strong style="color:var(--ink)">Click ↑ ↓ to move items.</strong> Top = most important.
         </p>
         <div class="priority-list" id="priorityList">
             ${attrsArray.map((a, i) => `
-                <div class="priority-item" draggable="true" data-attr-id="${a.id}" data-idx="${i}">
+                <div class="priority-item" data-attr-id="${a.id}">
                     <div style="display:flex;align-items:center;gap:10px;">
                         <span class="rank">${i + 1}</span>
                         <span>${a.name}${a.unit ? ' (' + a.unit + ')' : ''}</span>
                     </div>
                     <div style="display:flex;gap:4px;">
-                        <button class="btn" style="padding:4px 10px;font-size:12px;" onclick="movePriority(${i}, -1)">↑</button>
-                        <button class="btn" style="padding:4px 10px;font-size:12px;" onclick="movePriority(${i}, 1)">↓</button>
+                        <button type="button" class="btn pri-up" style="padding:6px 14px;font-size:14px;font-weight:700">↑</button>
+                        <button type="button" class="btn pri-down" style="padding:6px 14px;font-size:14px;font-weight:700">↓</button>
                     </div>
                 </div>
             `).join('')}
         </div>
-        <button class="btn p" style="width:100%;padding:14px" onclick="lockChoice()">
+        <button type="button" class="btn p" style="width:100%;padding:14px;margin-top:16px" id="lockChoiceBtn">
             🔒 Lock Choice & Reveal
         </button>
-        <button class="btn" style="width:100%;margin-top:8px;" onclick="backToSelect()">
+        <button type="button" class="btn" style="width:100%;margin-top:8px;" id="backBtn">
             ← Back to options
         </button>
     `;
 
-    setupDragAndDrop();
-}
-
-function setupDragAndDrop() {
+    // Attach listeners to priority items
     const list = document.getElementById('priorityList');
-    if (!list) return;
-    let dragged = null;
-
     list.querySelectorAll('.priority-item').forEach(item => {
-        item.addEventListener('dragstart', e => {
-            dragged = item;
-            item.style.opacity = '0.5';
-        });
-        item.addEventListener('dragend', () => {
-            item.style.opacity = '1';
-            updateRanks();
-        });
-        item.addEventListener('dragover', e => e.preventDefault());
-        item.addEventListener('drop', e => {
+        const upBtn = item.querySelector('.pri-up');
+        const downBtn = item.querySelector('.pri-down');
+
+        upBtn.addEventListener('click', (e) => {
             e.preventDefault();
-            if (!dragged || dragged === item) return;
+            e.stopPropagation();
             const items = [...list.children];
-            const fromIdx = items.indexOf(dragged);
-            const toIdx = items.indexOf(item);
-            if (fromIdx < toIdx) item.after(dragged);
-            else item.before(dragged);
+            const idx = items.indexOf(item);
+            if (idx > 0) {
+                items[idx - 1].before(item);
+                updateRanks();
+            }
+        });
+
+        downBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const items = [...list.children];
+            const idx = items.indexOf(item);
+            if (idx < items.length - 1) {
+                items[idx + 1].after(item);
+                updateRanks();
+            }
         });
     });
+
+    document.getElementById('lockChoiceBtn').addEventListener('click', lockChoice);
+    document.getElementById('backBtn').addEventListener('click', backToSelect);
 }
 
 function updateRanks() {
     const items = document.querySelectorAll('#priorityList .priority-item');
     items.forEach((el, i) => {
-        el.querySelector('.rank').textContent = i + 1;
-        el.dataset.idx = i;
+        const rankEl = el.querySelector('.rank');
+        if (rankEl) rankEl.textContent = i + 1;
     });
     currentComparison.priorities = [...items].map(el => el.dataset.attrId);
-}
-
-function movePriority(idx, dir) {
-    const list = document.getElementById('priorityList');
-    const items = [...list.children];
-    const target = idx + dir;
-    if (target < 0 || target >= items.length) return;
-    if (dir === -1) items[target].before(items[idx]);
-    else items[target].after(items[idx]);
-    updateRanks();
 }
 
 function backToSelect() {
     currentComparison.step = 'select';
     renderComparisonModal();
-    // Re-highlight previous choice
     if (currentComparison.choice !== null) {
         const cards = document.querySelectorAll('.option-card');
-        if (cards[currentComparison.choice]) cards[currentComparison.choice].classList.add('selected');
+        if (cards[currentComparison.choice]) {
+            cards[currentComparison.choice].classList.add('selected');
+        }
         const lockBtn = document.getElementById('lockBtn');
-        if (lockBtn) { lockBtn.disabled = false; lockBtn.textContent = 'Next: Set Your Priorities →'; }
+        if (lockBtn) {
+            lockBtn.disabled = false;
+            lockBtn.textContent = 'Next: Set Your Priorities →';
+        }
     }
 }
 
+// ============================================================
+// LOCK CHOICE + REVEAL
+// ============================================================
 async function lockChoice() {
     if (currentComparison.choice === null) return;
 
@@ -216,14 +232,12 @@ async function lockChoice() {
     const chosenItem = currentComparison.options[chosenIdx];
     const chosenLabel = currentComparison.labels[chosenIdx];
 
-    // Fetch full details
     const { data: fullItem } = await sb
         .from('items')
         .select('*, brands(*), item_attributes(*, attribute_definitions(*))')
         .eq('id', chosenItem.id)
         .single();
 
-    // Save comparison record
     const { data: { session } } = await sb.auth.getSession();
     if (session) {
         await sb.from('comparisons').insert({
@@ -239,12 +253,14 @@ async function lockChoice() {
     renderReveal(fullItem, chosenLabel);
 }
 
+// ============================================================
+// REVEAL
+// ============================================================
 function renderReveal(item, label) {
     const content = document.getElementById('compContent');
     const attrs = item.item_attributes || [];
     const priorities = currentComparison.priorities || [];
 
-    // Build priority explanation
     const priorityExplanations = priorities.slice(0, 5).map((attrId, idx) => {
         const attr = attrs.find(a => a.attribute_definitions?.id === attrId);
         if (!attr) return null;
@@ -287,22 +303,29 @@ function renderReveal(item, label) {
             `}
         </div>
 
-       <div class="reveal-actions">
-    <button class="btn p" onclick="saveDecision('${item.id}')">💾 Save to Memory</button>
-    <button class="btn" onclick="openReviewModal('${item.id}', \`${item.name.replace(/`/g, '\\`')}\`)">⭐ Write Review</button>
-    <button class="btn" onclick="shareResult()">🔗 Share</button>
-    <button class="btn" onclick="showWhereToBuy('${item.id}', \`${item.name.replace(/`/g, '\\`')}\`, '${currentComparison.categoryId}')">🛒 Where to Buy</button>
-    <button class="btn" onclick="closeCompModal()">Close</button>
-</div>
+        <div class="reveal-actions">
+            <button class="btn p" onclick="saveDecision('${item.id}')">💾 Save to Memory</button>
+            <button class="btn" onclick="openReviewModal('${item.id}', \`${item.name.replace(/`/g, '\\`')}\`)">⭐ Write Review</button>
+            <button class="btn" onclick="shareResult()">🔗 Share</button>
+            <button class="btn" onclick="showWhereToBuy('${item.id}', \`${item.name.replace(/`/g, '\\`')}\`, '${currentComparison.categoryId}')">🛒 Where to Buy</button>
+            <button class="btn" onclick="closeCompModal()">Close</button>
+        </div>
 
-<div id="reviewsSection" style="margin-top:20px"></div>
-<div id="buySection" style="margin-top:20px"></div>
-<div id="buySection" style="margin-top:20px"></div>
+        <div id="reviewsSection" style="margin-top:20px"></div>
+        <div id="buySection" style="margin-top:20px"></div>
     `;
-}
-// Load reviews for this item
-setTimeout(() => loadItemReviews(item.id, item.name), 100);
 
+    // Load reviews after render
+    setTimeout(() => {
+        if (typeof loadItemReviews === 'function') {
+            loadItemReviews(item.id, item.name);
+        }
+    }, 100);
+}
+
+// ============================================================
+// SAVE DECISION
+// ============================================================
 async function saveDecision(itemId) {
     const { data: { session } } = await sb.auth.getSession();
     if (!session) { openAuth(); return; }
@@ -323,27 +346,27 @@ async function saveDecision(itemId) {
         return;
     }
 
-    // Button feedback
-    const btn = event.target;
-    btn.textContent = '✅ Saved!';
-    btn.disabled = true;
-    setTimeout(() => {
-        btn.textContent = '💾 Save to Memory';
-        btn.disabled = false;
-    }, 2000);
+    const btn = event?.target;
+    if (btn) {
+        btn.textContent = '✅ Saved!';
+        btn.disabled = true;
+        setTimeout(() => {
+            btn.textContent = '💾 Save to Memory';
+            btn.disabled = false;
+        }, 2000);
+    }
 }
 
 // ============================================================
-// SHARE RESULT — Beautiful shareable card
+// SHARE RESULT
 // ============================================================
 async function shareResult() {
     const item = currentComparison.options[currentComparison.choice];
     if (!item) return;
 
-    // Fetch full details
     const { data: fullItem } = await sb
         .from('items')
-        .select('*, brands(name), categories(name)')
+        .select('*, brands(name), categories(name), item_attributes(*, attribute_definitions(name, id))')
         .eq('id', item.id)
         .single();
 
@@ -352,12 +375,10 @@ async function shareResult() {
         return;
     }
 
-    // Show share modal
     showShareModal(fullItem);
 }
 
 function showShareModal(item) {
-    const modal = document.getElementById('compModal');
     const content = document.getElementById('compContent');
 
     const categoryName = item.categories?.name || 'Comparison';
@@ -365,7 +386,6 @@ function showShareModal(item) {
     const price = item.base_price ? `${item.currency} ${item.base_price.toLocaleString()}` : 'Price unavailable';
     const priorities = (currentComparison.priorities || []).slice(0, 5);
 
-    // Get priority names from chosen item's attributes
     const priorityNames = priorities
         .map(pid => item.item_attributes?.find(a => a.attribute_definitions?.id === pid))
         .filter(Boolean)
@@ -378,7 +398,6 @@ function showShareModal(item) {
             <button class="modal-close" style="position:static;font-size:20px" onclick="closeCompModal()">×</button>
         </div>
 
-        <!-- Preview Card -->
         <div id="sharePreview" style="
             background: linear-gradient(135deg, #3A3FD9 0%, #7C3AED 100%);
             border-radius: 20px;
@@ -437,7 +456,6 @@ function showShareModal(item) {
             </div>
         </div>
 
-        <!-- Actions -->
         <div style="display:flex;flex-direction:column;gap:10px">
             <button class="btn p" style="width:100%;padding:14px" onclick="downloadShareCard('${item.id}')">
                 📥 Download Card (PNG)
@@ -459,9 +477,7 @@ function showShareModal(item) {
     `;
 }
 
-// Download share card as PNG (canvas generated)
 async function downloadShareCard(itemId) {
-    const item = currentComparison.options[currentComparison.choice];
     const { data: fullItem } = await sb
         .from('items')
         .select('*, brands(name), categories(name), item_attributes(*, attribute_definitions(name, id))')
@@ -475,56 +491,46 @@ async function downloadShareCard(itemId) {
     canvas.height = 1350;
     const ctx = canvas.getContext('2d');
 
-    // Background gradient
     const grad = ctx.createLinearGradient(0, 0, 1080, 1350);
     grad.addColorStop(0, '#3A3FD9');
     grad.addColorStop(1, '#7C3AED');
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, 1080, 1350);
 
-    // CHOZ logo text
     ctx.fillStyle = 'rgba(255,255,255,0.9)';
     ctx.font = 'bold 42px Arial';
     ctx.textAlign = 'center';
     ctx.fillText('CHOZ', 540, 130);
 
-    // Tagline
     ctx.font = '22px Arial';
     ctx.fillStyle = 'rgba(255,255,255,0.75)';
     ctx.fillText('Choose without the noise.', 540, 175);
 
-    // "I chose this"
     ctx.font = 'bold 72px Arial';
     ctx.fillStyle = '#FFFFFF';
     ctx.fillText('I chose this.', 540, 320);
 
-    // White card
     ctx.fillStyle = 'rgba(255,255,255,0.15)';
     roundRect(ctx, 90, 420, 900, 360, 32);
     ctx.fill();
 
-    // Category
     ctx.font = 'bold 24px Arial';
     ctx.fillStyle = 'rgba(255,255,255,0.75)';
     ctx.fillText((fullItem.categories?.name || 'Comparison').toUpperCase(), 540, 500);
 
-    // Product name
     ctx.font = 'bold 48px Arial';
     ctx.fillStyle = '#FFFFFF';
     wrapText(ctx, fullItem.name, 540, 580, 800, 56);
 
-    // Brand
     ctx.font = '26px Arial';
     ctx.fillStyle = 'rgba(255,255,255,0.85)';
     ctx.fillText(fullItem.brands?.name || '', 540, 680);
 
-    // Price
     ctx.font = 'bold 40px Arial';
     ctx.fillStyle = '#FFD25A';
     const priceText = fullItem.base_price ? `${fullItem.currency} ${fullItem.base_price.toLocaleString()}` : '';
     ctx.fillText(priceText, 540, 740);
 
-    // Priorities
     const priorities = (currentComparison.priorities || []).slice(0, 5);
     const priorityNames = priorities
         .map(pid => fullItem.item_attributes?.find(a => a.attribute_definitions?.id === pid))
@@ -537,7 +543,6 @@ async function downloadShareCard(itemId) {
         ctx.fillStyle = 'rgba(255,255,255,0.7)';
         ctx.fillText('MY PRIORITIES', 540, 870);
 
-        // Priority chips
         let x = 90;
         let y = 910;
         const chipH = 60;
@@ -560,13 +565,11 @@ async function downloadShareCard(itemId) {
         });
     }
 
-    // Footer
     ctx.font = '22px Arial';
     ctx.fillStyle = 'rgba(255,255,255,0.7)';
     ctx.textAlign = 'center';
     ctx.fillText('choz-platform.pages.dev', 540, 1270);
 
-    // Download
     canvas.toBlob(blob => {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -605,12 +608,10 @@ function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
     ctx.fillText(line.trim(), x, currentY);
 }
 
-// Native share (mobile)
 async function shareNative(itemId) {
-    const item = currentComparison.options[currentComparison.choice];
     const { data: fullItem } = await sb
         .from('items')
-        .select('*, brands(name), categories(name)')
+        .select('*, brands(name)')
         .eq('id', itemId)
         .single();
 
@@ -619,27 +620,19 @@ async function shareNative(itemId) {
 
     if (navigator.share) {
         try {
-            await navigator.share({
-                title: 'My CHOZ Decision',
-                text: text,
-                url: url
-            });
+            await navigator.share({ title: 'My CHOZ Decision', text, url });
         } catch (err) {
-            if (err.name !== 'AbortError') {
-                console.warn('Share failed:', err);
-            }
+            if (err.name !== 'AbortError') console.warn('Share failed:', err);
         }
     } else {
         copyShareText(itemId);
     }
 }
 
-// Copy text to clipboard
 async function copyShareText(itemId) {
-    const item = currentComparison.options[currentComparison.choice];
     const { data: fullItem } = await sb
         .from('items')
-        .select('*, brands(name), categories(name)')
+        .select('*, brands(name)')
         .eq('id', itemId)
         .single();
 
@@ -647,7 +640,6 @@ async function copyShareText(itemId) {
 
     try {
         await navigator.clipboard.writeText(text);
-        // Show feedback
         const btn = event?.target;
         if (btn) {
             const original = btn.textContent;
@@ -659,134 +651,9 @@ async function copyShareText(itemId) {
     }
 }
 
-function closeCompModal() {
-    document.getElementById('compModal').classList.add('hidden');
-    currentComparison = {
-        categoryId: null, options: [], labels: [],
-        priorities: [], choice: null, step: 'select'
-    };
-}
-
-// Categories loading
-async function loadCategories() {
-    const grid = document.getElementById('catGrid');
-    if (!grid) return;
-
-    const { data: cats, error } = await sb
-        .from('categories')
-        .select('*')
-        .eq('is_active', true)
-        .order('sort_order');
-
-    if (error || !cats || cats.length === 0) {
-        grid.innerHTML = '<p style="color:var(--mute)">No categories available.</p>';
-        return;
-    }
-
-    grid.innerHTML = cats.map(c => `
-        <a onclick="startComparison('${c.id}')">
-            <span class="icon">${c.icon || '📦'}</span>
-            <b>${c.name}</b>
-            <small>${c.description || 'Compare options'}</small>
-        </a>
-    `).join('');
-}
-
-// Modal close handlers
-document.addEventListener('DOMContentLoaded', () => {
-    const compModal = document.getElementById('compModal');
-    const closeComp = document.getElementById('closeComp');
-    if (closeComp) closeComp.onclick = closeCompModal;
-    if (compModal) compModal.addEventListener('click', (e) => {
-        if (e.target.id === 'compModal') closeCompModal();
-    });
-});
 // ============================================================
-// WHERE TO BUY — Affiliate links with click tracking
+// WHERE TO BUY
 // ============================================================
-async function showWhereToBuy(itemId, itemName) {
-    const section = document.getElementById('buySection');
-    section.innerHTML = '<p style="text-align:center;color:var(--mute);font-size:14px;padding:16px">Loading buy options...</p>';
-
-    const { data: links } = await sb
-        .from('affiliate_links')
-        .select('*')
-        .eq('item_id', itemId)
-        .eq('is_active', true)
-        .order('created_at');
-
-    let html = `
-        <div style="background:var(--sf);border:1px solid var(--line);border-radius:14px;padding:20px">
-            <h4 style="font-family:'Bricolage Grotesque';font-size:17px;margin-bottom:12px">🛒 Where to Buy</h4>
-    `;
-
-    if (links && links.length > 0) {
-        // Admin-configured affiliate links
-        html += `<p style="color:var(--mute);font-size:13px;margin-bottom:14px">
-            These links are managed by CHOZ. We may earn a commission when you buy through them — this never affects your comparison result.
-        </p>`;
-        html += `<div style="display:flex;flex-direction:column;gap:8px">`;
-        links.forEach(l => {
-            const safeLabel = (l.label || l.provider || 'Open store').replace(/'/g, "\\'");
-            html += `
-                <a href="${l.url}" target="_blank" rel="noopener noreferrer nofollow sponsored"
-                   onclick="trackAffiliateClick('${l.id}', '${itemId}')"
-                   style="display:flex;justify-content:space-between;align-items:center;padding:14px 18px;background:var(--acbg);color:var(--ink);border-radius:10px;text-decoration:none;font-weight:500">
-                    <span>${safeLabel}</span>
-                    <span style="color:var(--ac);font-size:13px">Visit →</span>
-                </a>
-            `;
-        });
-        html += `</div>`;
-    } else {
-        // Fallback search links (no affiliate — just helps user find it)
-        const q = encodeURIComponent(itemName);
-        const searchLinks = [
-            { name: 'Search on Daraz', url: `https://www.daraz.pk/catalog/?q=${q}`, icon: '🛍️' },
-            { name: 'Search on OLX', url: `https://www.olx.com.pk/items/q-${q}`, icon: '📦' },
-            { name: 'Search on Google Shopping', url: `https://www.google.com/search?tbm=shop&q=${q}`, icon: '🔍' }
-        ];
-        html += `<p style="color:var(--mute);font-size:13px;margin-bottom:14px">
-            No purchase links are configured for this product yet. You can search on trusted platforms:
-        </p>`;
-        html += `<div style="display:flex;flex-direction:column;gap:8px">`;
-        searchLinks.forEach(l => {
-            html += `
-                <a href="${l.url}" target="_blank" rel="noopener noreferrer"
-                   style="display:flex;justify-content:space-between;align-items:center;padding:14px 18px;background:var(--sf);border:1px solid var(--line);color:var(--ink);border-radius:10px;text-decoration:none;font-weight:500">
-                    <span>${l.icon} ${l.name}</span>
-                    <span style="color:var(--ac);font-size:13px">Open →</span>
-                </a>
-            `;
-        });
-        html += `</div>`;
-        html += `<p style="color:var(--mute);font-size:12px;margin-top:14px;font-style:italic">
-            CHOZ does not sell products directly. These open search results on external platforms.
-        </p>`;
-    }
-
-    html += `</div>`;
-    section.innerHTML = html;
-}
-
-// Track affiliate click (for admin analytics)
-async function trackAffiliateClick(linkId, itemId) {
-    try {
-        const { data: { session } } = await sb.auth.getSession();
-        await sb.from('analytics_events').insert({
-            event_type: 'affiliate_click',
-            user_id: session?.user?.id || null,
-            metadata: { link_id: linkId, item_id: itemId }
-        });
-    } catch (e) {
-        // Silent fail — analytics should never break UX
-    }
-}
-// ============================================================
-// WHERE TO BUY — Admin links + Category-aware search fallback
-// ============================================================
-
-// Category-wise search providers
 const SEARCH_PROVIDERS = {
     'cat-phone': [
         { name: 'Daraz', icon: '🛍️', url: q => `https://www.daraz.pk/catalog/?q=${q}` },
@@ -830,9 +697,10 @@ const SEARCH_PROVIDERS = {
 
 async function showWhereToBuy(itemId, itemName, categoryId) {
     const section = document.getElementById('buySection');
+    if (!section) return;
+
     section.innerHTML = '<p style="text-align:center;color:var(--mute);font-size:14px;padding:16px">Loading buy options...</p>';
 
-    // 1. Try admin-configured links
     const { data: adminLinks } = await sb
         .from('affiliate_links')
         .select('*')
@@ -848,7 +716,6 @@ async function showWhereToBuy(itemId, itemName, categoryId) {
             </p>
     `;
 
-    // 2. Show admin links if any
     if (adminLinks && adminLinks.length > 0) {
         html += `<p style="color:var(--mute);font-size:13px;margin-bottom:12px;padding:10px;background:var(--acbg);border-radius:8px">
             ⓘ Some links below are affiliate links. We may earn a commission — this never affects your comparison result.
@@ -868,7 +735,6 @@ async function showWhereToBuy(itemId, itemName, categoryId) {
         html += `</div>`;
     }
 
-    // 3. Show category-specific search links (always shown as fallback/additional)
     const providers = SEARCH_PROVIDERS[categoryId] || [
         { name: 'Google Shopping', icon: '🔍', url: q => `https://www.google.com/search?tbm=shop&q=${q}` },
         { name: 'Daraz', icon: '🛍️', url: q => `https://www.daraz.pk/catalog/?q=${q}` },
@@ -889,15 +755,13 @@ async function showWhereToBuy(itemId, itemName, categoryId) {
     html += `</div>`;
 
     html += `<p style="color:var(--mute);font-size:12px;margin-top:14px;font-style:italic;line-height:1.5">
-        CHOZ does not sell products directly. These links open search results on external platforms. 
-        Prices and availability are shown by those platforms.
+        CHOZ does not sell products directly. These links open search results on external platforms.
     </p>`;
 
     html += `</div>`;
     section.innerHTML = html;
 }
 
-// Track affiliate click
 async function trackAffiliateClick(linkId, itemId) {
     try {
         const { data: { session } } = await sb.auth.getSession();
@@ -908,18 +772,17 @@ async function trackAffiliateClick(linkId, itemId) {
         });
     } catch (e) {}
 }
-// ============================================================
-// REVIEWS SYSTEM
-// ============================================================
 
-// Load existing reviews for an item
+// ============================================================
+// REVIEWS
+// ============================================================
 async function loadItemReviews(itemId, itemName) {
     const section = document.getElementById('reviewsSection');
     if (!section) return;
 
     const { data: reviews } = await sb
         .from('user_reviews')
-        .select('*, profiles(email)')
+        .select('*')
         .eq('item_id', itemId)
         .eq('is_approved', true)
         .eq('is_hidden', false)
@@ -960,9 +823,10 @@ async function loadItemReviews(itemId, itemName) {
     `;
 }
 
-// Open review modal
 function openReviewModal(itemId, itemName) {
     const section = document.getElementById('reviewsSection');
+    if (!section) return;
+
     section.innerHTML = `
         <div style="background:var(--sf);border:1px solid var(--line);border-radius:14px;padding:24px">
             <h4 style="font-family:'Bricolage Grotesque';font-size:18px;margin-bottom:4px">Write a Review</h4>
@@ -984,14 +848,13 @@ function openReviewModal(itemId, itemName) {
                       style="width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);margin-bottom:14px;font-family:inherit;font-size:14px;resize:vertical"></textarea>
 
             <div style="display:flex;gap:8px">
-                <button class="btn p" style="flex:1" onclick="submitReview('${itemId}', \`${itemName.replace(/`/g, '\\`')}\`)">Submit Review</button>
-                <button class="btn" onclick="loadItemReviews('${itemId}', \`${itemName.replace(/`/g, '\\`')}\`)">Cancel</button>
+                <button class="btn p" style="flex:1" id="submitReviewBtn">Submit Review</button>
+                <button class="btn" id="cancelReviewBtn">Cancel</button>
             </div>
             <p id="reviewError" style="color:#ef4444;font-size:13px;margin-top:10px;text-align:center"></p>
         </div>
     `;
 
-    // Star picker logic
     let selectedRating = 0;
     const stars = section.querySelectorAll('#starPicker span');
     stars.forEach(star => {
@@ -1006,7 +869,6 @@ function openReviewModal(itemId, itemName) {
             stars.forEach(s => {
                 s.style.color = parseInt(s.dataset.star) <= selectedRating ? 'var(--hl)' : 'var(--line)';
             });
-            stars.forEach(s => s.dataset.selected = 'true');
         });
     });
     section.querySelector('#starPicker').addEventListener('mouseleave', () => {
@@ -1015,12 +877,15 @@ function openReviewModal(itemId, itemName) {
         });
     });
 
-    // Store rating globally for submit
-    window.__currentRating = () => selectedRating;
+    document.getElementById('submitReviewBtn').addEventListener('click', () => {
+        submitReview(itemId, itemName, selectedRating);
+    });
+    document.getElementById('cancelReviewBtn').addEventListener('click', () => {
+        loadItemReviews(itemId, itemName);
+    });
 }
 
-async function submitReview(itemId, itemName) {
-    const rating = window.__currentRating ? window.__currentRating() : 0;
+async function submitReview(itemId, itemName, rating) {
     const title = document.getElementById('reviewTitle').value.trim();
     const content = document.getElementById('reviewContent').value.trim();
     const errEl = document.getElementById('reviewError');
@@ -1039,7 +904,7 @@ async function submitReview(itemId, itemName) {
     const { error } = await sb.from('user_reviews').insert({
         user_id: session.user.id,
         item_id: itemId,
-        rating: rating,
+        rating,
         title: title || null,
         content: content || null,
         is_approved: true,
@@ -1051,16 +916,14 @@ async function submitReview(itemId, itemName) {
         return;
     }
 
-    // Success — reload reviews
     loadItemReviews(itemId, itemName);
 }
 
-// Helpers
 function formatReviewDate(iso) {
     if (!iso) return '';
     const d = new Date(iso);
     const now = new Date();
-    const diff = Math.floor((now - d) / 86400);
+    const diff = Math.floor((now - d) / 86400000);
     if (diff < 1) return 'Today';
     if (diff < 7) return diff + 'd ago';
     if (diff < 30) return Math.floor(diff / 7) + 'w ago';
@@ -1071,3 +934,53 @@ function escapeHtml(s) {
     if (!s) return '';
     return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
+
+// ============================================================
+// CLOSE MODAL
+// ============================================================
+function closeCompModal() {
+    document.getElementById('compModal').classList.add('hidden');
+    currentComparison = {
+        categoryId: null, options: [], labels: [],
+        priorities: [], choice: null, step: 'select'
+    };
+}
+
+// ============================================================
+// LOAD CATEGORIES
+// ============================================================
+async function loadCategories() {
+    const grid = document.getElementById('catGrid');
+    if (!grid) return;
+
+    const { data: cats, error } = await sb
+        .from('categories')
+        .select('*')
+        .eq('is_active', true)
+        .order('sort_order');
+
+    if (error || !cats || cats.length === 0) {
+        grid.innerHTML = '<p style="color:var(--mute)">No categories available.</p>';
+        return;
+    }
+
+    grid.innerHTML = cats.map(c => `
+        <a onclick="startComparison('${c.id}')" style="cursor:pointer">
+            <span class="icon">${c.icon || '📦'}</span>
+            <b>${c.name}</b>
+            <small>${c.description || 'Compare options'}</small>
+        </a>
+    `).join('');
+}
+
+// ============================================================
+// MODAL CLOSE HANDLERS
+// ============================================================
+document.addEventListener('DOMContentLoaded', () => {
+    const compModal = document.getElementById('compModal');
+    const closeComp = document.getElementById('closeComp');
+    if (closeComp) closeComp.onclick = closeCompModal;
+    if (compModal) compModal.addEventListener('click', (e) => {
+        if (e.target.id === 'compModal') closeCompModal();
+    });
+});
