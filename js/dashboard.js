@@ -43,6 +43,7 @@ function loadTab(tab) {
     else if (tab === 'history') loadHistory(content);
     else if (tab === 'memories') loadMemories(content);
     else if (tab === 'favorites') loadFavorites(content);
+    else if (tab === 'reviews') loadMyReviews(content);
     else if (tab === 'settings') loadSettings(content);
 }
 
@@ -281,3 +282,96 @@ updateThemeBtn();
 
 // Init
 init();
+// ============================================================
+// MY REVIEWS
+// ============================================================
+async function loadMyReviews(content) {
+    const { data, error } = await sb
+        .from('user_reviews')
+        .select('*, items(name, brands(name))')
+        .eq('user_id', currentUser.id)
+        .order('created_at', { ascending: false });
+
+    if (error) { content.innerHTML = `<div class="empty"><h3>Error</h3><p>${error.message}</p></div>`; return; }
+    if (!data || data.length === 0) {
+        content.innerHTML = emptyState(
+            'No reviews yet',
+            'When you complete a comparison and write a review, it will appear here.',
+            '/#cats',
+            'Start comparing'
+        );
+        return;
+    }
+
+    content.innerHTML = data.map(r => `
+        <div class="list-item">
+            <div style="flex:1">
+                <h4>${r.items?.name || 'Item'}</h4>
+                <div style="color:var(--hl);font-size:14px;margin:4px 0">${'★'.repeat(r.rating)}${'☆'.repeat(5 - r.rating)}</div>
+                ${r.title ? `<strong style="font-size:14px;display:block;margin:6px 0">${escapeHtmlDashboard(r.title)}</strong>` : ''}
+                <p class="meta">${escapeHtmlDashboard(r.content || '')}</p>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px">
+                <span class="time">${formatDate(r.created_at)}</span>
+                <div style="display:flex;gap:6px">
+                    <button class="btn" style="padding:4px 10px;font-size:12px" onclick="editReview('${r.id}', ${r.rating}, \`${(r.title || '').replace(/`/g, '\\`')}\`, \`${(r.content || '').replace(/`/g, '\\`')}\`)">Edit</button>
+                    <button class="btn" style="padding:4px 10px;font-size:12px;color:#ef4444" onclick="deleteReview('${r.id}')">Delete</button>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+async function deleteReview(id) {
+    if (!confirm('Delete this review? This cannot be undone.')) return;
+    const { error } = await sb.from('user_reviews').delete().eq('id', id).eq('user_id', currentUser.id);
+    if (error) { alert(error.message); return; }
+    loadTab('reviews');
+}
+
+async function editReview(id, currentRating, currentTitle, currentContent) {
+    const content = document.getElementById('tabContent');
+
+    content.innerHTML = `
+        <div style="background:var(--sf);border:1px solid var(--line);border-radius:14px;padding:24px;max-width:600px;margin:0 auto">
+            <h3 style="font-family:'Bricolage Grotesque';font-size:20px;margin-bottom:16px">Edit Review</h3>
+
+            <label style="display:block;font-size:13px;font-weight:600;margin-bottom:6px">Rating</label>
+            <select id="editRating" style="width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);margin-bottom:14px;font-family:inherit;font-size:14px">
+                ${[1,2,3,4,5].map(n => `<option value="${n}" ${n === currentRating ? 'selected' : ''}>${'★'.repeat(n)} (${n}/5)</option>`).join('')}
+            </select>
+
+            <label style="display:block;font-size:13px;font-weight:600;margin-bottom:6px">Title</label>
+            <input type="text" id="editTitle" value="${escapeHtmlDashboard(currentTitle)}" maxlength="80"
+                   style="width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);margin-bottom:14px;font-family:inherit;font-size:14px">
+
+            <label style="display:block;font-size:13px;font-weight:600;margin-bottom:6px">Review</label>
+            <textarea id="editContent" rows="4" maxlength="500"
+                      style="width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);margin-bottom:14px;font-family:inherit;font-size:14px;resize:vertical">${escapeHtmlDashboard(currentContent)}</textarea>
+
+            <div style="display:flex;gap:8px">
+                <button class="btn p" style="flex:1" onclick="saveReviewEdit('${id}')">Save Changes</button>
+                <button class="btn" onclick="loadTab('reviews')">Cancel</button>
+            </div>
+        </div>
+    `;
+}
+
+async function saveReviewEdit(id) {
+    const rating = parseInt(document.getElementById('editRating').value);
+    const title = document.getElementById('editTitle').value.trim();
+    const content = document.getElementById('editContent').value.trim();
+
+    const { error } = await sb.from('user_reviews')
+        .update({ rating, title: title || null, content: content || null })
+        .eq('id', id)
+        .eq('user_id', currentUser.id);
+
+    if (error) { alert(error.message); return; }
+    loadTab('reviews');
+}
+
+function escapeHtmlDashboard(s) {
+    if (!s) return '';
+    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
