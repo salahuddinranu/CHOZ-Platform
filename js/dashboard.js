@@ -182,7 +182,7 @@ async function loadSettings(content) {
         .from('profiles')
         .select('*')
         .eq('id', currentUser.id)
-        .single();
+.maybeSingle()
 
     if (error) {
         content.innerHTML = `<div class="empty"><h3>Error</h3><p>${error.message}</p></div>`;
