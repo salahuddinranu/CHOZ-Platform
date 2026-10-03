@@ -44,6 +44,7 @@ function loadTab(tab) {
     else if (tab === 'memories') loadMemories(content);
     else if (tab === 'favorites') loadFavorites(content);
     else if (tab === 'reviews') loadMyReviews(content);
+    else if (tab === 'profile') loadChoiceProfile(content);
     else if (tab === 'settings') loadSettings(content);
 }
 
@@ -374,4 +375,230 @@ async function saveReviewEdit(id) {
 function escapeHtmlDashboard(s) {
     if (!s) return '';
     return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+// ============================================================
+// CHOICE PROFILE — Preference patterns from user activity
+// ============================================================
+async function loadChoiceProfile(content) {
+    content.innerHTML = '<div class="loading">Analyzing your choices...</div>';
+
+    // Fetch all decision memories for this user
+    const { data: memories, error } = await sb
+        .from('decision_memories')
+        .select('*')
+        .eq('user_id', currentUser.id)
+        .order('created_at', { ascending: false });
+
+    if (error) {
+        content.innerHTML = `<div class="empty"><h3>Error</h3><p>${error.message}</p></div>`;
+        return;
+    }
+
+    if (!memories || memories.length < 2) {
+        content.innerHTML = `
+            <div class="empty">
+                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                    <circle cx="12" cy="7" r="4"/>
+                </svg>
+                <h3>Not enough data yet</h3>
+                <p style="margin-bottom:20px">Complete at least 2 comparisons and save them to Memory. Your Choice Profile will then show your priority patterns.</p>
+                <a class="btn p" href="/#cats">Start comparing →</a>
+            </div>
+        `;
+        return;
+    }
+
+    // Analyze priorities across all memories
+    const priorityCounts = {};
+    const priorityRanks = {}; // Track average rank for each priority
+
+    memories.forEach(m => {
+        const priorities = m.priorities || [];
+        priorities.forEach((p, idx) => {
+            // p is a priority object or an ID — normalize
+            let pid;
+            if (typeof p === 'string') pid = p;
+            else if (typeof p === 'object' && p !== null) pid = p.id || p.attribute_id || p.attr_id;
+            else return;
+
+            if (!pid) return;
+
+            if (!priorityCounts[pid]) {
+                priorityCounts[pid] = 0;
+                priorityRanks[pid] = [];
+            }
+            priorityCounts[pid]++;
+            priorityRanks[pid].push(idx + 1);
+        });
+    });
+
+    // If priorities are stored as IDs, we need to fetch their names
+    const priorityIds = Object.keys(priorityCounts);
+    let priorityNameMap = {};
+
+    if (priorityIds.length > 0) {
+        const { data: attrDefs } = await sb
+            .from('attribute_definitions')
+            .select('id, name')
+            .in('id', priorityIds);
+
+        if (attrDefs) {
+            attrDefs.forEach(a => { priorityNameMap[a.id] = a.name; });
+        }
+    }
+
+    // Build insights
+    const insights = Object.entries(priorityCounts)
+        .map(([pid, count]) => ({
+            id: pid,
+            name: priorityNameMap[pid] || pid.substring(0, 8) + '...',
+            count,
+            percentage: Math.round((count / memories.length) * 100),
+            avgRank: priorityRanks[pid].reduce((a, b) => a + b, 0) / priorityRanks[pid].length
+        }))
+        .filter(i => i.percentage >= 40) // Only show if 40%+ of comparisons
+        .sort((a, b) => b.percentage - a.percentage)
+        .slice(0, 5);
+
+    // Generate natural-language insights
+    const insightsText = generateInsightsText(insights, memories.length);
+
+    // Determine the top priority
+    const topPriority = insights.length > 0 ? insights[0] : null;
+
+    content.innerHTML = `
+        <div style="background:var(--sf);border:1px solid var(--line);border-radius:16px;padding:24px;margin-bottom:16px">
+            <h2 style="font-family:'Bricolage Grotesque';font-size:22px;margin-bottom:8px">Your Choice Profile</h2>
+            <p style="color:var(--mute);font-size:14px;margin-bottom:20px">
+                Based on your <strong>${memories.length} saved decisions</strong> on CHOZ.
+                This is a transparent observation of your own activity — not a personality assessment.
+            </p>
+
+            ${topPriority ? `
+                <div style="background:linear-gradient(135deg,var(--ac),#7C3AED);color:white;padding:20px;border-radius:14px;margin-bottom:20px">
+                    <div style="font-size:11px;letter-spacing:2px;text-transform:uppercase;opacity:0.8;margin-bottom:8px">
+                        Your #1 priority
+                    </div>
+                    <div style="font-family:'Bricolage Grotesque';font-size:24px;font-weight:700;margin-bottom:4px">
+                        ${escapeHtmlProfile(topPriority.name)}
+                    </div>
+                    <div style="font-size:13px;opacity:0.9">
+                        Appeared in ${topPriority.percentage}% of your comparisons
+                    </div>
+                </div>
+            ` : ''}
+
+            ${insights.length > 0 ? `
+                <h3 style="font-family:'Bricolage Grotesque';font-size:16px;margin-bottom:12px">
+                    Patterns detected
+                </h3>
+                ${insights.map(i => `
+                    <div style="margin-bottom:14px">
+                        <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px">
+                            <span style="font-weight:500">${escapeHtmlProfile(i.name)}</span>
+                            <span style="color:var(--mute)">${i.percentage}%</span>
+                        </div>
+                        <div style="height:6px;background:var(--line);border-radius:3px;overflow:hidden">
+                            <div style="height:100%;background:var(--ac);width:${i.percentage}%"></div>
+                        </div>
+                    </div>
+                `).join('')}
+            ` : `
+                <p style="color:var(--mute);font-size:14px;text-align:center;padding:20px">
+                    Your priorities vary too much to identify a clear pattern yet.
+                    Complete more comparisons to see insights.
+                </p>
+            `}
+        </div>
+
+        ${insightsText.length > 0 ? `
+            <div style="background:var(--sf);border:1px solid var(--line);border-radius:16px;padding:24px;margin-bottom:16px">
+                <h3 style="font-family:'Bricolage Grotesque';font-size:16px;margin-bottom:12px">
+                    What this suggests
+                </h3>
+                ${insightsText.map(t => `
+                    <p style="font-size:14px;color:var(--mute);line-height:1.7;margin-bottom:10px">
+                        ${t}
+                    </p>
+                `).join('')}
+            </div>
+        ` : ''}
+
+        <div style="background:var(--sf);border:1px solid var(--line);border-radius:16px;padding:24px">
+            <h3 style="font-family:'Bricolage Grotesque';font-size:16px;margin-bottom:8px">
+                About this profile
+            </h3>
+            <p style="font-size:13px;color:var(--mute);line-height:1.7;margin-bottom:16px">
+                Choice Profile observes patterns in your own CHOZ activity. It does not diagnose
+                personality, psychology, or any sensitive trait. It only reflects what you chose
+                to prioritize when comparing options on CHOZ.
+            </p>
+            <button class="btn" style="color:#ef4444;border-color:#ef4444" onclick="resetChoiceProfile()">
+                Reset Choice Profile
+            </button>
+        </div>
+    `;
+}
+
+// Generate natural-language insights
+function generateInsightsText(insights, totalComparisons) {
+    const text = [];
+
+    if (insights.length === 0) return text;
+
+    const top = insights[0];
+    const second = insights[1];
+
+    if (top.percentage >= 70) {
+        text.push(`Across most of your decisions, <strong>${escapeHtmlProfile(top.name)}</strong> has been one of your top priorities.`);
+    } else if (top.percentage >= 50) {
+        text.push(`You frequently prioritize <strong>${escapeHtmlProfile(top.name)}</strong> when comparing options.`);
+    }
+
+    if (second && second.percentage >= 40) {
+        text.push(`You also consistently consider <strong>${escapeHtmlProfile(second.name)}</strong> — it appeared in ${second.percentage}% of your comparisons.`);
+    }
+
+    if (insights.length >= 3) {
+        text.push(`Overall, your decisions tend to balance ${insights.slice(0, 3).map(i => `<strong>${escapeHtmlProfile(i.name)}</strong>`).join(', ')}.`);
+    }
+
+    if (totalComparisons >= 5) {
+        text.push(`This analysis is based on ${totalComparisons} saved decisions — a growing picture of what matters to you.`);
+    }
+
+    return text;
+}
+
+// Reset choice profile
+async function resetChoiceProfile() {
+    if (!confirm('Reset your Choice Profile? This will clear your saved Decision Memories. This cannot be undone.')) {
+        return;
+    }
+
+    const { error } = await sb
+        .from('decision_memories')
+        .delete()
+        .eq('user_id', currentUser.id);
+
+    if (error) {
+        alert('Could not reset: ' + error.message);
+        return;
+    }
+
+    alert('Choice Profile reset.');
+    loadTab('profile');
+}
+
+// Escape helper (agar pehle se nahi hai)
+function escapeHtmlProfile(s) {
+    if (!s) return '';
+    return String(s).replace(/[&<>"']/g, c => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+    }[c]));
 }
