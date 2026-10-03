@@ -133,3 +133,14 @@ footer .ln{display:flex;gap:14px;flex-wrap:wrap}
 @media (prefers-reduced-motion:reduce){
   *{transition:none!important;scroll-behavior:auto!important}
 }
+/* Search modal */
+#searchModal .modal-content {
+    animation: slideDown 0.2s ease;
+}
+@keyframes slideDown {
+    from { transform: translateY(-20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+#searchInput::-webkit-search-cancel-button { display: none; }
+#searchInput::placeholder { color: var(--mute); }
+kbd { font-family: inherit; }
