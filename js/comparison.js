@@ -1,5 +1,5 @@
 // ============================================================
-// CHOZ BLIND COMPARISON ENGINE — v3 with Custom Option + Checkbox Priorities
+// CHOZ BLIND COMPARISON ENGINE — v3 with Custom Option + Toast
 // ============================================================
 
 let currentComparison = {
@@ -27,7 +27,6 @@ async function startComparison(categoryId) {
     currentComparison.priorityNames = [];
     currentComparison.customCounter = 0;
 
-    // Fetch items AND attribute definitions (for custom option form)
     const [itemsRes, attrsRes] = await Promise.all([
         sb.from('items')
             .select('*, brands(name), item_attributes(*, attribute_definitions(id, name, slug, unit, is_priority_eligible))')
@@ -43,13 +42,13 @@ async function startComparison(categoryId) {
     const attrDefs = attrsRes.data || [];
 
     if (itemsRes.error || !items || items.length < 2) {
-        alert('Not enough items in this category yet.');
+        toastWarning('Not enough items in this category yet.');
         return;
     }
 
     const validItems = items.filter(i => (i.item_attributes || []).length >= 2);
     if (validItems.length < 2) {
-        alert('Not enough items with complete data in this category.');
+        toastWarning('Not enough items with complete data in this category.');
         return;
     }
 
@@ -60,6 +59,13 @@ async function startComparison(categoryId) {
     currentComparison.labels = ['A', 'B', 'C'].slice(0, shuffled.length);
 
     renderComparisonModal();
+}
+
+// ============================================================
+// BROWSE CATEGORY — Redirect to browse page
+// ============================================================
+function browseCategory(categoryId) {
+    window.location.href = `/category.html?id=${encodeURIComponent(categoryId)}`;
 }
 
 // ============================================================
@@ -214,12 +220,11 @@ function saveCustomOption() {
     const price = priceEl ? priceEl.value : '';
 
     if (!name) {
-        alert('Please enter a name for your option.');
+        toastWarning('Please enter a name for your option.');
         nameEl.focus();
         return;
     }
 
-    // Collect attribute values
     const item_attributes = [];
     document.querySelectorAll('.custom-attr-input').forEach(input => {
         const val = input.value.trim();
@@ -238,7 +243,6 @@ function saveCustomOption() {
         }
     });
 
-    // Add synthetic attributes for attributes user didn't fill (so it displays nicely)
     currentComparison.customCounter = (currentComparison.customCounter || 0) + 1;
     const customLabel = String.fromCharCode(65 + currentComparison.options.length);
 
@@ -254,6 +258,7 @@ function saveCustomOption() {
     currentComparison.options.push(customOption);
     currentComparison.labels.push(customLabel);
 
+    toastSuccess('Your option added to comparison');
     renderComparisonModal();
 }
 
@@ -265,7 +270,6 @@ function renderPrioritiesStep() {
     const attrsArray = currentComparison.attributeDefs || [];
 
     if (attrsArray.length === 0) {
-        // Fallback: collect attributes from options
         const allAttrs = new Map();
         currentComparison.options.forEach(item => {
             (item.item_attributes || []).forEach(a => {
@@ -279,7 +283,6 @@ function renderPrioritiesStep() {
 
     const list = currentComparison.attributeDefs;
 
-    // All selected by default
     currentComparison.priorities = list.map(a => a.id);
     currentComparison.priorityNames = list.map(a => a.name);
 
@@ -333,12 +336,10 @@ function renderPrioritiesStep() {
 
     const listEl = document.getElementById('priorityList');
 
-    // Checkbox handlers
     listEl.querySelectorAll('.pri-check').forEach(cb => {
         cb.addEventListener('change', updateSelectedPriorities);
     });
 
-    // Up/Down handlers
     listEl.querySelectorAll('.priority-item').forEach(item => {
         const upBtn = item.querySelector('.pri-up');
         const downBtn = item.querySelector('.pri-down');
@@ -438,13 +439,12 @@ function backToSelect() {
 async function lockChoice() {
     if (currentComparison.choice === null) return;
 
-    // Ensure priorities up to date
     if (document.getElementById('priorityList')) {
         updateSelectedPriorities();
     }
 
     if (!currentComparison.priorities || currentComparison.priorities.length === 0) {
-        alert('Please tick at least one priority.');
+        toastWarning('Please tick at least one priority.');
         return;
     }
 
@@ -465,7 +465,6 @@ async function lockChoice() {
         fullItem = data;
     }
 
-    // Save comparison record
     const { data: { session } } = await sb.auth.getSession();
     if (session) {
         await sb.from('comparisons').insert({
@@ -583,7 +582,7 @@ async function saveDecision(itemId) {
     });
 
     if (error) {
-        alert('Could not save: ' + error.message);
+        toastError('Could not save: ' + error.message);
         return;
     }
 
@@ -596,6 +595,7 @@ async function saveDecision(itemId) {
             btn.disabled = false;
         }, 2000);
     }
+    toastSuccess('Saved to your Decision Memory');
 }
 
 // ============================================================
@@ -606,7 +606,7 @@ async function bookmarkComparison(itemId, itemName) {
     if (!session) { openAuth(); return; }
 
     if (String(itemId).startsWith('custom-')) {
-        alert('Custom entries cannot be bookmarked.');
+        toastWarning('Custom entries cannot be bookmarked.');
         return;
     }
 
@@ -619,12 +619,13 @@ async function bookmarkComparison(itemId, itemName) {
 
     if (existing) {
         const { error } = await sb.from('saved_comparisons').delete().eq('id', existing.id);
-        if (error) { alert('Could not remove: ' + error.message); return; }
+        if (error) { toastError('Could not remove: ' + error.message); return; }
         if (event?.target) {
             event.target.textContent = '🔖 Bookmark';
             event.target.style.background = '';
             event.target.style.color = '';
         }
+        toastInfo('Bookmark removed');
         return;
     }
 
@@ -636,13 +637,14 @@ async function bookmarkComparison(itemId, itemName) {
         label: `Saved from ${currentComparison.options.length}-option comparison`
     });
 
-    if (error) { alert('Could not save: ' + error.message); return; }
+    if (error) { toastError('Could not save: ' + error.message); return; }
 
     if (event?.target) {
         event.target.textContent = '✅ Bookmarked';
         event.target.style.background = 'var(--ac)';
         event.target.style.color = 'white';
     }
+    toastSuccess('Added to Saved');
 }
 
 // ============================================================
@@ -671,7 +673,7 @@ async function shareResult() {
         .single();
 
     if (!fullItem) {
-        alert('Could not load item details.');
+        toastError('Could not load item details.');
         return;
     }
 
@@ -746,7 +748,7 @@ async function downloadShareCard(itemId) {
         fullItem = data;
     }
 
-    if (!fullItem) { alert('Load failed'); return; }
+    if (!fullItem) { toastError('Load failed'); return; }
 
     const canvas = document.createElement('canvas');
     canvas.width = 1080;
@@ -911,8 +913,9 @@ async function copyShareText(itemId) {
             btn.textContent = '✓ Copied!';
             setTimeout(() => { btn.textContent = original; }, 2000);
         }
+        toastSuccess('Copied to clipboard');
     } catch (err) {
-        alert('Could not copy. Text:\n\n' + text);
+        toastInfo('Text: ' + text);
     }
 }
 
@@ -1095,7 +1098,7 @@ function openReviewModal(itemId, itemName) {
     if (!section) return;
 
     if (String(itemId).startsWith('custom-')) {
-        alert('Custom entries cannot be reviewed.');
+        toastWarning('Custom entries cannot be reviewed.');
         return;
     }
 
@@ -1188,6 +1191,7 @@ async function submitReview(itemId, itemName, rating) {
         return;
     }
 
+    toastSuccess('Review submitted!');
     loadItemReviews(itemId, itemName);
 }
 
@@ -1220,7 +1224,7 @@ function closeCompModal() {
 }
 
 // ============================================================
-// LOAD CATEGORIES
+// LOAD CATEGORIES — Browse page link
 // ============================================================
 async function loadCategories() {
     const grid = document.getElementById('catGrid');
@@ -1276,13 +1280,13 @@ async function loadCategories() {
         const hint = hints[c.id] || c.description || 'Compare options';
 
         return `
-            <a onclick="startComparison('${c.id}')" style="${!hasEnough ? 'opacity:0.6' : ''}">
+            <a onclick="browseCategory('${c.id}')" style="${!hasEnough ? 'opacity:0.6' : ''}">
                 <span class="icon">${c.icon || '📦'}</span>
                 <b>${c.name}</b>
                 <small>${hint}</small>
                 <div class="cat-footer">
                     <span class="cat-count">${itemCount} options</span>
-                    <span class="cat-arrow">Compare →</span>
+                    <span class="cat-arrow">Browse →</span>
                 </div>
             </a>
         `;
