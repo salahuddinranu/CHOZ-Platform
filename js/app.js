@@ -1,5 +1,5 @@
 // ============================================================
-// CHOZ MAIN APP — Clean Version
+// CHOZ MAIN APP — Clean Final Version
 // ============================================================
 
 // ============================================================
@@ -100,12 +100,12 @@ function toggleAuthMode(e) {
     const terms = document.getElementById('termsLabel');
     const pwdInput = document.getElementById('authPass');
     const errEl = document.getElementById('authError');
+    const forgotWrap = document.getElementById('forgotWrap');
 
     if (title) title.textContent = authMode === 'signin' ? 'Sign in' : 'Sign up';
     if (submit) submit.textContent = authMode === 'signin' ? 'Sign in' : 'Sign up';
     if (switchText) switchText.textContent = authMode === 'signin' ? 'No account?' : 'Already have account?';
     if (switchLink) switchLink.textContent = authMode === 'signin' ? 'Sign up' : 'Sign in';
-        const forgotWrap = document.getElementById('forgotWrap');
     if (forgotWrap) forgotWrap.style.display = authMode === 'signin' ? 'block' : 'none';
     if (strength) strength.style.display = authMode === 'signup' ? 'block' : 'none';
     if (terms) terms.style.display = authMode === 'signup' ? 'flex' : 'none';
@@ -127,7 +127,6 @@ async function handleAuthSubmit() {
         return;
     }
 
-    // Signup validations
     if (authMode === 'signup') {
         const checks = checkPasswordStrength(password);
         if (!checks.length) {
@@ -158,25 +157,23 @@ async function handleAuthSubmit() {
         } else {
             const { error } = await sb.auth.signUp({ email, password });
             if (error) throw error;
-            errEl.style.color = '#22c55e';
-            errEl.style.color = '#22c55e';
-errEl.textContent = 'Account created! Signing you in...';
 
-// Auto sign in after signup
-const { error: signInErr } = await sb.auth.signInWithPassword({ email, password });
-if (!signInErr) {
-    closeAuth();
-    if (typeof toastSuccess === 'function') toastSuccess('Welcome to CHOZ!');
-} else {
-    errEl.textContent = 'Account created! Please sign in with your email and password.';
-}
+            errEl.style.color = '#22c55e';
+            errEl.textContent = 'Account created! Signing you in...';
+
+            // Auto sign in after signup
+            const { error: signInErr } = await sb.auth.signInWithPassword({ email, password });
+            if (!signInErr) {
+                closeAuth();
+                if (typeof toastSuccess === 'function') toastSuccess('Welcome to CHOZ!');
+            } else {
+                errEl.textContent = 'Account created! Please sign in with your email and password.';
+            }
 
             const termsCheck = document.getElementById('termsCheck');
             if (termsCheck) termsCheck.checked = false;
             document.getElementById('authPass').value = '';
-            updatePasswordStrength();
-
-            if (typeof toastSuccess === 'function') toastSuccess('Account created!');
+            if (typeof updatePasswordStrength === 'function') updatePasswordStrength();
         }
     } catch (err) {
         errEl.style.color = '#ef4444';
@@ -184,7 +181,6 @@ if (!signInErr) {
         let msg = err.message || 'Something went wrong.';
         const lowerMsg = msg.toLowerCase();
 
-        // Better error messages
         if (lowerMsg.includes('invalid login credentials') || lowerMsg.includes('invalid credentials')) {
             msg = 'Invalid email or password. If you signed up with Google, use "Continue with Google" below, or click "Forgot password?" to set a password.';
         } else if (lowerMsg.includes('email not confirmed')) {
@@ -200,7 +196,6 @@ if (!signInErr) {
         }
 
         errEl.textContent = msg;
-
     } finally {
         submitBtn.disabled = false;
         submitBtn.textContent = authMode === 'signin' ? 'Sign in' : 'Sign up';
@@ -587,8 +582,9 @@ function showOnboardStep(step) {
 function finishOnboarding() {
     localStorage.setItem('choz-onboarded', '1');
     document.getElementById('onboardModal').classList.add('hidden');
-    const cats = document.getElementById('cats');
-    if (cats) cats.scrollIntoView({ behavior: 'smooth' });
+    // Support both IDs
+    const target = document.getElementById('categories') || document.getElementById('cats');
+    if (target) target.scrollIntoView({ behavior: 'smooth' });
 }
 
 function skipOnboarding() {
@@ -681,10 +677,11 @@ if ('serviceWorker' in navigator) {
 document.addEventListener('DOMContentLoaded', () => {
     // Auth modal close
     const closeBtn = document.getElementById('closeAuth');
-        // Forgot password link
+    if (closeBtn) closeBtn.onclick = closeAuth;
+
+    // Forgot password link
     const forgotLink = document.getElementById('forgotPwdLink');
     if (forgotLink) forgotLink.onclick = handleForgotPassword;
-    if (closeBtn) closeBtn.onclick = closeAuth;
 
     const authModal = document.getElementById('authModal');
     if (authModal) {
@@ -724,23 +721,18 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
 
-    // Start comparison button
+    // Start comparison button — FIXED
     const startBtn = document.getElementById('startBtn');
     if (startBtn) {
-       const startBtn = document.getElementById('startBtn');
-if (startBtn) {
-    const startBtn = document.getElementById('startBtn');
-if (startBtn) {
-    startBtn.onclick = () => {
-        const target = document.getElementById('categories') || document.getElementById('cats');
-        if (target) {
-            target.scrollIntoView({ behavior: 'smooth' });
-        } else {
-            window.location.href = '/#categories';
-        }
-    };
-}
-}
+        startBtn.onclick = () => {
+            const target = document.getElementById('categories') || document.getElementById('cats');
+            if (target) {
+                target.scrollIntoView({ behavior: 'smooth' });
+            } else {
+                window.location.href = '/#categories';
+            }
+        };
+    }
 });
 
 // ============================================================
