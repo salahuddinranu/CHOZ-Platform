@@ -727,11 +727,17 @@ document.addEventListener('DOMContentLoaded', () => {
     // Start comparison button
     const startBtn = document.getElementById('startBtn');
     if (startBtn) {
-        startBtn.onclick = () => {
-            const cats = document.getElementById('cats');
-            if (cats) cats.scrollIntoView({ behavior: 'smooth' });
-        };
-    }
+       const startBtn = document.getElementById('startBtn');
+if (startBtn) {
+    startBtn.onclick = () => {
+        const cats = document.getElementById('categories') || document.getElementById('cats');
+        if (cats) {
+            cats.scrollIntoView({ behavior: 'smooth' });
+        } else {
+            window.location.href = '/#categories';
+        }
+    };
+}
 });
 
 // ============================================================
