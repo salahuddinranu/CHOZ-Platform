@@ -189,7 +189,7 @@ function renderProduct(item, brandName, categoryName, attrs) {
 
         '<div class="product-layout">' +
             '<div>' +
-                '<div class="section-title">Specifications</div>' +
+                '<div class="section-title">📋 Specifications</div>' +
                 '<div style="background:var(--sf);border:1px solid var(--line);border-radius:16px;padding:20px">' +
                     (attrs.length === 0
                         ? '<p style="color:var(--mute);font-size:14px;text-align:center;padding:20px">No specifications available.</p>'
@@ -204,19 +204,24 @@ function renderProduct(item, brandName, categoryName, attrs) {
             '</div>' +
 
             '<div>' +
-                '<div class="section-title">Actions</div>' +
+                '<div class="section-title">🎯 Take Action</div>' +
                 '<div style="background:var(--sf);border:1px solid var(--line);border-radius:16px;padding:20px">' +
                     '<p style="font-size:14px;color:var(--mute);line-height:1.6;margin-bottom:20px">' +
                         (item.description ? escapeP(item.description) : 'No description available.') +
                     '</p>' +
+                    '<div style="background:var(--ac-soft);padding:14px;border-radius:10px;margin-bottom:16px">' +
+                        '<p style="font-size:13px;color:var(--ac);margin:0;line-height:1.5">' +
+                            '<strong>💡 Tip:</strong> Compare this product against others in <strong>blind mode</strong> — brands hidden until you choose.' +
+                        '</p>' +
+                    '</div>' +
                     '<div class="action-buttons">' +
-                        '<button class="btn p" <button class="btn p" onclick="goCompare()">⚖️ Compare in Blind Mode</button>>⚖️ Compare</button>' +
+                        '<button class="btn p" onclick="goCompare()" style="flex:1">⚖️ Compare in Blind Mode</button>' +
                         '<button class="btn" onclick="toggleFavorite(\'' + item.id + '\')" id="favBtn">⭐ Favorite</button>' +
-                        '<button class="btn" onclick="copyLink()">🔗 Copy Link</button>' +
+                        '<button class="btn" onclick="copyLink()">🔗 Copy</button>' +
                     '</div>' +
                 '</div>' +
 
-                '<div class="section-title" style="margin-top:24px">Reviews</div>' +
+                '<div class="section-title" style="margin-top:24px">⭐ Reviews</div>' +
                 '<div id="reviewsSection" style="background:var(--sf);border:1px solid var(--line);border-radius:16px;padding:20px">' +
                     '<p style="color:var(--mute);font-size:14px;text-align:center;padding:20px">Loading reviews...</p>' +
                 '</div>' +
