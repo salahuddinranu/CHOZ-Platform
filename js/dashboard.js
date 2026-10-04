@@ -1,5 +1,5 @@
 // ============================================================
-// CHOZ USER DASHBOARD — Clean Version
+// CHOZ USER DASHBOARD — Clean Final Version
 // ============================================================
 
 let currentUser = null;
@@ -47,7 +47,7 @@ function loadTab(tab) {
     if (tab === 'overview') loadOverview(content);
     else if (tab === 'history') loadHistory(content);
     else if (tab === 'memories') loadMemories(content);
-        else if (tab === 'saved') loadSavedComparisons(content);
+    else if (tab === 'saved') loadSavedComparisons(content);
     else if (tab === 'favorites') loadFavorites(content);
     else if (tab === 'reviews') loadMyReviews(content);
     else if (tab === 'profile') loadChoiceProfile(content);
@@ -74,7 +74,7 @@ async function loadOverview(content) {
         <div class="list-item" style="flex-direction:column;align-items:flex-start">
             <h4>Start a new comparison</h4>
             <p class="meta" style="margin-bottom:12px">Explore categories and make a blind decision.</p>
-            <a class="btn p" href="/#cats">Browse categories →</a>
+            <a class="btn p" href="/#categories">Browse categories →</a>
         </div>
     `;
 }
@@ -92,7 +92,7 @@ async function loadHistory(content) {
 
     if (error) { content.innerHTML = `<div class="empty"><h3>Error</h3><p>${error.message}</p></div>`; return; }
     if (!data || data.length === 0) {
-        content.innerHTML = emptyState('No comparisons yet', 'Your comparison history will appear here.', '/#cats', 'Start comparing');
+        content.innerHTML = emptyState('No comparisons yet', 'Your comparison history will appear here.', '/#categories', 'Start comparing');
         return;
     }
 
@@ -119,7 +119,7 @@ async function loadMemories(content) {
 
     if (error) { content.innerHTML = `<div class="empty"><h3>Error</h3><p>${error.message}</p></div>`; return; }
     if (!data || data.length === 0) {
-        content.innerHTML = emptyState('No memories yet', 'When you complete a comparison and save your decision, it will appear here.', '/#cats', 'Make a decision');
+        content.innerHTML = emptyState('No memories yet', 'When you complete a comparison and save your decision, it will appear here.', '/#categories', 'Make a decision');
         return;
     }
 
@@ -156,7 +156,7 @@ async function loadFavorites(content) {
 
     if (error) { content.innerHTML = `<div class="empty"><h3>Error</h3><p>${error.message}</p></div>`; return; }
     if (!data || data.length === 0) {
-        content.innerHTML = emptyState('No favorites yet', 'Save items you like and they will appear here.', '/#cats', 'Explore');
+        content.innerHTML = emptyState('No favorites yet', 'Save items you like and they will appear here.', '/#categories', 'Explore');
         return;
     }
 
@@ -192,7 +192,7 @@ async function loadMyReviews(content) {
         content.innerHTML = emptyState(
             'No reviews yet',
             'When you complete a comparison and write a review, it will appear here.',
-            '/#cats',
+            '/#categories',
             'Start comparing'
         );
         return;
@@ -297,7 +297,7 @@ async function loadChoiceProfile(content) {
                 </svg>
                 <h3>Not enough data yet</h3>
                 <p style="margin-bottom:20px">Complete at least 2 comparisons and save them to Memory. Your Choice Profile will then show your priority patterns.</p>
-                <a class="btn p" href="/#cats">Start comparing →</a>
+                <a class="btn p" href="/#categories">Start comparing →</a>
             </div>
         `;
         return;
@@ -454,7 +454,7 @@ async function loadPulseDashboard(content) {
                     <p style="color:var(--mute);font-size:14px;max-width:400px;margin:0 auto 20px">
                         Complete a few comparisons and community trends will appear here.
                     </p>
-                    <a class="btn p" href="/#cats">Start comparing →</a>
+                    <a class="btn p" href="/#categories">Start comparing →</a>
                 </div>
             `;
             return;
@@ -593,10 +593,10 @@ async function loadSettings(content) {
 
             <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;gap:12px;flex-wrap:wrap">
                 <div>
-                    <div style="font-size:14px;font-weight:500">Change password</div>
-                    <div style="font-size:13px;color:var(--mute);margin-top:2px">Send a reset link to your email</div>
+                    <div style="font-size:14px;font-weight:500">Change Password</div>
+                    <div style="font-size:13px;color:var(--mute);margin-top:2px">Update your password directly</div>
                 </div>
-                <button class="btn" id="resetPwdBtn">Send reset link</button>
+                <button class="btn p" id="changePwdBtn">Change Password</button>
             </div>
         </div>
 
@@ -611,6 +611,7 @@ async function loadSettings(content) {
         </div>
     `;
 
+    // ---- Save Profile ----
     document.getElementById('saveProfileBtn').onclick = async (e) => {
         const btn = e.target;
         const msg = document.getElementById('profileSaveMsg');
@@ -655,26 +656,13 @@ async function loadSettings(content) {
         }
     };
 
-    document.getElementById('resetPwdBtn').onclick = async (e) => {
-        const btn = e.target;
-        btn.disabled = true;
-        btn.textContent = 'Sending...';
+    // ---- Change Password Button ----
+    const changePwdBtn = document.getElementById('changePwdBtn');
+    if (changePwdBtn) {
+        changePwdBtn.onclick = openChangePasswordModal;
+    }
 
-        const { error: resetErr } = await sb.auth.resetPasswordForEmail(currentUser.email, {
-            redirectTo: window.location.origin + '/dashboard.html'
-        });
-
-        btn.disabled = false;
-        btn.textContent = 'Send reset link';
-
-        if (resetErr) {
-            alert('Error: ' + resetErr.message);
-            return;
-        }
-
-        alert('✓ Reset link sent to ' + currentUser.email);
-    };
-
+    // ---- Delete Account ----
     document.getElementById('deleteAccBtn').onclick = async () => {
         const confirmText = prompt('This will permanently delete your account and all data.\n\nType DELETE to confirm:');
         if (confirmText !== 'DELETE') return;
@@ -689,6 +677,221 @@ async function loadSettings(content) {
         alert('Your account has been deleted.');
         window.location.href = '/';
     };
+}
+
+// ============================================================
+// SAVED COMPARISONS
+// ============================================================
+async function loadSavedComparisons(content) {
+    const { data, error } = await sb
+        .from('saved_comparisons')
+        .select('*')
+        .eq('user_id', currentUser.id)
+        .order('created_at', { ascending: false });
+
+    if (error) {
+        content.innerHTML = `<div class="empty"><h3>Error</h3><p>${error.message}</p></div>`;
+        return;
+    }
+
+    if (!data || data.length === 0) {
+        content.innerHTML = emptyState(
+            'No saved comparisons yet',
+            'When you bookmark a comparison, it will appear here.',
+            '/#categories',
+            'Start comparing'
+        );
+        return;
+    }
+
+    content.innerHTML = data.map(s => `
+        <div class="list-item">
+            <div style="flex:1">
+                <h4>🔖 ${escapeDash(s.item_name || 'Saved comparison')}</h4>
+                ${s.note ? `<p class="meta">${escapeDash(s.note)}</p>` : ''}
+                ${s.label ? `<p class="meta" style="font-size:12px">${escapeDash(s.label)}</p>` : ''}
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px">
+                <span class="time">${formatDate(s.created_at)}</span>
+                <button class="btn" style="padding:4px 12px;font-size:12px" onclick="deleteSaved('${s.id}')">Remove</button>
+            </div>
+        </div>
+    `).join('');
+}
+
+async function deleteSaved(id) {
+    if (!confirm('Remove this saved comparison?')) return;
+    const { error } = await sb.from('saved_comparisons').delete().eq('id', id).eq('user_id', currentUser.id);
+    if (error) { alert(error.message); return; }
+    loadTab('saved');
+}
+
+// ============================================================
+// CHANGE PASSWORD MODAL
+// ============================================================
+function openChangePasswordModal() {
+    const existing = document.getElementById('changePwdModal');
+    if (existing) existing.remove();
+
+    const modal = document.createElement('div');
+    modal.id = 'changePwdModal';
+    modal.className = 'modal';
+    modal.style.zIndex = '9999';
+    modal.innerHTML = `
+        <div class="modal-content" style="max-width:420px">
+            <button class="modal-close" onclick="document.getElementById('changePwdModal').remove()">×</button>
+
+            <div style="text-align:center;margin-bottom:20px">
+                <div style="font-size:44px;margin-bottom:12px;line-height:1">🔒</div>
+                <h3 style="font-family:'Bricolage Grotesque';font-size:22px;margin-bottom:6px">
+                    Change Password
+                </h3>
+                <p style="color:var(--mute);font-size:14px;line-height:1.6">
+                    Enter your current password to confirm, then set a new one.
+                </p>
+            </div>
+
+            <label style="display:block;font-size:13px;font-weight:600;margin-bottom:6px">
+                Current password
+            </label>
+            <input type="password" id="oldPassword" placeholder="Enter current password"
+                   autocomplete="current-password"
+                   style="width:100%;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);font-family:inherit;font-size:15px;margin-bottom:14px;box-sizing:border-box">
+
+            <label style="display:block;font-size:13px;font-weight:600;margin-bottom:6px">
+                New password
+            </label>
+            <input type="password" id="newPassword" placeholder="Min 8 chars, 1 uppercase, 1 number"
+                   autocomplete="new-password"
+                   style="width:100%;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);font-family:inherit;font-size:15px;margin-bottom:14px;box-sizing:border-box">
+
+            <label style="display:block;font-size:13px;font-weight:600;margin-bottom:6px">
+                Confirm new password
+            </label>
+            <input type="password" id="confirmPassword" placeholder="Re-enter new password"
+                   autocomplete="new-password"
+                   style="width:100%;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);font-family:inherit;font-size:15px;margin-bottom:16px;box-sizing:border-box">
+
+            <p id="changePwdError" style="color:#ef4444;font-size:13px;min-height:18px;margin-bottom:12px;text-align:center"></p>
+
+            <div style="display:flex;gap:10px;flex-direction:column">
+                <button class="btn p" style="padding:14px;font-size:15px" id="submitChangePwd">
+                    Update Password
+                </button>
+                <button class="btn" style="padding:14px;font-size:15px" onclick="document.getElementById('changePwdModal').remove()">
+                    Cancel
+                </button>
+            </div>
+
+            <p style="font-size:12px;color:var(--mute);text-align:center;margin-top:16px;line-height:1.5">
+                🔐 Your password is encrypted and never stored in plain text.
+            </p>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    setTimeout(() => {
+        const el = document.getElementById('oldPassword');
+        if (el) el.focus();
+    }, 100);
+
+    modal.addEventListener('click', (e) => {
+        if (e.target.id === 'changePwdModal') modal.remove();
+    });
+
+    document.getElementById('submitChangePwd').onclick = async function() {
+        const oldPwd = document.getElementById('oldPassword').value;
+        const newPwd = document.getElementById('newPassword').value;
+        const confirmPwd = document.getElementById('confirmPassword').value;
+        const errEl = document.getElementById('changePwdError');
+        const btn = this;
+
+        errEl.textContent = '';
+
+        if (!oldPwd || !newPwd || !confirmPwd) {
+            errEl.textContent = 'All fields are required.';
+            return;
+        }
+
+        if (newPwd !== confirmPwd) {
+            errEl.textContent = 'New passwords do not match.';
+            return;
+        }
+
+        if (newPwd.length < 8) {
+            errEl.textContent = 'Password must be at least 8 characters.';
+            return;
+        }
+
+        if (!/[A-Z]/.test(newPwd)) {
+            errEl.textContent = 'Password must contain an uppercase letter.';
+            return;
+        }
+
+        if (!/[0-9]/.test(newPwd)) {
+            errEl.textContent = 'Password must contain a number.';
+            return;
+        }
+
+        if (newPwd === oldPwd) {
+            errEl.textContent = 'New password must be different from current password.';
+            return;
+        }
+
+        btn.disabled = true;
+        btn.textContent = 'Verifying...';
+
+        try {
+            const { data: { session } } = await sb.auth.getSession();
+            if (!session || !session.user.email) {
+                throw new Error('You must be signed in to change password.');
+            }
+
+            const { error: verifyErr } = await sb.auth.signInWithPassword({
+                email: session.user.email,
+                password: oldPwd
+            });
+
+            if (verifyErr) {
+                throw new Error('Current password is incorrect.');
+            }
+
+            btn.textContent = 'Updating...';
+            const { error: updateErr } = await sb.auth.updateUser({
+                password: newPwd
+            });
+
+            if (updateErr) throw updateErr;
+
+            errEl.style.color = '#22c55e';
+            errEl.textContent = '✓ Password updated successfully!';
+
+            if (typeof toastSuccess === 'function') {
+                toastSuccess('Password updated successfully');
+            }
+
+            setTimeout(() => {
+                const m = document.getElementById('changePwdModal');
+                if (m) m.remove();
+            }, 1500);
+
+        } catch (err) {
+            console.error('Change password error:', err);
+            errEl.style.color = '#ef4444';
+            errEl.textContent = err.message || 'Could not change password.';
+            btn.disabled = false;
+            btn.textContent = 'Update Password';
+        }
+    };
+
+    modal.querySelectorAll('input').forEach(inp => {
+        inp.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                document.getElementById('submitChangePwd').click();
+            }
+        });
+    });
 }
 
 // ============================================================
@@ -728,11 +931,6 @@ function escapeDash(s) {
 }
 
 // ============================================================
-// SIGN OUT
-// ============================================================
-const signOutBtn = document.getElementById('signOutBtn');
-if (signOutBtn) {
-   // ============================================================
 // SIGN OUT WITH CONFIRMATION
 // ============================================================
 const signOutBtn = document.getElementById('signOutBtn');
@@ -741,13 +939,13 @@ if (signOutBtn) {
 }
 
 function showSignOutModal() {
-    // Remove existing modal
     const existing = document.getElementById('signOutModal');
     if (existing) existing.remove();
 
     const modal = document.createElement('div');
     modal.id = 'signOutModal';
     modal.className = 'modal';
+    modal.style.zIndex = '9999';
     modal.innerHTML = `
         <div class="modal-content" style="max-width:420px;text-align:center">
             <div style="font-size:48px;margin-bottom:16px">👋</div>
@@ -773,15 +971,11 @@ function showSignOutModal() {
         window.location.href = '/';
     };
 
-    document.getElementById('cancelSignOut').onclick = () => {
-        modal.remove();
-    };
+    document.getElementById('cancelSignOut').onclick = () => modal.remove();
 
-    // Close on outside click
     modal.addEventListener('click', (e) => {
         if (e.target.id === 'signOutModal') modal.remove();
     });
-}
 }
 
 // ============================================================
@@ -816,49 +1010,3 @@ updateThemeBtn();
 // INIT
 // ============================================================
 init();
-// ============================================================
-// SAVED COMPARISONS
-// ============================================================
-async function loadSavedComparisons(content) {
-    const { data, error } = await sb
-        .from('saved_comparisons')
-        .select('*')
-        .eq('user_id', currentUser.id)
-        .order('created_at', { ascending: false });
-
-    if (error) {
-        content.innerHTML = `<div class="empty"><h3>Error</h3><p>${error.message}</p></div>`;
-        return;
-    }
-
-    if (!data || data.length === 0) {
-        content.innerHTML = emptyState(
-            'No saved comparisons yet',
-            'When you bookmark a comparison, it will appear here.',
-            '/#cats',
-            'Start comparing'
-        );
-        return;
-    }
-
-    content.innerHTML = data.map(s => `
-        <div class="list-item">
-            <div style="flex:1">
-                <h4>🔖 ${escapeDash(s.item_name || 'Saved comparison')}</h4>
-                ${s.note ? `<p class="meta">${escapeDash(s.note)}</p>` : ''}
-                ${s.label ? `<p class="meta" style="font-size:12px">${escapeDash(s.label)}</p>` : ''}
-            </div>
-            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px">
-                <span class="time">${formatDate(s.created_at)}</span>
-                <button class="btn" style="padding:4px 12px;font-size:12px" onclick="deleteSaved('${s.id}')">Remove</button>
-            </div>
-        </div>
-    `).join('');
-}
-
-async function deleteSaved(id) {
-    if (!confirm('Remove this saved comparison?')) return;
-    const { error } = await sb.from('saved_comparisons').delete().eq('id', id).eq('user_id', currentUser.id);
-    if (error) { alert(error.message); return; }
-    loadTab('saved');
-}
