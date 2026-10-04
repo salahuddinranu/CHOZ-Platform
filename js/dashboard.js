@@ -732,10 +732,56 @@ function escapeDash(s) {
 // ============================================================
 const signOutBtn = document.getElementById('signOutBtn');
 if (signOutBtn) {
-    signOutBtn.onclick = async () => {
+   // ============================================================
+// SIGN OUT WITH CONFIRMATION
+// ============================================================
+const signOutBtn = document.getElementById('signOutBtn');
+if (signOutBtn) {
+    signOutBtn.onclick = () => showSignOutModal();
+}
+
+function showSignOutModal() {
+    // Remove existing modal
+    const existing = document.getElementById('signOutModal');
+    if (existing) existing.remove();
+
+    const modal = document.createElement('div');
+    modal.id = 'signOutModal';
+    modal.className = 'modal';
+    modal.innerHTML = `
+        <div class="modal-content" style="max-width:420px;text-align:center">
+            <div style="font-size:48px;margin-bottom:16px">👋</div>
+            <h3 style="font-family:'Bricolage Grotesque';font-size:22px;margin-bottom:8px">Sign out?</h3>
+            <p style="color:var(--mute);font-size:14px;line-height:1.6;margin-bottom:24px">
+                Are you sure you want to sign out?<br>
+                Your saved decisions and memories will be waiting for you when you return.
+            </p>
+            <div style="display:flex;gap:10px;flex-direction:column">
+                <button class="btn p" style="padding:14px;font-size:15px" id="confirmSignOut">
+                    Yes, sign me out
+                </button>
+                <button class="btn" style="padding:14px;font-size:15px" id="cancelSignOut">
+                    ← No, continue using CHOZ
+                </button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+
+    document.getElementById('confirmSignOut').onclick = async () => {
         await sb.auth.signOut();
         window.location.href = '/';
     };
+
+    document.getElementById('cancelSignOut').onclick = () => {
+        modal.remove();
+    };
+
+    // Close on outside click
+    modal.addEventListener('click', (e) => {
+        if (e.target.id === 'signOutModal') modal.remove();
+    });
+}
 }
 
 // ============================================================
