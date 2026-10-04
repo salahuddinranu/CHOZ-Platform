@@ -125,6 +125,7 @@ async function handleAuthSubmit() {
         return;
     }
 
+    // Signup validations
     if (authMode === 'signup') {
         const checks = checkPasswordStrength(password);
         if (!checks.length) {
@@ -151,23 +152,88 @@ async function handleAuthSubmit() {
             const { error } = await sb.auth.signInWithPassword({ email, password });
             if (error) throw error;
             closeAuth();
+            if (typeof toastSuccess === 'function') toastSuccess('Welcome back!');
         } else {
             const { error } = await sb.auth.signUp({ email, password });
             if (error) throw error;
             errEl.style.color = '#22c55e';
-            errEl.textContent = 'Account created! Check your email to verify.';
+            errEl.textContent = 'Account created! You can now sign in.';
 
             const termsCheck = document.getElementById('termsCheck');
             if (termsCheck) termsCheck.checked = false;
             document.getElementById('authPass').value = '';
             updatePasswordStrength();
+
+            if (typeof toastSuccess === 'function') toastSuccess('Account created!');
         }
     } catch (err) {
         errEl.style.color = '#ef4444';
-        errEl.textContent = err.message;
+
+        let msg = err.message || 'Something went wrong.';
+        const lowerMsg = msg.toLowerCase();
+
+        // Better error messages
+        if (lowerMsg.includes('invalid login credentials') || lowerMsg.includes('invalid credentials')) {
+            msg = 'Invalid email or password. If you signed up with Google, use "Continue with Google" below, or click "Forgot password?" to set a password.';
+        } else if (lowerMsg.includes('email not confirmed')) {
+            msg = 'Please verify your email first. Check your inbox for the confirmation link.';
+        } else if (lowerMsg.includes('user already registered') || lowerMsg.includes('already been registered')) {
+            msg = 'This email is already registered. Try signing in, or use "Forgot password?" to reset.';
+        } else if (lowerMsg.includes('password should be') || lowerMsg.includes('weak password')) {
+            msg = 'Password is too weak. Use at least 8 characters with uppercase and number.';
+        } else if (lowerMsg.includes('rate limit') || lowerMsg.includes('too many')) {
+            msg = 'Too many attempts. Please wait a few minutes and try again.';
+        } else if (lowerMsg.includes('provider') && lowerMsg.includes('google')) {
+            msg = 'This account uses Google sign-in. Please use "Continue with Google".';
+        }
+
+        errEl.textContent = msg;
+
     } finally {
         submitBtn.disabled = false;
         submitBtn.textContent = authMode === 'signin' ? 'Sign in' : 'Sign up';
+    }
+}
+
+// ============================================================
+// FORGOT PASSWORD
+// ============================================================
+async function handleForgotPassword(e) {
+    if (e) e.preventDefault();
+
+    const email = document.getElementById('authEmail').value.trim();
+    const errEl = document.getElementById('authError');
+
+    if (!email) {
+        errEl.style.color = '#ef4444';
+        errEl.textContent = 'Enter your email above, then click Forgot password.';
+        document.getElementById('authEmail').focus();
+        return;
+    }
+
+    errEl.style.color = 'var(--mute)';
+    errEl.textContent = 'Sending reset link...';
+
+    try {
+        const { error } = await sb.auth.resetPasswordForEmail(email, {
+            redirectTo: window.location.origin + '/dashboard.html'
+        });
+
+        if (error) throw error;
+
+        errEl.style.color = '#22c55e';
+        errEl.textContent = '✓ Reset link sent to ' + email + '. Check your inbox and spam folder.';
+
+        if (typeof toastSuccess === 'function') {
+            toastSuccess('Reset link sent to ' + email);
+        }
+    } catch (err) {
+        errEl.style.color = '#ef4444';
+        let msg = err.message || 'Could not send reset link.';
+        if (msg.toLowerCase().includes('rate limit')) {
+            msg = 'Too many attempts. Please wait and try again.';
+        }
+        errEl.textContent = msg;
     }
 }
 
