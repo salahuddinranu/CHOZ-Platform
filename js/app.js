@@ -729,14 +729,17 @@ document.addEventListener('DOMContentLoaded', () => {
     if (startBtn) {
        const startBtn = document.getElementById('startBtn');
 if (startBtn) {
+    const startBtn = document.getElementById('startBtn');
+if (startBtn) {
     startBtn.onclick = () => {
-        const cats = document.getElementById('categories') || document.getElementById('cats');
-        if (cats) {
-            cats.scrollIntoView({ behavior: 'smooth' });
+        const target = document.getElementById('categories') || document.getElementById('cats');
+        if (target) {
+            target.scrollIntoView({ behavior: 'smooth' });
         } else {
             window.location.href = '/#categories';
         }
     };
+}
 }
 });
 
