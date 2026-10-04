@@ -159,7 +159,17 @@ async function handleAuthSubmit() {
             const { error } = await sb.auth.signUp({ email, password });
             if (error) throw error;
             errEl.style.color = '#22c55e';
-            errEl.textContent = 'Account created! You can now sign in.';
+            errEl.style.color = '#22c55e';
+errEl.textContent = 'Account created! Signing you in...';
+
+// Auto sign in after signup
+const { error: signInErr } = await sb.auth.signInWithPassword({ email, password });
+if (!signInErr) {
+    closeAuth();
+    if (typeof toastSuccess === 'function') toastSuccess('Welcome to CHOZ!');
+} else {
+    errEl.textContent = 'Account created! Please sign in with your email and password.';
+}
 
             const termsCheck = document.getElementById('termsCheck');
             if (termsCheck) termsCheck.checked = false;
