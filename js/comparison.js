@@ -115,6 +115,10 @@ function renderComparisonModal() {
         <button type="button" class="btn p" style="width:100%;padding:14px" id="lockBtn" disabled>
             Select an option first
         </button>
+        <a href="/category.html?id=${currentComparison.categoryId}" 
+   style="display:block;text-align:center;margin-top:12px;font-size:13px;color:var(--ac);text-decoration:underline">
+   Or browse all items in this category →
+</a>
     `;
 
     content.querySelectorAll('.option-card').forEach(card => {
@@ -1280,13 +1284,13 @@ async function loadCategories() {
         const hint = hints[c.id] || c.description || 'Compare options';
 
         return `
-            <a onclick="browseCategory('${c.id}')" style="${!hasEnough ? 'opacity:0.6' : ''}">
+            <a onclick="startComparison('${c.id}')" style="${!hasEnough ? 'opacity:0.6' : ''}">
                 <span class="icon">${c.icon || '📦'}</span>
                 <b>${c.name}</b>
                 <small>${hint}</small>
                 <div class="cat-footer">
                     <span class="cat-count">${itemCount} options</span>
-                    <span class="cat-arrow">Browse →</span>
+                    <span class="cat-arrow"><span class="cat-arrow">Compare →</span> →</span>
                 </div>
             </a>
         `;
