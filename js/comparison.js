@@ -50,7 +50,7 @@ async function startComparison(categoryId) {
         }));
         currentComparison.labels = currentComparison.options.map(o => o.label);
 
-        // Fetch attribute definitions for custom option form
+        // Fetch attribute definitions
         const { data: attrDefs } = await sb
             .from('attribute_definitions')
             .select('*')
@@ -61,7 +61,7 @@ async function startComparison(categoryId) {
         renderComparisonModal();
     } catch (err) {
         console.error('start comparison error:', err);
-        toastError(err.message || 'Could not start comparison');
+        if (typeof toastError === 'function') toastError(err.message || 'Could not start comparison');
     }
 }
 
