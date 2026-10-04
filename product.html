@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Product — CHOZ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700;12..96,800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/style.css">
+<style>
+    .product-page { padding: 40px 0 80px; }
+    .breadcrumb { font-size: 13px; color: var(--mute); margin-bottom: 20px; }
+    .breadcrumb a { color: var(--ac); }
+    .product-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: start; }
+    @media (max-width: 820px) { .product-layout { grid-template-columns: 1fr; gap: 24px; } }
+    .product-hero {
+        background: linear-gradient(135deg, #3A3FD9, #7C3AED);
+        border-radius: 24px;
+        padding: 40px;
+        color: white;
+        text-align: center;
+        margin-bottom: 24px;
+    }
+    .product-hero .big-initial {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.2);
+        display: grid;
+        place-items: center;
+        font-family: 'Bricolage Grotesque';
+        font-size: 48px;
+        font-weight: 700;
+        margin: 0 auto 20px;
+    }
+    .product-name { font-family: 'Bricolage Grotesque'; font-size: 28px; font-weight: 700; margin-bottom: 8px; line-height: 1.2; }
+    .product-brand { font-size: 15px; opacity: 0.85; margin-bottom: 16px; }
+    .product-price-big { font-size: 32px; font-weight: 700; color: var(--hl); }
+    .section-title { font-family: 'Bricolage Grotesque'; font-size: 18px; font-weight: 700; margin-bottom: 16px; }
+    .spec-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 12px 0;
+        border-bottom: 1px solid var(--line);
+        font-size: 14px;
+    }
+    .spec-row:last-child { border-bottom: none; }
+    .spec-label { color: var(--mute); }
+    .spec-value { font-weight: 600; }
+    .action-buttons { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 20px; }
+    .action-buttons .btn { padding: 12px 20px; font-size: 14px; }
+    .skeleton-line { height: 14px; background: var(--line); border-radius: 6px; margin-bottom: 12px; animation: skp 1.5s ease-in-out infinite; }
+    @keyframes skp { 0%,100%{opacity:1} 50%{opacity:0.5} }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+<nav><div class="w">
+<a class="logo" href="/" aria-label="CHOZ Home">
+<svg width="28" height="28" viewBox="0 0 512 512" style="vertical-align:middle;margin-right:8px">
+<defs><linearGradient id="lgp" x1="0" y1="0" x2="1" y2="1">
+<stop offset="0" stop-color="#3A3FD9"/><stop offset="1" stop-color="#7C3AED"/>
+</linearGradient></defs>
+<rect width="512" height="512" rx="112" fill="url(#lgp)"/>
+<path d="M 350 154 A 128 128 0 1 0 350 358" fill="none" stroke="#FFFFFF" stroke-width="52" stroke-linecap="round"/>
+<circle cx="376" cy="256" r="14" fill="#FFD25A"/>
+</svg>CHOZ</a>
+<div class="sp"></div>
+<button class="btn btn-icon" id="themeBtn">🌙</button>
+<a class="btn" href="/">← Home</a>
+</div></nav>
+
+<div class="w product-page">
+    <div class="breadcrumb" id="breadcrumb">Loading...</div>
+    <div id="productContent">
+        <div class="skeleton-line" style="width:40%"></div>
+        <div class="skeleton-line" style="width:70%;height:28px"></div>
+        <div class="skeleton-line" style="width:100%;height:200px;border-radius:24px;margin-top:20px"></div>
+    </div>
+</div>
+
+<footer style="border-top:1px solid var(--line);padding:40px 24px;margin-top:60px;text-align:center;color:var(--mute);font-size:14px">
+    <strong style="color:var(--ink);font-family:'Bricolage Grotesque';font-size:18px">CHOZ</strong>
+    <p style="margin-top:8px">"Choose without the noise."</p>
+    <p style="margin-top:12px;font-size:12px">Web owned and created by Salahuddin Ranu.</p>
+</footer>
+
+<script src="/js/config.js"></script>
+<script src="/js/toast.js"></script>
+<script>
+const themeBtn = document.getElementById('themeBtn');
+function getTheme() {
+    const s = document.documentElement.getAttribute('data-theme');
+    return s || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+}
+themeBtn.textContent = getTheme() === 'dark' ? '☀️' : '🌙';
+themeBtn.onclick = () => {
+    const next = getTheme() === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('choz-theme', next);
+    themeBtn.textContent = next === 'dark' ? '☀️' : '🌙';
+};
+const saved = localStorage.getItem('choz-theme');
+if (saved) document.documentElement.setAttribute('data-theme', saved);
+
+document.addEventListener('DOMContentLoaded', () => {
+    try {
+        if (typeof sb === 'undefined') {
+            document.getElementById('productContent').innerHTML = '<div style="background:#fee2e2;color:#991b1b;padding:20px;border-radius:12px">Configuration error: Supabase not loaded.</div>';
+            return;
+        }
+        init();
+    } catch (err) {
+        console.error(err);
+    }
+});
+
+async function init() {
+    try {
+        const params = new URLSearchParams(window.location.search);
+        const itemId = params.get('id');
+
+        if (!itemId) {
+            document.getElementById('productContent').innerHTML = '<p>Product not found (no ID).</p>';
+            return;
+        }
+
+        const { data: item, error } = await sb
+            .from('items')
+            .select('*')
+            .eq('id', itemId)
+            .maybeSingle();
+
+        if (error || !item) {
+            document.getElementById('productContent').innerHTML = '<p>Product not found.</p>';
+            return;
+        }
+
+        // Fetch brand
+        let brandName = '';
+        if (item.brand_id) {
+            const { data: b } = await sb.from('brands').select('name').eq('id', item.brand_id).maybeSingle();
+            if (b) brandName = b.name;
+        }
+
+        // Fetch category
+        let categoryName = 'Category';
+        if (item.category_id) {
+            const { data: c } = await sb.from('categories').select('name').eq('id', item.category_id).maybeSingle();
+            if (c) categoryName = c.name;
+        }
+
+        // Fetch attributes
+        const { data: attrs } = await sb
+            .from('item_attributes')
+            .select('value, numeric_value, attribute_definitions(name, unit, sort_order)')
+            .eq('item_id', itemId);
+
+        document.title = item.name + ' — CHOZ';
+        renderProduct(item, brandName, categoryName, attrs || []);
+        loadReviews(itemId);
+
+    } catch (err) {
+        console.error('Init error:', err);
+        document.getElementById('productContent').innerHTML = '<p>Error: ' + err.message + '</p>';
+    }
+}
+
+function renderProduct(item, brandName, categoryName, attrs) {
+    const initial = (item.name || '?').charAt(0).toUpperCase();
+    const price = item.base_price ? (item.currency || 'PKR') + ' ' + item.base_price.toLocaleString() : 'Price unavailable';
+
+    attrs.sort((a, b) => (a.attribute_definitions?.sort_order || 0) - (b.attribute_definitions?.sort_order || 0));
+
+    document.getElementById('breadcrumb').innerHTML =
+        '<a href="/">Home</a> / ' +
+        '<a href="/category.html?id=' + encodeURIComponent(item.category_id) + '">' + escapeP(categoryName) + '</a> / ' +
+        '<span>' + escapeP(item.name) + '</span>';
+
+    document.getElementById('productContent').innerHTML =
+        '<div class="product-hero">' +
+            '<div class="big-initial">' + initial + '</div>' +
+            '<div class="product-name">' + escapeP(item.name) + '</div>' +
+            '<div class="product-brand">' + (brandName ? escapeP(brandName) : 'Unbranded') + '</div>' +
+            '<div class="product-price-big">' + price + '</div>' +
+        '</div>' +
+
+        '<div class="product-layout">' +
+            '<div>' +
+                '<div class="section-title">Specifications</div>' +
+                '<div style="background:var(--sf);border:1px solid var(--line);border-radius:16px;padding:20px">' +
+                    (attrs.length === 0
+                        ? '<p style="color:var(--mute);font-size:14px;text-align:center;padding:20px">No specifications available.</p>'
+                        : attrs.map(a => {
+                            const name = a.attribute_definitions?.name || '';
+                            const unit = a.attribute_definitions?.unit || '';
+                            const val = a.value || a.numeric_value || '—';
+                            return '<div class="spec-row"><span class="spec-label">' + escapeP(name) + '</span><span class="spec-value">' + escapeP(val) + (unit ? ' ' + escapeP(unit) : '') + '</span></div>';
+                        }).join('')
+                    ) +
+                '</div>' +
+            '</div>' +
+
+            '<div>' +
+                '<div class="section-title">Actions</div>' +
+                '<div style="background:var(--sf);border:1px solid var(--line);border-radius:16px;padding:20px">' +
+                    '<p style="font-size:14px;color:var(--mute);line-height:1.6;margin-bottom:20px">' +
+                        (item.description ? escapeP(item.description) : 'No description available.') +
+                    '</p>' +
+                    '<div class="action-buttons">' +
+                        '<button class="btn p" onclick="goCompare()">⚖️ Compare</button>' +
+                        '<button class="btn" onclick="toggleFavorite(\'' + item.id + '\')" id="favBtn">⭐ Favorite</button>' +
+                        '<button class="btn" onclick="copyLink()">🔗 Copy Link</button>' +
+                    '</div>' +
+                '</div>' +
+
+                '<div class="section-title" style="margin-top:24px">Reviews</div>' +
+                '<div id="reviewsSection" style="background:var(--sf);border:1px solid var(--line);border-radius:16px;padding:20px">' +
+                    '<p style="color:var(--mute);font-size:14px;text-align:center;padding:20px">Loading reviews...</p>' +
+                '</div>' +
+            '</div>' +
+        '</div>';
+
+    checkFavorite(item.id);
+}
+
+async function checkFavorite(itemId) {
+    try {
+        const { data: { session } } = await sb.auth.getSession();
+        if (!session) return;
+
+        const { data } = await sb
+            .from('favorites')
+            .select('id')
+            .eq('user_id', session.user.id)
+            .eq('item_id', itemId)
+            .maybeSingle();
+
+        const btn = document.getElementById('favBtn');
+        if (btn && data) {
+            btn.textContent = '⭐ Favorited';
+            btn.style.background = 'var(--ac-soft)';
+            btn.style.borderColor = 'var(--ac)';
+        }
+    } catch (e) {}
+}
+
+async function toggleFavorite(itemId) {
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) {
+        if (typeof toastInfo === 'function') toastInfo('Sign in to save favorites');
+        return;
+    }
+
+    const { data: existing } = await sb
+        .from('favorites')
+        .select('id')
+        .eq('user_id', session.user.id)
+        .eq('item_id', itemId)
+        .maybeSingle();
+
+    const btn = document.getElementById('favBtn');
+
+    if (existing) {
+        await sb.from('favorites').delete().eq('id', existing.id);
+        if (btn) {
+            btn.textContent = '⭐ Favorite';
+            btn.style.background = '';
+            btn.style.borderColor = '';
+        }
+        if (typeof toastInfo === 'function') toastInfo('Removed from favorites');
+    } else {
+        await sb.from('favorites').insert({ user_id: session.user.id, item_id: itemId });
+        if (btn) {
+            btn.textContent = '⭐ Favorited';
+            btn.style.background = 'var(--ac-soft)';
+            btn.style.borderColor = 'var(--ac)';
+        }
+        if (typeof toastSuccess === 'function') toastSuccess('Added to favorites');
+    }
+}
+
+function goCompare() {
+    window.location.href = '/#categories';
+}
+
+async function loadReviews(itemId) {
+    const section = document.getElementById('reviewsSection');
+    if (!section) return;
+
+    const { data: reviews } = await sb
+        .from('user_reviews')
+        .select('*')
+        .eq('item_id', itemId)
+        .eq('is_approved', true)
+        .eq('is_hidden', false)
+        .order('created_at', { ascending: false })
+        .limit(5);
+
+    if (!reviews || reviews.length === 0) {
+        section.innerHTML = '<p style="color:var(--mute);font-size:14px;text-align:center;padding:20px">No reviews yet. Be the first!</p>';
+        return;
+    }
+
+    const avg = (reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1);
+
+    section.innerHTML =
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">' +
+            '<span style="color:var(--hl);font-size:16px">' + '★'.repeat(Math.round(avg)) + '☆'.repeat(5 - Math.round(avg)) + '</span>' +
+            '<span style="color:var(--mute);font-size:13px">' + avg + ' (' + reviews.length + ' reviews)</span>' +
+        '</div>' +
+        reviews.map(r =>
+            '<div style="border-top:1px solid var(--line);padding:12px 0">' +
+                '<div style="display:flex;justify-content:space-between;margin-bottom:4px">' +
+                    '<span style="color:var(--hl);font-size:13px">' + '★'.repeat(r.rating) + '☆'.repeat(5 - r.rating) + '</span>' +
+                    '<span style="color:var(--mute);font-size:12px">' + new Date(r.created_at).toLocaleDateString() + '</span>' +
+                '</div>' +
+                (r.title ? '<strong style="font-size:14px;display:block;margin-bottom:4px">' + escapeP(r.title) + '</strong>' : '') +
+                '<p style="color:var(--mute);font-size:13px;margin:0;line-height:1.5">' + escapeP(r.content || '') + '</p>' +
+            '</div>'
+        ).join('');
+}
+
+function copyLink() {
+    navigator.clipboard.writeText(window.location.href);
+    if (typeof toastSuccess === 'function') toastSuccess('Link copied!');
+}
+
+function escapeP(s) {
+    if (!s) return '';
+    return String(s).replace(/[&<>"']/g, function(c) {
+        return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+    });
+}
+</script>
+</body>
+</html>
