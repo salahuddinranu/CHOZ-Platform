@@ -105,6 +105,8 @@ function toggleAuthMode(e) {
     if (submit) submit.textContent = authMode === 'signin' ? 'Sign in' : 'Sign up';
     if (switchText) switchText.textContent = authMode === 'signin' ? 'No account?' : 'Already have account?';
     if (switchLink) switchLink.textContent = authMode === 'signin' ? 'Sign up' : 'Sign in';
+        const forgotWrap = document.getElementById('forgotWrap');
+    if (forgotWrap) forgotWrap.style.display = authMode === 'signin' ? 'block' : 'none';
     if (strength) strength.style.display = authMode === 'signup' ? 'block' : 'none';
     if (terms) terms.style.display = authMode === 'signup' ? 'flex' : 'none';
     if (pwdInput) pwdInput.setAttribute('autocomplete', authMode === 'signup' ? 'new-password' : 'current-password');
@@ -669,6 +671,9 @@ if ('serviceWorker' in navigator) {
 document.addEventListener('DOMContentLoaded', () => {
     // Auth modal close
     const closeBtn = document.getElementById('closeAuth');
+        // Forgot password link
+    const forgotLink = document.getElementById('forgotPwdLink');
+    if (forgotLink) forgotLink.onclick = handleForgotPassword;
     if (closeBtn) closeBtn.onclick = closeAuth;
 
     const authModal = document.getElementById('authModal');
