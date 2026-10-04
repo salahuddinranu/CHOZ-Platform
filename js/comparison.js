@@ -26,39 +26,43 @@ async function startComparison(categoryId) {
     currentComparison.choice = null;
     currentComparison.priorityNames = [];
     currentComparison.customCounter = 0;
+    currentComparison.sessionToken = null;
 
-    const [itemsRes, attrsRes] = await Promise.all([
-        sb.from('items')
-            .select('*, brands(name), item_attributes(*, attribute_definitions(id, name, slug, unit, is_priority_eligible))')
-            .eq('category_id', categoryId)
-            .eq('is_active', true),
-        sb.from('attribute_definitions')
+    try {
+        // Server-side session start (anti-cheat)
+        const { data, error } = await sb.rpc('start_comparison_session', {
+            p_category_id: categoryId
+        });
+
+        if (error) throw error;
+
+        currentComparison.sessionToken = data.session_token;
+        currentComparison.options = data.options.map(opt => ({
+            label: opt.label,
+            display_name: opt.display_name,
+            base_price: opt.price_hint,
+            currency: opt.currency,
+            item_attributes: (opt.attributes || []).map(a => ({
+                value: a.value,
+                numeric_value: a.numeric_value,
+                attribute_definitions: { name: a.name, unit: a.unit }
+            }))
+        }));
+        currentComparison.labels = currentComparison.options.map(o => o.label);
+
+        // Fetch attribute definitions for custom option form
+        const { data: attrDefs } = await sb
+            .from('attribute_definitions')
             .select('*')
             .eq('category_id', categoryId)
-            .order('sort_order')
-    ]);
+            .order('sort_order');
+        currentComparison.attributeDefs = attrDefs || [];
 
-    const items = itemsRes.data;
-    const attrDefs = attrsRes.data || [];
-
-    if (itemsRes.error || !items || items.length < 2) {
-        toastWarning('Not enough items in this category yet.');
-        return;
+        renderComparisonModal();
+    } catch (err) {
+        console.error('start comparison error:', err);
+        toastError(err.message || 'Could not start comparison');
     }
-
-    const validItems = items.filter(i => (i.item_attributes || []).length >= 2);
-    if (validItems.length < 2) {
-        toastWarning('Not enough items with complete data in this category.');
-        return;
-    }
-
-    currentComparison.attributeDefs = attrDefs;
-
-    const shuffled = [...validItems].sort(() => Math.random() - 0.5).slice(0, 3);
-    currentComparison.options = shuffled;
-    currentComparison.labels = ['A', 'B', 'C'].slice(0, shuffled.length);
-
-    renderComparisonModal();
 }
 
 // ============================================================
@@ -452,36 +456,61 @@ async function lockChoice() {
         return;
     }
 
-    const chosenIdx = currentComparison.choice;
-    const chosenItem = currentComparison.options[chosenIdx];
-    const chosenLabel = currentComparison.labels[chosenIdx];
+    const chosenItem = currentComparison.options[currentComparison.choice];
+    const chosenLabel = currentComparison.labels[currentComparison.choice];
 
-    let fullItem;
-
+    // Custom option — no server lock needed
     if (chosenItem.is_custom) {
-        fullItem = chosenItem;
-    } else {
-        const { data } = await sb
-            .from('items')
-            .select('*, brands(*), item_attributes(*, attribute_definitions(*))')
-            .eq('id', chosenItem.id)
-            .single();
-        fullItem = data;
+        currentComparison.step = 'revealed';
+        renderReveal({
+            id: chosenItem.id,
+            name: chosenItem.name,
+            base_price: chosenItem.base_price,
+            currency: chosenItem.currency,
+            brands: null,
+            categories: { name: 'Custom' },
+            item_attributes: chosenItem.item_attributes,
+            is_custom: true
+        }, chosenLabel);
+        return;
     }
 
-    const { data: { session } } = await sb.auth.getSession();
-    if (session) {
-        await sb.from('comparisons').insert({
-            user_id: session.user.id,
-            category_id: currentComparison.categoryId,
-            title: 'Blind Comparison',
-            status: 'completed',
-            completed_at: new Date().toISOString()
+    try {
+        // Send to server — server validates + freezes
+        const { error } = await sb.rpc('lock_comparison_choice', {
+            p_session_token: currentComparison.sessionToken,
+            p_chosen_label: chosenLabel,
+            p_priorities: currentComparison.priorities
         });
-    }
 
-    currentComparison.step = 'revealed';
-    renderReveal(fullItem, chosenLabel);
+        if (error) throw error;
+
+        // Save comparison record
+        const { data: { session } } = await sb.auth.getSession();
+        if (session) {
+            await sb.from('comparisons').insert({
+                user_id: session.user.id,
+                category_id: currentComparison.categoryId,
+                title: 'Blind Comparison',
+                status: 'completed',
+                completed_at: new Date().toISOString()
+            });
+        }
+
+        // Server returns reveal (server decides what to show)
+        const { data: revealData, error: revealErr } = await sb.rpc('reveal_comparison_choice', {
+            p_session_token: currentComparison.sessionToken
+        });
+
+        if (revealErr) throw revealErr;
+
+        currentComparison.step = 'revealed';
+        renderRevealFromServer(revealData.item, revealData.chosen_label);
+
+    } catch (err) {
+        console.error('Lock error:', err);
+        toastError(err.message || 'Could not lock choice');
+    }
 }
 
 // ============================================================
@@ -1308,3 +1337,74 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.target.id === 'compModal') closeCompModal();
     });
 });
+// ============================================================
+// RENDER REVEAL FROM SERVER RESPONSE
+// ============================================================
+function renderRevealFromServer(item, label) {
+    const content = document.getElementById('compContent');
+    const attrs = (item.attributes || []).map(a => ({
+        value: a.value,
+        numeric_value: a.numeric_value,
+        attribute_definitions: { name: a.name, unit: a.unit }
+    }));
+    const priorities = currentComparison.priorities || [];
+
+    const priorityExplanations = priorities.slice(0, 5).map((attrId, idx) => {
+        const attr = attrs.find(a => a.attribute_definitions?.name === attrId || a.attribute_definitions?.id === attrId);
+        if (!attr) return null;
+        return {
+            rank: idx + 1,
+            name: attr.attribute_definitions?.name || 'Unknown',
+            value: `${attr.value || attr.numeric_value || '—'}${attr.attribute_definitions?.unit ? ' ' + attr.attribute_definitions.unit : ''}`
+        };
+    }).filter(Boolean);
+
+    content.innerHTML = `
+        <div class="comp-header">
+            <h3>Your Result</h3>
+            <span class="badge" style="background:#dcfce7;color:#166534">✓ Verified</span>
+        </div>
+
+        <div class="reveal-card">
+            <h2>🎉 Revealed</h2>
+            <p style="opacity:0.9">You chose Option ${label}</p>
+            <div class="item-name">${item.name}</div>
+            ${item.brand_name ? `<div class="brand-name">${item.brand_name}</div>` : ''}
+            ${item.base_price ? `<div class="price">${item.currency} ${item.base_price.toLocaleString()}</div>` : ''}
+        </div>
+
+        <div class="why-section-box">
+            <h4 style="font-family:'Bricolage Grotesque';font-size:18px;margin-bottom:12px">Why I Chose This</h4>
+            ${priorityExplanations.length > 0 ? `
+                <ol style="margin:0;padding-left:20px;font-size:14px;line-height:1.8">
+                    ${priorityExplanations.map(p => `
+                        <li><strong>${p.name}</strong> <span style="color:var(--ac);font-weight:600">→ ${p.value}</span></li>
+                    `).join('')}
+                </ol>
+                <p style="margin-top:14px;font-size:13px;color:var(--mute)">
+                    🔒 Verified server-side. Brand names were hidden during your decision.
+                </p>
+            ` : `
+                <p style="font-size:14px">You selected this option from ${currentComparison.options.length} anonymous choices.</p>
+            `}
+        </div>
+
+        <div class="reveal-actions">
+            <button class="btn p" onclick="saveDecision('${item.id}')">💾 Save to Memory</button>
+            <button class="btn" onclick="bookmarkComparison('${item.id}', \`${item.name.replace(/`/g, '\\`')}\`)">🔖 Bookmark</button>
+            <button class="btn" onclick="openReviewModal('${item.id}', \`${item.name.replace(/`/g, '\\`')}\`)">⭐ Write Review</button>
+            <button class="btn" onclick="shareResult()">🔗 Share</button>
+            <button class="btn" onclick="showWhereToBuy('${item.id}', \`${item.name.replace(/`/g, '\\`')}\`, '${currentComparison.categoryId}')">🛒 Where to Buy</button>
+            <button class="btn" onclick="closeCompModal()">Close</button>
+        </div>
+
+        <div id="reviewsSection" style="margin-top:20px"></div>
+        <div id="buySection" style="margin-top:20px"></div>
+    `;
+
+    setTimeout(() => {
+        if (typeof loadItemReviews === 'function') {
+            loadItemReviews(item.id, item.name);
+        }
+    }, 100);
+}
