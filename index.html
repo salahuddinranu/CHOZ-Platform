@@ -543,6 +543,68 @@ Browse categories
 <script src="/js/comparison.js"></script>
 <script src="/js/search.js"></script>
 <script src="/js/app.js"></script>
-
+<script>
+// ============================================================
+// AUTO-START COMPARISON (from product page)
+// ============================================================
+document.addEventListener('DOMContentLoaded', async () => {
+    // Wait for app to init
+    setTimeout(async () => {
+        const params = new URLSearchParams(window.location.search);
+        const itemId = params.get('compare');
+        const categoryId = params.get('start');
+        
+        if (!itemId && !categoryId) return;
+        
+        try {
+            // Wait for session
+            const { data: { session } } = await sb.auth.getSession();
+            
+            if (!session) {
+                // Open auth first
+                if (typeof openAuth === 'function') {
+                    openAuth();
+                    // After login, user can try again
+                    if (typeof toastInfo === 'function') {
+                        toastInfo('Please sign in, then click Compare again');
+                    }
+                }
+                return;
+            }
+            
+            let targetCategoryId = categoryId;
+            
+            // If itemId, find its category
+            if (itemId && !categoryId) {
+                const { data: item } = await sb
+                    .from('items')
+                    .select('category_id')
+                    .eq('id', itemId)
+                    .maybeSingle();
+                
+                if (item) targetCategoryId = item.category_id;
+            }
+            
+            if (targetCategoryId && typeof startComparison === 'function') {
+                // Scroll to categories
+                const catsSection = document.getElementById('categories');
+                if (catsSection) catsSection.scrollIntoView({ behavior: 'smooth' });
+                
+                // Start comparison after a small delay
+                setTimeout(() => {
+                    startComparison(targetCategoryId);
+                }, 600);
+                
+                // Clean URL
+                if (window.history && window.history.replaceState) {
+                    window.history.replaceState({}, '', '/');
+                }
+            }
+        } catch (err) {
+            console.error('Auto-start error:', err);
+        }
+    }, 800);
+});
+</script>
 </body>
 </html>
