@@ -210,7 +210,7 @@ function renderProduct(item, brandName, categoryName, attrs) {
                         (item.description ? escapeP(item.description) : 'No description available.') +
                     '</p>' +
                     '<div class="action-buttons">' +
-                        '<button class="btn p" onclick="goCompare()">⚖️ Compare</button>' +
+                        '<button class="btn p" <button class="btn p" onclick="goCompare()">⚖️ Compare in Blind Mode</button>>⚖️ Compare</button>' +
                         '<button class="btn" onclick="toggleFavorite(\'' + item.id + '\')" id="favBtn">⭐ Favorite</button>' +
                         '<button class="btn" onclick="copyLink()">🔗 Copy Link</button>' +
                     '</div>' +
@@ -283,7 +283,12 @@ async function toggleFavorite(itemId) {
 }
 
 function goCompare() {
-    window.location.href = '/#categories';
+    // Get category from URL or from loaded item
+    const params = new URLSearchParams(window.location.search);
+    const itemId = params.get('id');
+    
+    // Redirect to homepage with auto-start
+    window.location.href = '/?compare=' + encodeURIComponent(itemId) + '#categories';
 }
 
 async function loadReviews(itemId) {
