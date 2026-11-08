@@ -744,3 +744,93 @@ initCookieBanner();
 initOnboarding();
 loadCategories();
 loadPulse();
+// ============================================================
+// ADMIN / CREATOR LOGIN LOGIC
+// ============================================================
+let isAdminMode = false;
+
+window.toggleAdminMode = function() {
+    isAdminMode = !isAdminMode;
+    const btn = document.getElementById('adminModeBtn');
+    const authTitle = document.getElementById('authTitle');
+    const authSubmit = document.getElementById('authSubmit');
+    const googleBtn = document.getElementById('googleBtn');
+    const termsLabel = document.getElementById('termsLabel');
+    const switchText = document.getElementById('authSwitchText');
+
+    if (isAdminMode) {
+        authTitle.textContent = 'Creator Access Only';
+        authSubmit.textContent = 'Login as Creator';
+        btn.textContent = '← Back to normal user login';
+        btn.style.color = 'var(--ac)';
+        if (googleBtn) googleBtn.style.display = 'none'; // Admin ke liye Google login hide
+        if (termsLabel) termsLabel.style.display = 'none'; // Terms hide
+        if (switchText) switchText.parentElement.style.display = 'none'; // Signup hide
+        authMode = 'signin'; // Admin hamesha signin hi karega
+    } else {
+        authTitle.textContent = authMode === 'signin' ? 'Sign in' : 'Sign up';
+        authSubmit.textContent = authMode === 'signin' ? 'Sign in' : 'Sign up';
+        btn.textContent = 'Sign in as Creator / Admin';
+        btn.style.color = '#6b7280';
+        if (googleBtn) googleBtn.style.display = 'flex';
+        if (termsLabel) termsLabel.style.display = authMode === 'signup' ? 'flex' : 'none';
+        if (switchText) switchText.parentElement.style.display = 'block';
+    }
+};
+
+// Jab auth successful ho, toh check karein ke user Admin hai ya nahi
+async function checkIfUserIsAdmin(userId) {
+    const { data, error } = await sb
+        .from('admin_users')
+        .select('role')
+        .eq('user_id', userId)
+        .maybeSingle();
+    
+    if (data) return true;
+    return false;
+}
+
+// Auth submit function ko modify karein
+const originalHandleAuthSubmit = handleAuthSubmit;
+window.handleAuthSubmit = async function() {
+    if (isAdminMode) {
+        // Validation
+        const email = document.getElementById('authEmail').value.trim();
+        const password = document.getElementById('authPass').value;
+        const errEl = document.getElementById('authError');
+        const submitBtn = document.getElementById('authSubmit');
+
+        if (!email || !password) {
+            errEl.textContent = 'Email and password required.';
+            return;
+        }
+
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Verifying...';
+
+        try {
+            const { data, error } = await sb.auth.signInWithPassword({ email, password });
+            if (error) throw error;
+
+            // Check if admin
+            const isAdmin = await checkIfUserIsAdmin(data.user.id);
+            if (!isAdmin) {
+                await sb.auth.signOut();
+                throw new Error('Access Denied. You are not the Creator.');
+            }
+
+            // Agar Admin hai toh direct Admin Portal par bhejein
+            closeAuth();
+            toastSuccess('Welcome back, Creator!');
+            window.location.href = '/admin/index.html'; // Admin portal ka path
+
+        } catch (err) {
+            errEl.textContent = err.message;
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Login as Creator';
+        }
+    } else {
+        // Normal user ke liye purana function chalayein
+        originalHandleAuthSubmit();
+    }
+};
