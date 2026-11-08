@@ -1395,6 +1395,10 @@ function renderRevealFromServer(item, label) {
             <button class="btn" onclick="openReviewModal('${item.id}', \`${item.name.replace(/`/g, '\\`')}\`)">⭐ Write Review</button>
             <button class="btn" onclick="shareResult()">🔗 Share</button>
             <button class="btn" onclick="showWhereToBuy('${item.id}', \`${item.name.replace(/`/g, '\\`')}\`, '${currentComparison.categoryId}')">🛒 Where to Buy</button>
+            <a href="https://asiafilm.org/4/733c71520a71eddd64299eac78f71e2c" target="_blank" rel="nofollow sponsored" 
+   style="display:inline-flex; align-items:center; gap:8px; background: linear-gradient(135deg, #FFD25A, #FFA500); color: #1a1a1a; padding: 10px 20px; border-radius: 8px; font-weight: 700; text-decoration: none; font-size: 14px; box-shadow: 0 4px 12px rgba(255, 165, 0, 0.4); transition: transform 0.2s;">
+   🔥 Check Best Price & Deals
+</a>
             <button class="btn" onclick="closeCompModal()">Close</button>
         </div>
 
