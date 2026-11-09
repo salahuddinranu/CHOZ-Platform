@@ -66,19 +66,96 @@ async function loadOverview(content) {
     ]);
 
       content.innerHTML = `
+        <!-- Profile Card (Neeche wala) -->
+        <div style="background: linear-gradient(135deg, var(--ac), #7C3AED); color: white; border-radius: 20px; padding: 30px; display: flex; align-items: center; gap: 24px; flex-wrap: wrap; margin-bottom: 24px; position: relative; overflow: hidden;">
+            
+            <div style="position: absolute; top: -50px; right: -50px; width: 150px; height: 150px; background: rgba(255,255,255,0.1); border-radius: 50%;"></div>
+
+            <!-- Avatar Section -->
+            <div style="text-align: center; z-index: 1;">
+                <div id="profileAvatar" style="width: 100px; height: 100px; border-radius: 50%; background: rgba(255,255,255,0.2); border: 3px solid white; display: grid; place-items: center; overflow: hidden; font-size: 40px; font-weight: bold; margin: 0 auto;">
+                    ${(currentUser.email || 'U').charAt(0).toUpperCase()}
+                </div>
+                <input type="file" id="avatarUpload" accept="image/*" style="display: none;">
+                <button class="btn" style="margin-top: 12px; font-size: 12px; padding: 6px 16px; background: white; color: var(--ac); border: none; border-radius: 100px; font-weight: 600;" onclick="document.getElementById('avatarUpload').click()">📷 Change</button>
+            </div>
+
+            <!-- User Info -->
+            <div style="flex: 1; z-index: 1;">
+                <h2 style="font-family: 'Bricolage Grotesque'; font-size: 26px; margin-bottom: 4px; color: white;">${currentUser.email.split('@')[0]}</h2>
+                <p style="font-size: 14px; opacity: 0.9; margin-bottom: 16px;">${currentUser.email}</p>
+                
+                <div style="display: flex; gap: 10px; font-size: 13px; font-weight: 500; flex-wrap: wrap;">
+                    <span style="background: rgba(255,255,255,0.2); padding: 6px 14px; border-radius: 100px;">⭐ Pro Member</span>
+                    <span style="background: rgba(255,255,255,0.2); padding: 6px 14px; border-radius: 100px;">🎯 Smart Chooser</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Grid -->
         <div class="stat-grid" style="margin-bottom: 24px;">
-            <div class="stat" style="background: linear-gradient(135deg, #E0E7FF, #F3E8FF); border: none;">
+            <div class="stat" style="background: #E0E7FF; border: none;">
                 <h3 style="color: #4338CA;">${comps.count || 0}</h3>
-                <p style="color: #4338CA; font-weight: 500;">Total Comparisons</p>
+                <p style="color: #4338CA; font-weight: 600;">Total Comparisons</p>
             </div>
-            <div class="stat" style="background: linear-gradient(135deg, #DCFCE7, #D1FAE5); border: none;">
+            <div class="stat" style="background: #DCFCE7; border: none;">
                 <h3 style="color: #15803D;">${mems.count || 0}</h3>
-                <p style="color: #15803D; font-weight: 500;">Decision Memories</p>
+                <p style="color: #15803D; font-weight: 600;">Decision Memories</p>
             </div>
-            <div class="stat" style="background: linear-gradient(135deg, #FEF3C7, #FFEDD5); border: none;">
+            <div class="stat" style="background: #FEF3C7; border: none;">
                 <h3 style="color: #B45309;">${favs.count || 0}</h3>
-                <p style="color: #B45309; font-weight: 500;">Saved Favorites</p>
+                <p style="color: #B45309; font-weight: 600;">Saved Favorites</p>
             </div>
+        </div>
+
+        <!-- Quick Action -->
+        <div style="background: var(--sf); border: 1px solid var(--line); border-radius: 16px; padding: 24px; text-align: center; margin-bottom: 24px;">
+            <h3 style="font-family: 'Bricolage Grotesque'; font-size: 20px; margin-bottom: 8px;">Ready for your next decision?</h3>
+            <p style="color: var(--mute); font-size: 14px; margin-bottom: 20px;">Use blind comparison to find exactly what you need.</p>
+            <a class="btn p" href="/#categories" style="padding: 12px 24px; font-size: 15px;">🎯 Start New Comparison</a>
+        </div>
+    `;
+
+    // Profile Picture Upload Logic (Yeh zaroori hai taake button kaam kare)
+    setTimeout(() => {
+        const avatarUpload = document.getElementById('avatarUpload');
+        if (avatarUpload) {
+            avatarUpload.addEventListener('change', async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                if (file.size > 2 * 1024 * 1024) { alert('Picture 2MB se choti honi chahiye.'); return; }
+                
+                const { data: { session } } = await sb.auth.getSession();
+                if (!session) return;
+                
+                const fileExt = file.name.split('.').pop();
+                const fileName = \`\${session.user.id}-\${Date.now()}.\${fileExt}\`;
+                
+                const { error } = await sb.storage.from('avatars').upload(fileName, file);
+                if (error) { alert('Upload error: ' + error.message); return; }
+                
+                const { data: urlData } = sb.storage.from('avatars').getPublicUrl(fileName);
+                await sb.from('profiles').update({ avatar_url: urlData.publicUrl }).eq('id', session.user.id);
+                
+                // UI Update karein
+                const avatarEl = document.getElementById('profileAvatar');
+                if (avatarEl) {
+                    avatarEl.innerHTML = \`<img src="\${urlData.publicUrl}" style="width:100%;height:100%;object-fit:cover;">\`;
+                }
+                alert('Profile picture update ho gayi!');
+            });
+        }
+
+        // Purani picture load karein agar database mein hai
+        sb.from('profiles').select('avatar_url').eq('id', currentUser.id).maybeSingle().then(({data}) => {
+            if (data && data.avatar_url) {
+                const avatarEl = document.getElementById('profileAvatar');
+                if (avatarEl) {
+                    avatarEl.innerHTML = \`<img src="\${data.avatar_url}" style="width:100%;height:100%;object-fit:cover;">\`;
+                }
+            }
+        });
+    }, 100);
         </div>
 
         <div style="background: var(--sf); border: 1px solid var(--line); border-radius: 16px; padding: 24px; text-align: center; margin-bottom: 24px;">
