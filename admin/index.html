@@ -51,6 +51,58 @@
         .divider::before { left: 0; }
         .divider::after { right: 0; }
         .empty-state { text-align: center; padding: 2rem; color: #6b7280; }
+        /* ============================================================
+   MOBILE RESPONSIVE FIX FOR ADMIN PORTAL
+   ============================================================ */
+@media (max-width: 768px) {
+    .admin-layout {
+        flex-direction: column; /* Sidebar ko upar aur content ko neeche kar dega */
+    }
+    .admin-sidebar {
+        width: 100%; /* Sidebar poori screen cover karega */
+        padding: 1rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        justify-content: center;
+    }
+    .admin-sidebar h3 {
+        width: 100%;
+        text-align: center;
+        margin-bottom: 10px;
+    }
+    .admin-sidebar a {
+        padding: 8px 12px;
+        font-size: 13px;
+        margin-bottom: 0;
+        width: auto;
+    }
+    .admin-main {
+        padding: 1rem; /* Content ke side se space kam karega */
+        width: 100%;
+    }
+    .admin-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+    /* Tables ko mobile par scrollable banayega */
+    table {
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+    .stats-grid {
+        grid-template-columns: 1fr 1fr; /* Stats ko 2 columns mein dikhayega */
+    }
+    .form-row {
+        grid-template-columns: 1fr; /* Form fields ko ek ke neeche ek layega */
+    }
+    .modal-content {
+        width: 95%;
+        padding: 1.5rem;
+    }
+}
     </style>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-ABC123XYZ4"></script>
