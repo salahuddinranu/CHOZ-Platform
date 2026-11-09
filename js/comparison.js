@@ -600,6 +600,51 @@ function renderReveal(item, label) {
             ` : ''}
             <button class="btn" onclick="shareResult()">🔗 Share</button>
             <button class="btn" onclick="showWhereToBuy('${item.id}', \`${item.name.replace(/`/g, '\\`')}\`, '${currentComparison.categoryId}')">🛒 Where to Buy</button>
+            <!-- Desktop Banner (728x90) -->
+<div class="ad-desktop" style="text-align:center; margin: 20px 0;">
+  <script type="text/javascript">
+    atOptions = {
+      'key' : '<script>
+  atOptions = {
+    'key' : '0e47a386ba29c695f0bf252504b64fe7',
+    'format' : 'iframe',
+    'height' : 90,
+    'width' : 728,
+    'params' : {}
+  };
+</script>
+<script src="https://bauval.org/22/0e47a386ba29c695f0bf252504b64fe7"></script>',
+      'format' : 'iframe',
+      'height' : 90,
+      'width' : 728,
+      'params' : {}
+    };
+    document.write('<scr' + 'ipt type="text/javascript" src="http' + (location.protocol === 'https:' ? 's' : '') + '://www.highrevenueformat.com/YAHAN_DESKTOP_KEY/invoke.js"></scr' + 'ipt>');
+  </script>
+</div>
+
+<!-- Mobile Banner (320x50) -->
+<div class="ad-mobile" style="text-align:center; margin: 20px 0; display: none;">
+  <script type="text/javascript">
+    atOptions = {
+      'key' : '<script>
+  atOptions = {
+    'key' : '7e1802f7abf85824530f36e52ca6e259',
+    'format' : 'iframe',
+    'height' : 50,
+    'width' : 320,
+    'params' : {}
+  };
+</script>
+<script src="https://bauval.org/22/7e1802f7abf85824530f36e52ca6e259"></script>',
+      'format' : 'iframe',
+      'height' : 50,
+      'width' : 320,
+      'params' : {}
+    };
+    document.write('<scr' + 'ipt type="text/javascript" src="http' + (location.protocol === 'https:' ? 's' : '') + '://www.highrevenueformat.com/YAHAN_MOBILE_KEY/invoke.js"></scr' + 'ipt>');
+  </script>
+</div>
             <button class="btn" onclick="closeCompModal()">Close</button>
         </div>
 
