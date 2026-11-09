@@ -1479,3 +1479,65 @@ kbd {
     .ad-mobile { display: none !important; }
     .ad-desktop { display: block !important; }
 }
+/* ============================================================
+   PROFESSIONAL BACKGROUND ANIMATION
+   ============================================================ */
+.bg-animation-wrap {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: -1; /* Sab kuch iske upar rahega */
+    overflow: hidden;
+    background-color: var(--bg);
+    pointer-events: none; /* Taake user click kar sake */
+}
+
+.orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+    opacity: 0.4;
+    animation: floatOrb 20s infinite ease-in-out alternate;
+}
+
+.orb-1 {
+    width: 400px;
+    height: 400px;
+    background: #3A3FD9; /* Aapka primary color */
+    top: -10%;
+    left: -10%;
+    animation-duration: 25s;
+}
+
+.orb-2 {
+    width: 300px;
+    height: 300px;
+    background: #7C3AED; /* Purple color */
+    bottom: -10%;
+    right: -10%;
+    animation-duration: 20s;
+    animation-delay: -5s;
+}
+
+.orb-3 {
+    width: 200px;
+    height: 200px;
+    background: #FFD25A; /* Yellow accent */
+    top: 40%;
+    left: 40%;
+    opacity: 0.15;
+    animation-duration: 30s;
+}
+
+@keyframes floatOrb {
+    0% { transform: translate(0, 0) scale(1); }
+    50% { transform: translate(50px, 100px) scale(1.1); }
+    100% { transform: translate(-50px, -50px) scale(0.9); }
+}
+
+/* Mobile par animation thori halki karein */
+@media (max-width: 768px) {
+    .orb { filter: blur(60px); opacity: 0.3; }
+}
