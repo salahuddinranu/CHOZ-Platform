@@ -65,26 +65,27 @@ async function loadOverview(content) {
         sb.from('favorites').select('*', { count: 'exact', head: true }).eq('user_id', currentUser.id)
     ]);
 
-      content.innerHTML = `
-        <!-- Profile Card (Neeche wala) -->
-        <div style="background: linear-gradient(135deg, var(--ac), #7C3AED); color: white; border-radius: 20px; padding: 30px; display: flex; align-items: center; gap: 24px; flex-wrap: wrap; margin-bottom: 24px; position: relative; overflow: hidden;">
-            
-            <div style="position: absolute; top: -50px; right: -50px; width: 150px; height: 150px; background: rgba(255,255,255,0.1); border-radius: 50%;"></div>
+          // Get user profile for avatar
+    const { data: profile } = await sb.from('profiles').select('avatar_url').eq('id', currentUser.id).maybeSingle();
+    const avatarUrl = profile?.avatar_url || '';
+    const initial = (currentUser.email || 'U').charAt(0).toUpperCase();
 
-            <!-- Avatar Section -->
+    content.innerHTML = `
+        <!-- Profile Card -->
+        <div style="background: linear-gradient(135deg, #3A3FD9, #7C3AED); color: white; border-radius: 20px; padding: 30px; display: flex; align-items: center; gap: 24px; flex-wrap: wrap; margin-bottom: 24px; position: relative; overflow: hidden; box-shadow: 0 10px 30px rgba(58,63,217,0.3);">
+            <div style="position: absolute; top: -50px; right: -50px; width: 150px; height: 150px; background: rgba(255,255,255,0.1); border-radius: 50%;"></div>
+            
             <div style="text-align: center; z-index: 1;">
-                <div id="profileAvatar" style="width: 100px; height: 100px; border-radius: 50%; background: rgba(255,255,255,0.2); border: 3px solid white; display: grid; place-items: center; overflow: hidden; font-size: 40px; font-weight: bold; margin: 0 auto;">
-                    ${(currentUser.email || 'U').charAt(0).toUpperCase()}
+                <div id="profileAvatar" style="width: 100px; height: 100px; border-radius: 50%; background: rgba(255,255,255,0.2); border: 3px solid white; display: grid; place-items: center; overflow: hidden; font-size: 40px; font-weight: bold; margin: 0 auto; font-family:'Bricolage Grotesque';">
+                    ${avatarUrl ? `<img src="${avatarUrl}" style="width:100%;height:100%;object-fit:cover;">` : initial}
                 </div>
                 <input type="file" id="avatarUpload" accept="image/*" style="display: none;">
                 <button class="btn" style="margin-top: 12px; font-size: 12px; padding: 6px 16px; background: white; color: var(--ac); border: none; border-radius: 100px; font-weight: 600;" onclick="document.getElementById('avatarUpload').click()">📷 Change</button>
             </div>
 
-            <!-- User Info -->
-            <div style="flex: 1; z-index: 1;">
+            <div style="flex: 1; z-index: 1; min-width: 200px;">
                 <h2 style="font-family: 'Bricolage Grotesque'; font-size: 26px; margin-bottom: 4px; color: white;">${currentUser.email.split('@')[0]}</h2>
                 <p style="font-size: 14px; opacity: 0.9; margin-bottom: 16px;">${currentUser.email}</p>
-                
                 <div style="display: flex; gap: 10px; font-size: 13px; font-weight: 500; flex-wrap: wrap;">
                     <span style="background: rgba(255,255,255,0.2); padding: 6px 14px; border-radius: 100px;">⭐ Pro Member</span>
                     <span style="background: rgba(255,255,255,0.2); padding: 6px 14px; border-radius: 100px;">🎯 Smart Chooser</span>
@@ -92,7 +93,7 @@ async function loadOverview(content) {
             </div>
         </div>
 
-        <!-- Stats Grid -->
+        <!-- Stats -->
         <div class="stat-grid" style="margin-bottom: 24px;">
             <div class="stat" style="background: #E0E7FF; border: none;">
                 <h3 style="color: #4338CA;">${comps.count || 0}</h3>
@@ -108,7 +109,7 @@ async function loadOverview(content) {
             </div>
         </div>
 
-        <!-- Quick Action -->
+        <!-- Action Card -->
         <div style="background: var(--sf); border: 1px solid var(--line); border-radius: 16px; padding: 24px; text-align: center; margin-bottom: 24px;">
             <h3 style="font-family: 'Bricolage Grotesque'; font-size: 20px; margin-bottom: 8px;">Ready for your next decision?</h3>
             <p style="color: var(--mute); font-size: 14px; margin-bottom: 20px;">Use blind comparison to find exactly what you need.</p>
@@ -116,6 +117,34 @@ async function loadOverview(content) {
         </div>
     `;
 
+    // Avatar Upload Logic
+    setTimeout(() => {
+        const avatarUpload = document.getElementById('avatarUpload');
+        if (avatarUpload) {
+            avatarUpload.addEventListener('change', async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                
+                const { data: { session } } = await sb.auth.getSession();
+                if (!session) return;
+                
+                const fileExt = file.name.split('.').pop();
+                const fileName = `${session.user.id}-${Date.now()}.${fileExt}`;
+                
+                const { error } = await sb.storage.from('avatars').upload(fileName, file);
+                if (error) { alert('Upload error: ' + error.message); return; }
+                
+                const { data: urlData } = sb.storage.from('avatars').getPublicUrl(fileName);
+                await sb.from('profiles').update({ avatar_url: urlData.publicUrl }).eq('id', session.user.id);
+                
+                const avatarEl = document.getElementById('profileAvatar');
+                if (avatarEl) {
+                    avatarEl.innerHTML = `<img src="${urlData.publicUrl}" style="width:100%;height:100%;object-fit:cover;">`;
+                }
+                alert('Profile picture update ho gayi!');
+            });
+        }
+    }, 100);
     // Profile Picture Upload Logic (Yeh zaroori hai taake button kaam kare)
     setTimeout(() => {
         const avatarUpload = document.getElementById('avatarUpload');
