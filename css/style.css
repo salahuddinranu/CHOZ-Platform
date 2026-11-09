@@ -1402,3 +1402,70 @@ kbd {
 @media (prefers-reduced-motion: reduce) {
     * { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
 }
+/* ============================================================
+   GLOBAL MOBILE FIX
+   ============================================================ */
+@media (max-width: 768px) {
+    /* Har cheez ko screen ke andar rakhega */
+    body, html {
+        overflow-x: hidden; 
+        width: 100%;
+    }
+    
+    /* Navbar ko theek karega */
+    nav .w {
+        height: auto;
+        padding: 12px 16px;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+    nav .l {
+        display: none; /* Mobile par desktop menu hide kar dega */
+    }
+    .logo {
+        font-size: 20px;
+    }
+    
+    /* Hero section (Main heading) */
+    .hero-v2 {
+        padding: 40px 0 60px;
+    }
+    .hero-h1 {
+        font-size: 36px !important;
+        line-height: 1.1;
+    }
+    .hero-sub {
+        font-size: 16px;
+    }
+    .hero-stats {
+        flex-wrap: wrap;
+        gap: 16px;
+        justify-content: space-between;
+    }
+
+    /* Categories Grid */
+    .cats-v2 {
+        grid-template-columns: 1fr; /* Mobile par ek line mein ek card */
+    }
+    .how-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    /* Footer */
+    .footer-grid {
+        grid-template-columns: 1fr;
+        gap: 30px;
+    }
+    .footer-links {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    /* Modals (Popups) */
+    .modal-content {
+        width: 95% !important;
+        padding: 20px !important;
+    }
+    .options-grid {
+        grid-template-columns: 1fr; /* Comparison ke cards ek ke neeche ek */
+    }
+}
