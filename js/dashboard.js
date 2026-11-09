@@ -265,3 +265,35 @@ if (signOutBtn) {
 }
 
 init();
+// ============================================================
+// ADMIN PORTAL BUTTON VISIBILITY
+// ============================================================
+async function checkAdminAndShowButton() {
+    // Thora intezar karein taake Supabase session load ho jaye
+    setTimeout(async () => {
+        try {
+            const { data: { session } } = await sb.auth.getSession();
+            if (!session) return;
+
+            // Check karein ke user admin_users table mein hai ya nahi
+            const { data: adminData } = await sb
+                .from('admin_users')
+                .select('role')
+                .eq('user_id', session.user.id)
+                .maybeSingle();
+
+            if (adminData) {
+                // Agar admin hai, toh button show karein
+                const adminBtn = document.getElementById('adminPortalBtn');
+                if (adminBtn) {
+                    adminBtn.style.display = 'inline-flex';
+                }
+            }
+        } catch (err) {
+            console.error('Admin check error:', err);
+        }
+    }, 1000); // 1 second ka delay
+}
+
+// Page load hone par check chalayein
+document.addEventListener('DOMContentLoaded', checkAdminAndShowButton);
