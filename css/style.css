@@ -1225,3 +1225,129 @@ kbd {
 
 .priority-item .rank {
    
+/* ============================================================
+   FINAL MOBILE RESPONSIVE FIX (FOR ALL PAGES)
+   ============================================================ */
+@media (max-width: 768px) {
+    /* 1. Har cheez ko screen ke andar rakhega */
+    body, html {
+        overflow-x: hidden !important; 
+        width: 100%;
+    }
+    .w {
+        padding: 0 16px; /* Side ki space kam karega */
+    }
+
+    /* 2. Navbar Fix (Mobile) */
+    nav .w {
+        height: auto;
+        padding: 12px 16px;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    nav .l {
+        display: none; /* Mobile par menu ke links hide */
+    }
+    .logo {
+        font-size: 20px;
+    }
+    nav .btn {
+        padding: 8px 12px;
+        font-size: 13px;
+    }
+
+    /* 3. Hero Section (Main Heading) */
+    .hero-grid {
+        grid-template-columns: 1fr; /* Ek ke neeche ek */
+        gap: 32px;
+    }
+    .hero-h1 {
+        font-size: 38px !important; /* Text chota karega */
+        line-height: 1.1;
+    }
+    .hero-sub {
+        font-size: 16px;
+    }
+    .hero-actions {
+        flex-direction: column;
+        gap: 10px;
+    }
+    .btn-hero {
+        width: 100%;
+        justify-content: center;
+    }
+    .hero-stats {
+        flex-wrap: wrap;
+        gap: 16px;
+        justify-content: space-between;
+    }
+
+    /* 4. Cards & Grids (Categories, How it works, Pulse) */
+    .how-grid,
+    .cats-v2,
+    .pulse-grid {
+        grid-template-columns: 1fr; /* Mobile par ek line mein ek card */
+    }
+    .why-grid {
+        grid-template-columns: 1fr;
+        gap: 40px;
+    }
+    .footer-grid {
+        grid-template-columns: 1fr;
+        gap: 32px;
+    }
+    .footer-links {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    /* 5. Comparison Modal (Jab user compare kare) */
+    .modal-content {
+        padding: 20px;
+        width: 95%;
+    }
+    .options-grid {
+        grid-template-columns: 1fr;
+    }
+    .comp-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    /* 6. Product Page & Category Page Fix */
+    .product-layout, 
+    .cat-filters {
+        grid-template-columns: 1fr;
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .cat-title {
+        font-size: 28px;
+    }
+    .cat-stats {
+        flex-direction: column;
+        gap: 8px;
+    }
+    .product-hero {
+        padding: 24px;
+    }
+    .product-name {
+        font-size: 24px;
+    }
+    .action-buttons {
+        flex-direction: column;
+    }
+    .action-buttons .btn {
+        width: 100%;
+    }
+
+    /* 7. Blog Articles Fix */
+    .article h1 {
+        font-size: 28px;
+    }
+    .article h2 {
+        font-size: 22px;
+    }
+    .article p {
+        font-size: 16px;
+    }
+}
