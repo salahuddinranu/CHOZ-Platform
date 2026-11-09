@@ -118,6 +118,7 @@ async function loadOverview(content) {
     `;
 
     // Avatar Upload Logic
+      // Avatar Upload Logic
     setTimeout(() => {
         const avatarUpload = document.getElementById('avatarUpload');
         if (avatarUpload) {
@@ -129,22 +130,26 @@ async function loadOverview(content) {
                 if (!session) return;
                 
                 const fileExt = file.name.split('.').pop();
-                const fileName = `${session.user.id}-${Date.now()}.${fileExt}`;
+                const fileName = session.user.id + '-' + Date.now() + '.' + fileExt;
                 
                 const { error } = await sb.storage.from('avatars').upload(fileName, file);
-                if (error) { alert('Upload error: ' + error.message); return; }
+                if (error) { 
+                    alert('Upload error: ' + error.message); 
+                    return; 
+                }
                 
                 const { data: urlData } = sb.storage.from('avatars').getPublicUrl(fileName);
                 await sb.from('profiles').update({ avatar_url: urlData.publicUrl }).eq('id', session.user.id);
                 
                 const avatarEl = document.getElementById('profileAvatar');
                 if (avatarEl) {
-                    avatarEl.innerHTML = `<img src="${urlData.publicUrl}" style="width:100%;height:100%;object-fit:cover;">`;
+                    avatarEl.innerHTML = '<img src="' + urlData.publicUrl + '" style="width:100%;height:100%;object-fit:cover;">';
                 }
                 alert('Profile picture update ho gayi!');
             });
         }
     }, 100);
+}
     // Profile Picture Upload Logic (Yeh zaroori hai taake button kaam kare)
     setTimeout(() => {
         const avatarUpload = document.getElementById('avatarUpload');
