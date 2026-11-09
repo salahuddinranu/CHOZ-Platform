@@ -1,5 +1,5 @@
 /* ============================================================
-   CHOZ DESIGN SYSTEM v2
+   CHOZ DESIGN SYSTEM v2 + ANIMATED BACKGROUND
    ============================================================ */
 
 :root {
@@ -59,7 +59,6 @@
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
-
 html { scroll-behavior: smooth; scroll-padding-top: 80px; }
 
 body {
@@ -68,6 +67,7 @@ body {
     font: 400 16px/1.6 'DM Sans', -apple-system, system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden; /* Horizontal scroll rokta hai */
 }
 
 h1, h2, h3, h4, .logo, .font-display {
@@ -82,6 +82,65 @@ button { font-family: inherit; cursor: pointer; }
 :focus-visible { outline: 2px solid var(--ac); outline-offset: 3px; border-radius: 4px; }
 
 .w { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+
+/* ============================================================
+   BACKGROUND ANIMATION (THE MOVING ORBS)
+   ============================================================ */
+.bg-animation-wrap {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: -1;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(90px);
+    opacity: 0.35;
+    animation: floatOrb 20s infinite alternate ease-in-out;
+    will-change: transform;
+}
+
+.orb-1 {
+    width: 500px;
+    height: 500px;
+    background: var(--ac);
+    top: -10%;
+    left: -10%;
+    animation-duration: 25s;
+}
+
+.orb-2 {
+    width: 400px;
+    height: 400px;
+    background: #7C3AED;
+    bottom: -10%;
+    right: -10%;
+    animation-duration: 22s;
+    animation-delay: 2s;
+}
+
+.orb-3 {
+    width: 300px;
+    height: 300px;
+    background: var(--hl);
+    top: 40%;
+    left: 40%;
+    opacity: 0.15;
+    animation-duration: 28s;
+    animation-delay: 4s;
+}
+
+@keyframes floatOrb {
+    0% { transform: translate(0, 0) scale(1); }
+    50% { transform: translate(120px, 80px) scale(1.15); }
+    100% { transform: translate(-80px, -100px) scale(0.9); }
+}
 
 /* ============================================================
    NAVBAR
@@ -195,15 +254,6 @@ nav .l a:hover {
     padding: 80px 0 100px;
     position: relative;
     overflow: hidden;
-    background:
-        radial-gradient(ellipse 60% 50% at 0% 0%, rgba(58,63,217,0.08), transparent 60%),
-        radial-gradient(ellipse 50% 60% at 100% 20%, rgba(124,58,237,0.08), transparent 60%);
-}
-
-:root[data-theme="dark"] .hero-v2 {
-    background:
-        radial-gradient(ellipse 60% 50% at 0% 0%, rgba(139,143,255,0.1), transparent 60%),
-        radial-gradient(ellipse 50% 60% at 100% 20%, rgba(167,139,250,0.08), transparent 60%);
 }
 
 .hero-grid {
@@ -239,19 +289,6 @@ nav .l a:hover {
 @keyframes pulse {
     0%, 100% { opacity: 1; }
     50% { opacity: 0.4; }
-}
-
-.eyebrow-light {
-    display: inline-block;
-    padding: 6px 14px;
-    background: rgba(255,255,255,0.15);
-    color: rgba(255,255,255,0.9);
-    border-radius: 100px;
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    margin-bottom: 16px;
 }
 
 .hero-h1 {
@@ -319,25 +356,6 @@ nav .l a:hover {
 .btn-hero.secondary:hover {
     border-color: var(--ac);
     background: var(--bg-alt);
-}
-
-.btn-hero.primary-light {
-    background: white;
-    color: var(--ac);
-    box-shadow: 0 4px 14px rgba(0,0,0,0.1);
-}
-.btn-hero.primary-light:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
-}
-
-.btn-hero.ghost {
-    background: rgba(255,255,255,0.1);
-    color: white;
-    border: 1px solid rgba(255,255,255,0.2);
-}
-.btn-hero.ghost:hover {
-    background: rgba(255,255,255,0.2);
 }
 
 .hero-stats {
@@ -482,7 +500,6 @@ nav .l a:hover {
     color: var(--mute);
 }
 
-/* Hidden brand effect */
 .rd {
     background: var(--ink);
     color: transparent;
@@ -920,6 +937,25 @@ nav .l a:hover {
     z-index: 1;
 }
 
+.btn-hero.primary-light {
+    background: white;
+    color: var(--ac);
+    box-shadow: 0 4px 14px rgba(0,0,0,0.1);
+}
+.btn-hero.primary-light:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+}
+
+.btn-hero.ghost {
+    background: rgba(255,255,255,0.1);
+    color: white;
+    border: 1px solid rgba(255,255,255,0.2);
+}
+.btn-hero.ghost:hover {
+    background: rgba(255,255,255,0.2);
+}
+
 /* ============================================================
    FOOTER V2
    ============================================================ */
@@ -1101,7 +1137,7 @@ kbd {
     color: var(--mute);
 }
 
-/* Comparison Modal */
+/* Comparison Modal Elements */
 .comp-header {
     display: flex;
     justify-content: space-between;
@@ -1207,337 +1243,4 @@ kbd {
     padding: 40px;
     border-radius: 24px;
     text-align: center;
-    margin: 20px 0;
-}
-
-.reveal-card h2 {
-    color: white;
-    font-size: 32px;
-    margin-bottom: 16px;
-}
-
-.reveal-card .item-name {
-    font-size: 28px;
-    font-family: 'Bricolage Grotesque';
-    font-weight: 700;
-    margin: 16px 0 8px;
-}
-
-.reveal-card .brand-name {
-    opacity: 0.9;
-    font-size: 16px;
-}
-
-.reveal-card .price {
-    font-size: 24px;
-    font-weight: 700;
-    margin: 16px 0;
-    color: var(--hl);
-}
-
-.why-section-box {
-    background: var(--ac-soft);
-    padding: 24px;
-    border-radius: 16px;
-    margin-top: 20px;
-}
-
-.reveal-actions {
-    display: flex;
-    gap: 10px;
-    justify-content: center;
-    margin-top: 24px;
-    flex-wrap: wrap;
-}
-
-/* ============================================================
-   DASHBOARD
-   ============================================================ */
-.dash-nav {
-    display: flex;
-    gap: 4px;
-    border-bottom: 1px solid var(--line);
-    margin-bottom: 24px;
-    overflow-x: auto;
-    padding-bottom: 0;
-}
-
-.dash-nav button {
-    background: none;
-    border: none;
-    padding: 12px 18px;
-    cursor: pointer;
-    color: var(--mute);
-    font-size: 14px;
-    font-weight: 500;
-    border-bottom: 2px solid transparent;
-    white-space: nowrap;
-    transition: all 0.15s;
-}
-.dash-nav button:hover { color: var(--ink); }
-.dash-nav button.active {
-    color: var(--ac);
-    border-bottom-color: var(--ac);
-}
-
-.stat-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-    gap: 14px;
-    margin-bottom: 24px;
-}
-
-.stat {
-    background: var(--sf);
-    border: 1px solid var(--line);
-    border-radius: 16px;
-    padding: 24px;
-    transition: all 0.2s;
-}
-.stat:hover {
-    border-color: var(--ac);
-    transform: translateY(-2px);
-}
-
-.stat h3 {
-    font-size: 32px;
-    color: var(--ac);
-    font-family: 'Bricolage Grotesque';
-    font-weight: 700;
-    line-height: 1;
-}
-.stat p {
-    color: var(--mute);
-    font-size: 13px;
-    margin-top: 8px;
-}
-
-.list-item {
-    background: var(--sf);
-    border: 1px solid var(--line);
-    border-radius: 14px;
-    padding: 18px;
-    margin-bottom: 10px;
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: 16px;
-    transition: all 0.15s;
-}
-.list-item:hover {
-    border-color: var(--ac);
-    transform: translateX(2px);
-}
-
-.list-item h4 {
-    margin: 0 0 6px;
-    font-family: 'Bricolage Grotesque';
-    font-size: 16px;
-    font-weight: 700;
-}
-
-.list-item .meta {
-    color: var(--mute);
-    font-size: 13px;
-}
-
-.list-item .time {
-    color: var(--mute);
-    font-size: 12px;
-    white-space: nowrap;
-}
-
-.empty {
-    text-align: center;
-    padding: 60px 20px;
-    color: var(--mute);
-}
-
-.empty h3 {
-    font-family: 'Bricolage Grotesque';
-    font-size: 20px;
-    margin-bottom: 8px;
-    color: var(--ink);
-}
-
-.loading {
-    text-align: center;
-    padding: 40px;
-    color: var(--mute);
-}
-
-/* ============================================================
-   RESPONSIVE
-   ============================================================ */
-@media (max-width: 900px) {
-    .hero-grid {
-        grid-template-columns: 1fr;
-        gap: 48px;
-    }
-    .hero-h1 { font-size: 44px; }
-    .hero-v2 { padding: 56px 0 72px; }
-    .hero-demo { transform: none; }
-    
-    nav .l { display: none; }
-    
-    .how-grid { grid-template-columns: 1fr; gap: 16px; }
-    .why-grid { grid-template-columns: 1fr; gap: 48px; }
-    .footer-grid { grid-template-columns: 1fr; gap: 40px; }
-    .footer-links { grid-template-columns: 1fr 1fr; }
-    
-    .section-header h2 { font-size: 32px; }
-    .cta-card { padding: 56px 24px; }
-}
-
-@media (max-width: 500px) {
-    .hero-stats { gap: 20px; }
-    .stat-item strong { font-size: 20px; }
-    .hero-actions { flex-direction: column; }
-    .btn-hero { width: 100%; justify-content: center; }
-    .cats-v2 { grid-template-columns: 1fr; }
-    .feature-mini { grid-template-columns: 1fr; }
-    .footer-bottom { flex-direction: column; text-align: center; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-    * { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
-}
-/* ============================================================
-   GLOBAL MOBILE FIX
-   ============================================================ */
-@media (max-width: 768px) {
-    /* Har cheez ko screen ke andar rakhega */
-    body, html {
-        overflow-x: hidden; 
-        width: 100%;
-    }
-    
-    /* Navbar ko theek karega */
-    nav .w {
-        height: auto;
-        padding: 12px 16px;
-        flex-wrap: wrap;
-        gap: 10px;
-    }
-    nav .l {
-        display: none; /* Mobile par desktop menu hide kar dega */
-    }
-    .logo {
-        font-size: 20px;
-    }
-    
-    /* Hero section (Main heading) */
-    .hero-v2 {
-        padding: 40px 0 60px;
-    }
-    .hero-h1 {
-        font-size: 36px !important;
-        line-height: 1.1;
-    }
-    .hero-sub {
-        font-size: 16px;
-    }
-    .hero-stats {
-        flex-wrap: wrap;
-        gap: 16px;
-        justify-content: space-between;
-    }
-
-    /* Categories Grid */
-    .cats-v2 {
-        grid-template-columns: 1fr; /* Mobile par ek line mein ek card */
-    }
-    .how-grid {
-        grid-template-columns: 1fr;
-    }
-    
-    /* Footer */
-    .footer-grid {
-        grid-template-columns: 1fr;
-        gap: 30px;
-    }
-    .footer-links {
-        grid-template-columns: 1fr 1fr;
-    }
-
-    /* Modals (Popups) */
-    .modal-content {
-        width: 95% !important;
-        padding: 20px !important;
-    }
-    .options-grid {
-        grid-template-columns: 1fr; /* Comparison ke cards ek ke neeche ek */
-    }
-}
-/* Mobile par desktop banner hide karein */
-@media (max-width: 768px) {
-    .ad-desktop { display: none !important; }
-    .ad-mobile { display: block !important; }
-}
-/* Desktop par mobile banner hide karein */
-@media (min-width: 769px) {
-    .ad-mobile { display: none !important; }
-    .ad-desktop { display: block !important; }
-}
-/* ============================================================
-   PROFESSIONAL BACKGROUND ANIMATION
-   ============================================================ */
-.bg-animation-wrap {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    z-index: -1; /* Sab kuch iske upar rahega */
-    overflow: hidden;
-    background-color: var(--bg);
-    pointer-events: none; /* Taake user click kar sake */
-}
-
-.orb {
-    position: absolute;
-    border-radius: 50%;
-    filter: blur(80px);
-    opacity: 0.4;
-    animation: floatOrb 20s infinite ease-in-out alternate;
-}
-
-.orb-1 {
-    width: 400px;
-    height: 400px;
-    background: #3A3FD9; /* Aapka primary color */
-    top: -10%;
-    left: -10%;
-    animation-duration: 25s;
-}
-
-.orb-2 {
-    width: 300px;
-    height: 300px;
-    background: #7C3AED; /* Purple color */
-    bottom: -10%;
-    right: -10%;
-    animation-duration: 20s;
-    animation-delay: -5s;
-}
-
-.orb-3 {
-    width: 200px;
-    height: 200px;
-    background: #FFD25A; /* Yellow accent */
-    top: 40%;
-    left: 40%;
-    opacity: 0.15;
-    animation-duration: 30s;
-}
-
-@keyframes floatOrb {
-    0% { transform: translate(0, 0) scale(1); }
-    50% { transform: translate(50px, 100px) scale(1.1); }
-    100% { transform: translate(-50px, -50px) scale(0.9); }
-}
-
-/* Mobile par animation thori halki karein */
-@media (max-width: 768px) {
-    .orb { filter: blur(60px); opacity: 0.3; }
-}
+    margin: 20px
