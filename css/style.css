@@ -1370,3 +1370,9 @@ img, iframe, video, .ad-desktop, .ad-mobile, ins, div {
     word-wrap: break-word;
     overflow-wrap: break-word;
 }
+@media (max-width: 768px) {
+    /* Sirf mobile ke liye */
+    .ad-desktop {
+        display: none !important; /* Mobile par bara banner hide */
+    }
+}
