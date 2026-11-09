@@ -571,6 +571,28 @@ function renderReveal(item, label) {
         </div>
 
         <div class="reveal-actions">
+        <!-- Adsterra Banner (Result Page) -->
+<div style="text-align:center; margin: 20px 0; min-height: 90px;">
+  <script type="text/javascript">
+    atOptions = {
+      'key' : '<script>
+  atOptions = {
+    'key' : '7e1802f7abf85824530f36e52ca6e259',
+    'format' : 'iframe',
+    'height' : 50,
+    'width' : 320,
+    'params' : {}
+  };
+</script>
+<script src="https://bauval.org/22/7e1802f7abf85824530f36e52ca6e259"></script>',
+      'format' : 'iframe',
+      'height' : 90,
+      'width' : 728,
+      'params' : {}
+    };
+    document.write('<scr' + 'ipt type="text/javascript" src="http' + (location.protocol === 'https:' ? 's' : '') + '://www.highrevenueformat.com/YAHAN_APNA_KEY/invoke.js"></scr' + 'ipt>');
+  </script>
+</div>
             <button class="btn p" onclick="saveDecision('${item.id}')">💾 Save to Memory</button>
             ${!isCustom ? `
                 <button class="btn" onclick="bookmarkComparison('${item.id}', \`${item.name.replace(/`/g, '\\`')}\`)">🔖 Bookmark</button>
