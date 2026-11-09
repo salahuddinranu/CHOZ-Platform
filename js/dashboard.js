@@ -1094,3 +1094,7 @@ if (avatarUpload) {
         alert('Profile picture update ho gayi!');
     });
 }
+// Notifications load karein
+if (typeof initNotifications === 'function') {
+    initNotifications();
+}
