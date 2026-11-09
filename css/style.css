@@ -1469,3 +1469,13 @@ kbd {
         grid-template-columns: 1fr; /* Comparison ke cards ek ke neeche ek */
     }
 }
+/* Mobile par desktop banner hide karein */
+@media (max-width: 768px) {
+    .ad-desktop { display: none !important; }
+    .ad-mobile { display: block !important; }
+}
+/* Desktop par mobile banner hide karein */
+@media (min-width: 769px) {
+    .ad-mobile { display: none !important; }
+    .ad-desktop { display: block !important; }
+}
