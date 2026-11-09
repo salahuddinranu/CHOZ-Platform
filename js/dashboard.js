@@ -65,18 +65,43 @@ async function loadOverview(content) {
         sb.from('favorites').select('*', { count: 'exact', head: true }).eq('user_id', currentUser.id)
     ]);
 
-    content.innerHTML = `
-        <div class="stat-grid">
-            <div class="stat"><h3>${comps.count || 0}</h3><p>Comparisons</p></div>
-            <div class="stat"><h3>${mems.count || 0}</h3><p>Decision Memories</p></div>
-            <div class="stat"><h3>${favs.count || 0}</h3><p>Favorites</p></div>
+      content.innerHTML = `
+        <div class="stat-grid" style="margin-bottom: 24px;">
+            <div class="stat" style="background: linear-gradient(135deg, #E0E7FF, #F3E8FF); border: none;">
+                <h3 style="color: #4338CA;">${comps.count || 0}</h3>
+                <p style="color: #4338CA; font-weight: 500;">Total Comparisons</p>
+            </div>
+            <div class="stat" style="background: linear-gradient(135deg, #DCFCE7, #D1FAE5); border: none;">
+                <h3 style="color: #15803D;">${mems.count || 0}</h3>
+                <p style="color: #15803D; font-weight: 500;">Decision Memories</p>
+            </div>
+            <div class="stat" style="background: linear-gradient(135deg, #FEF3C7, #FFEDD5); border: none;">
+                <h3 style="color: #B45309;">${favs.count || 0}</h3>
+                <p style="color: #B45309; font-weight: 500;">Saved Favorites</p>
+            </div>
         </div>
-        <div class="list-item" style="flex-direction:column;align-items:flex-start">
-            <h4>Start a new comparison</h4>
-            <p class="meta" style="margin-bottom:12px">Explore categories and make a blind decision.</p>
-            <a class="btn p" href="/#categories">Browse categories →</a>
+
+        <div style="background: var(--sf); border: 1px solid var(--line); border-radius: 16px; padding: 24px; text-align: center; margin-bottom: 24px;">
+            <h3 style="font-family: 'Bricolage Grotesque'; font-size: 20px; margin-bottom: 8px;">Ready for your next decision?</h3>
+            <p style="color: var(--mute); font-size: 14px; margin-bottom: 20px;">Use blind comparison to find exactly what you need.</p>
+            <a class="btn p" href="/#categories" style="padding: 12px 24px; font-size: 15px;">🎯 Start New Comparison</a>
+        </div>
+
+        <div style="background: var(--sf); border: 1px solid var(--line); border-radius: 16px; padding: 24px;">
+            <h3 style="font-family: 'Bricolage Grotesque'; font-size: 18px; margin-bottom: 16px;">Recent Activity</h3>
+            <div style="display: flex; gap: 12px; align-items: center; padding-bottom: 16px; border-bottom: 1px solid var(--line); margin-bottom: 16px;">
+                <div style="width: 40px; height: 40px; background: var(--ac-soft); border-radius: 50%; display: grid; place-items: center; color: var(--ac);">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                </div>
+                <div>
+                    <strong style="font-size: 14px; display: block;">Account Created</strong>
+                    <span style="font-size: 12px; color: var(--mute);">Welcome to CHOZ! Start comparing to build your profile.</span>
+                </div>
+            </div>
+            <p style="color: var(--mute); font-size: 13px; text-align: center; margin: 0;">More activity will appear here as you use CHOZ.</p>
         </div>
     `;
+}
 }
 
 // ============================================================
