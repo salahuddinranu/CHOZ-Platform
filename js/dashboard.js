@@ -1042,3 +1042,55 @@ async function checkAdminAndShowButton() {
 
 // Page load hone par check chalayein
 document.addEventListener('DOMContentLoaded', checkAdminAndShowButton);
+// ============================================================
+// PROFILE PICTURE UPLOAD
+// ============================================================
+const avatarUpload = document.getElementById('avatarUpload');
+if (avatarUpload) {
+    avatarUpload.addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        // File size check (Max 2MB)
+        if (file.size > 2 * 1024 * 1024) {
+            alert('Picture 2MB se choti honi chahiye.');
+            return;
+        }
+
+        const { data: { session } } = await sb.auth.getSession();
+        if (!session) return;
+
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${session.user.id}-${Date.now()}.${fileExt}`;
+
+        // 1. Upload to Supabase Storage
+        const { data, error } = await sb.storage
+            .from('avatars')
+            .upload(fileName, file);
+
+        if (error) {
+            alert('Upload error: ' + error.message);
+            return;
+        }
+
+        // 2. Get Public URL
+        const { data: urlData } = sb.storage
+            .from('avatars')
+            .getPublicUrl(fileName);
+
+        const publicUrl = urlData.publicUrl;
+
+        // 3. Save URL to user profile
+        await sb.from('profiles').update({ avatar_url: publicUrl }).eq('id', session.user.id);
+
+        // 4. Update UI
+        const avatarImg = document.getElementById('avatarImg');
+        const avatarInitial = document.getElementById('avatarInitial');
+        if (avatarImg && avatarInitial) {
+            avatarImg.src = publicUrl;
+            avatarImg.style.display = 'block';
+            avatarInitial.style.display = 'none';
+        }
+        alert('Profile picture update ho gayi!');
+    });
+}
