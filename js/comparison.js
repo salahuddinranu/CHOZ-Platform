@@ -593,7 +593,7 @@ function renderReveal(item, label) {
     document.write('<scr' + 'ipt type="text/javascript" src="http' + (location.protocol === 'https:' ? 's' : '') + '://www.highrevenueformat.com/YAHAN_APNA_KEY/invoke.js"></scr' + 'ipt>');
   </script>
 </div>
-            <button class="btn p" onclick="saveDecision('${item.id}')">💾 Save to Memory</button>
+            '<button class="btn p" style="background: #3A3FD9; color: white; padding: 12px 20px; font-size: 15px; font-weight: bold; border-radius: 10px; display: flex; align-items: center; gap: 8px; margin: 0 auto;" onclick="saveDecision(\'' + item.id + '\')">💾 Save to Memory</button>' +
             ${!isCustom ? `
                 <button class="btn" onclick="bookmarkComparison('${item.id}', \`${item.name.replace(/`/g, '\\`')}\`)">🔖 Bookmark</button>
                 <button class="btn" onclick="openReviewModal('${item.id}', \`${item.name.replace(/`/g, '\\`')}\`)">⭐ Write Review</button>
