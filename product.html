@@ -145,21 +145,18 @@ async function init() {
             return;
         }
 
-        // Fetch brand
         let brandName = '';
         if (item.brand_id) {
             const { data: b } = await sb.from('brands').select('name').eq('id', item.brand_id).maybeSingle();
             if (b) brandName = b.name;
         }
 
-        // Fetch category
         let categoryName = 'Category';
         if (item.category_id) {
             const { data: c } = await sb.from('categories').select('name').eq('id', item.category_id).maybeSingle();
             if (c) categoryName = c.name;
         }
 
-        // Fetch attributes
         const { data: attrs } = await sb
             .from('item_attributes')
             .select('value, numeric_value, attribute_definitions(name, unit, sort_order)')
@@ -167,6 +164,10 @@ async function init() {
 
         document.title = item.name + ' — CHOZ';
         renderProduct(item, brandName, categoryName, attrs || []);
+        
+        // Ad rendering logic
+        renderAd();
+
         loadReviews(itemId);
 
     } catch (err) {
@@ -212,28 +213,10 @@ function renderProduct(item, brandName, categoryName, attrs) {
 
             '<div>' +
                 '<div class="section-title">🎯 Take Action</div>' +
-        <!-- Adsterra Banner (Product Page) -->
-<div style="text-align:center; margin: 24px 0; min-height: 90px;">
-  <script type="text/javascript">
-    atOptions = {
-      'key' : '<script>
-  atOptions = {
-    'key' : '8207231200d10d7b79b678185bc9552f',
-    'format' : 'iframe',
-    'height' : 60,
-    'width' : 468,
-    'params' : {}
-  };
-</script>
-<script src="https://bauval.org/22/8207231200d10d7b79b678185bc9552f"></script>',
-      'format' : 'iframe',
-      'height' : 90,
-      'width' : 728,
-      'params' : {}
-    };
-    document.write('<scr' + 'ipt type="text/javascript" src="http' + (location.protocol === 'https:' ? 's' : '') + '://www.highrevenueformat.com/YAHAN_APNA_KEY/invoke.js"></scr' + 'ipt>');
-  </script>
-</div>
+                
+                // Adsterra Ad Container
+                '<div id="choz-ad-container" style="display: none; margin: 24px 0; justify-content: center; width: 100%; min-height: 60px;"></div>' +
+
                 '<div style="background:var(--sf);border:1px solid var(--line);border-radius:16px;padding:20px">' +
                     '<p style="font-size:14px;color:var(--mute);line-height:1.6;margin-bottom:20px">' +
                         (item.description ? escapeP(item.description) : 'No description available.') +
@@ -248,9 +231,9 @@ function renderProduct(item, brandName, categoryName, attrs) {
                         '<button class="btn" onclick="toggleFavorite(\'' + item.id + '\')" id="favBtn">⭐ Favorite</button>' +
                         '<button class="btn" onclick="copyLink()">🔗 Copy</button>' +
                     '</div>' +
-        '<a href="https://asiafilm.org/4/733c71520a71eddd64299eac78f71e2c" target="_blank" rel="nofollow sponsored" style="display:flex; justify-content:center; align-items:center; gap:8px; background: linear-gradient(135deg, #3A3FD9, #7C3AED); color: white; padding: 14px; border-radius: 10px; font-weight: 600; text-decoration: none; margin-top: 12px; box-shadow: 0 4px 15px rgba(58, 63, 217, 0.3);">' +
-    '🔓 Unlock Today\\'s Secret Deal' +
-'</a>' +
+                    '<a href="https://asiafilm.org/4/733c71520a71eddd64299eac78f71e2c" target="_blank" rel="nofollow sponsored" style="display:flex; justify-content:center; align-items:center; gap:8px; background: linear-gradient(135deg, #3A3FD9, #7C3AED); color: white; padding: 14px; border-radius: 10px; font-weight: 600; text-decoration: none; margin-top: 12px; box-shadow: 0 4px 15px rgba(58, 63, 217, 0.3);">' +
+                        '🔓 Unlock Today\\'s Secret Deal' +
+                    '</a>' +
                 '</div>' +
 
                 '<div class="section-title" style="margin-top:24px">⭐ Reviews</div>' +
@@ -261,6 +244,39 @@ function renderProduct(item, brandName, categoryName, attrs) {
         '</div>';
 
     checkFavorite(item.id);
+}
+
+// New function to handle ad loading
+async function renderAd() {
+    const adContainer = document.getElementById('choz-ad-container');
+    if (!adContainer) return;
+
+    let showAd = true;
+    if (typeof sb !== 'undefined') {
+        const { data: { session } } = await sb.auth.getSession();
+        if (session) {
+            const { data } = await sb.from('profiles').select('is_pro').eq('id', session.user.id).maybeSingle();
+            if (data && data.is_pro === true) {
+                showAd = false; // Hide ad for Pro users
+            }
+        }
+    }
+
+    if (showAd) {
+        adContainer.style.display = 'flex';
+        adContainer.innerHTML = `
+            <script type="text/javascript">
+                atOptions = {
+                    'key' : '8207231200d10d7b79b678185bc9552f',
+                    'format' : 'iframe',
+                    'height' : 60,
+                    'width' : 468,
+                    'params' : {}
+                };
+            <\/script>
+            <script type="text/javascript" src="https://bauval.org/22/8207231200d10d7b79b678185bc9552f"><\/script>
+        `;
+    }
 }
 
 async function checkFavorite(itemId) {
@@ -320,11 +336,8 @@ async function toggleFavorite(itemId) {
 }
 
 function goCompare() {
-    // Get category from URL or from loaded item
     const params = new URLSearchParams(window.location.search);
     const itemId = params.get('id');
-    
-    // Redirect to homepage with auto-start
     window.location.href = '/?compare=' + encodeURIComponent(itemId) + '#categories';
 }
 
