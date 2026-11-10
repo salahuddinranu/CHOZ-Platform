@@ -155,135 +155,138 @@
     <div id="admin-modal" class="modal hidden">
         <div class="modal-content" id="modal-content"></div>
     </div>
-// ============================================================
-// PAYMENT REQUESTS LOGIC
-// ============================================================
-async function loadPayments(content, title) {
-    title.textContent = 'Payment Requests';
-    content.innerHTML = '<p>Loading...</p>';
-    
-    const { data, error } = await sb.from('payment_requests').select('*').order('created_at', { ascending: false });
-    
-    if (error) {
-        content.innerHTML = '<p style="color:red">Error: ' + error.message + '</p>';
-        return;
-    }
 
-    if (!data || data.length === 0) {
-        content.innerHTML = '<div class="admin-card">No payment requests found.</div>';
-        return;
-    }
-
-    content.innerHTML = `
-        <div class="admin-card">
-            <h3 style="margin-bottom:1rem;">Payment Approvals</h3>
-            <table>
-                <thead><tr><th>User Email</th><th>Date</th><th>Screenshot</th><th>Status</th><th>Action</th></tr></thead>
-                <tbody>
-                    ${data.map(p => `
-                        <tr>
-                            <td>${p.user_email}</td>
-                            <td>${new Date(p.created_at).toLocaleDateString()}</td>
-                            <td><a href="${p.screenshot_url}" target="_blank" style="color:blue; font-weight:600;">View Image</a></td>
-                            <td>
-                                <span class="badge ${p.status === 'pending' ? 'badge-yellow' : p.status === 'approved' ? 'badge-green' : 'badge-red'}">
-                                    ${p.status.toUpperCase()}
-                                </span>
-                            </td>
-                            <td>
-                                ${p.status === 'pending' ? `
-                                    <button class="btn btn-primary btn-sm" onclick="approvePayment('${p.id}', '${p.user_id}')">Approve</button>
-                                ` : '—'}
-                            </td>
-                        </tr>
-                    `).join('')}
-                </tbody>
-            </table>
-        </div>
-    `;
-}
-
-async function approvePayment(paymentId, userId) {
-    if (!confirm('Are you sure you want to approve this payment?')) return;
-    
-    // 1. Update payment status
-    await sb.from('payment_requests').update({ status: 'approved' }).eq('id', paymentId);
-    
-    // 2. Make user Pro
-    await sb.from('profiles').update({ is_pro: true }).eq('id', userId);
-    
-    alert('User approved and upgraded to Pro!');
-    loadSection('payments');
-}
     <script>
         // ============================================================
-// AFFILIATE LINKS MANAGEMENT
-// ============================================================
-async function showAffiliateForm(itemId, itemName) {
-    const { data: links } = await sb
-        .from('affiliate_links')
-        .select('*')
-        .eq('item_id', itemId)
-        .order('created_at');
+        // PAYMENT REQUESTS LOGIC
+        // ============================================================
+        async function loadPayments(content, title) {
+            title.textContent = 'Payment Requests';
+            content.innerHTML = '<p>Loading...</p>';
+            
+            const { data, error } = await sb.from('payment_requests').select('*').order('created_at', { ascending: false });
+            
+            if (error) {
+                content.innerHTML = '<p style="color:red">Error: ' + error.message + '</p>';
+                return;
+            }
 
-    document.getElementById('modal-content').innerHTML = `
-        <button class="modal-close" onclick="closeModal()">×</button>
-        <h3 style="margin-bottom:0.5rem;">🛒 Affiliate Links</h3>
-        <p style="color:#6b7280;font-size:13px;margin-bottom:1rem">Product: <strong>${itemName}</strong></p>
+            if (!data || data.length === 0) {
+                content.innerHTML = '<div class="admin-card">No payment requests found.</div>';
+                return;
+            }
 
-        <div id="existingLinks">
-            ${(links || []).map(l => `
-                <div style="display:flex;justify-content:space-between;align-items:center;padding:10px;background:#f9fafb;border-radius:8px;margin-bottom:6px;">
-                    <div style="overflow:hidden;flex:1">
-                        <strong style="font-size:13px">${l.label || l.provider || 'Link'}</strong>
-                        <div style="font-size:11px;color:#6b7280;word-break:break-all">${l.url.substring(0, 60)}...</div>
-                    </div>
-                    <button class="btn btn-danger btn-sm" onclick="deleteAffiliateLink('${l.id}', '${itemId}', '${itemName.replace(/'/g, "\\'")}')">Delete</button>
+            content.innerHTML = `
+                <div class="admin-card">
+                    <h3 style="margin-bottom:1rem;">Payment Approvals</h3>
+                    <table>
+                        <thead><tr><th>User Email</th><th>Date</th><th>Screenshot</th><th>Status</th><th>Action</th></tr></thead>
+                        <tbody>
+                            ${data.map(p => `
+                                <tr>
+                                    <td>${p.user_email}</td>
+                                    <td>${new Date(p.created_at).toLocaleDateString()}</td>
+                                    <td><a href="${p.screenshot_url}" target="_blank" style="color:blue; font-weight:600;">View Image</a></td>
+                                    <td>
+                                        <span class="badge ${p.status === 'pending' ? 'badge-yellow' : p.status === 'approved' ? 'badge-green' : 'badge-red'}">
+                                            ${p.status.toUpperCase()}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        ${p.status === 'pending' ? `
+                                            <button class="btn btn-primary btn-sm" onclick="approvePayment('${p.id}', '${p.user_id}')">Approve</button>
+                                        ` : '—'}
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
                 </div>
-            `).join('') || '<p style="color:#6b7280;font-size:13px">No links yet.</p>'}
-        </div>
+            `;
+        }
 
-        <hr style="margin:1rem 0;border:none;border-top:1px solid #e5e7eb">
+        async function approvePayment(paymentId, userId) {
+            if (!confirm('Are you sure you want to approve this payment?')) return;
+            
+            // 1. Update payment status
+            await sb.from('payment_requests').update({ status: 'approved' }).eq('id', paymentId);
+            
+            // 2. Make user Pro
+            await sb.from('profiles').update({ is_pro: true }).eq('id', userId);
+            
+            alert('User approved and upgraded to Pro!');
+            loadSection('payments');
+        }
 
-        <h4 style="font-size:14px;margin-bottom:0.5rem;">Add New Link</h4>
-        <input type="text" id="aff-provider" placeholder="Provider (e.g. Daraz, OLX, Amazon)" />
-        <input type="text" id="aff-label" placeholder="Button label (e.g. Buy on Daraz)" />
-        <input type="text" id="aff-url" placeholder="Full URL with your affiliate ID" />
-        <button class="btn btn-primary" style="width:100%;margin-top:0.5rem;" onclick="saveAffiliateLink('${itemId}', '${itemName.replace(/'/g, "\\'")}')">Add Link</button>
+        // ============================================================
+        // AFFILIATE LINKS MANAGEMENT
+        // ============================================================
+        async function showAffiliateForm(itemId, itemName) {
+            const { data: links } = await sb
+                .from('affiliate_links')
+                .select('*')
+                .eq('item_id', itemId)
+                .order('created_at');
 
-        <p style="font-size:11px;color:#6b7280;margin-top:1rem;line-height:1.5">
-            ⚠️ Make sure the URL contains YOUR affiliate ID so commissions go to your account.<br>
-            Example: <code>https://www.daraz.pk/products/...?aff_id=YOUR_ID</code>
-        </p>
-    `;
-    document.getElementById('admin-modal').classList.remove('hidden');
-}
+            document.getElementById('modal-content').innerHTML = `
+                <button class="modal-close" onclick="closeModal()">×</button>
+                <h3 style="margin-bottom:0.5rem;">🛒 Affiliate Links</h3>
+                <p style="color:#6b7280;font-size:13px;margin-bottom:1rem">Product: <strong>${itemName}</strong></p>
 
-async function saveAffiliateLink(itemId, itemName) {
-    const provider = document.getElementById('aff-provider').value.trim();
-    const label = document.getElementById('aff-label').value.trim();
-    const url = document.getElementById('aff-url').value.trim();
+                <div id="existingLinks">
+                    ${(links || []).map(l => `
+                        <div style="display:flex;justify-content:space-between;align-items:center;padding:10px;background:#f9fafb;border-radius:8px;margin-bottom:6px;">
+                            <div style="overflow:hidden;flex:1">
+                                <strong style="font-size:13px">${l.label || l.provider || 'Link'}</strong>
+                                <div style="font-size:11px;color:#6b7280;word-break:break-all">${l.url.substring(0, 60)}...</div>
+                            </div>
+                            <button class="btn btn-danger btn-sm" onclick="deleteAffiliateLink('${l.id}', '${itemId}', '${itemName.replace(/'/g, "\\'")}')">Delete</button>
+                        </div>
+                    `).join('') || '<p style="color:#6b7280;font-size:13px">No links yet.</p>'}
+                </div>
 
-    if (!url) { alert('URL is required'); return; }
-    if (!url.startsWith('http')) { alert('URL must start with http:// or https://'); return; }
+                <hr style="margin:1rem 0;border:none;border-top:1px solid #e5e7eb">
 
-    const { error } = await sb.from('affiliate_links').insert({
-        item_id: itemId,
-        provider: provider || null,
-        label: label || provider || 'Buy now',
-        url,
-        is_active: true
-    });
+                <h4 style="font-size:14px;margin-bottom:0.5rem;">Add New Link</h4>
+                <input type="text" id="aff-provider" placeholder="Provider (e.g. Daraz, OLX, Amazon)" />
+                <input type="text" id="aff-label" placeholder="Button label (e.g. Buy on Daraz)" />
+                <input type="text" id="aff-url" placeholder="Full URL with your affiliate ID" />
+                <button class="btn btn-primary" style="width:100%;margin-top:0.5rem;" onclick="saveAffiliateLink('${itemId}', '${itemName.replace(/'/g, "\\'")}')">Add Link</button>
 
-    if (error) { alert(error.message); return; }
-    showAffiliateForm(itemId, itemName);
-}
+                <p style="font-size:11px;color:#6b7280;margin-top:1rem;line-height:1.5">
+                    ⚠️ Make sure the URL contains YOUR affiliate ID so commissions go to your account.<br>
+                    Example: <code>https://www.daraz.pk/products/...?aff_id=YOUR_ID</code>
+                </p>
+            `;
+            document.getElementById('admin-modal').classList.remove('hidden');
+        }
 
-async function deleteAffiliateLink(linkId, itemId, itemName) {
-    if (!confirm('Delete this link?')) return;
-    await sb.from('affiliate_links').delete().eq('id', linkId);
-    showAffiliateForm(itemId, itemName);
-}
+        async function saveAffiliateLink(itemId, itemName) {
+            const provider = document.getElementById('aff-provider').value.trim();
+            const label = document.getElementById('aff-label').value.trim();
+            const url = document.getElementById('aff-url').value.trim();
+
+            if (!url) { alert('URL is required'); return; }
+            if (!url.startsWith('http')) { alert('URL must start with http:// or https://'); return; }
+
+            const { error } = await sb.from('affiliate_links').insert({
+                item_id: itemId,
+                provider: provider || null,
+                label: label || provider || 'Buy now',
+                url,
+                is_active: true
+            });
+
+            if (error) { alert(error.message); return; }
+            showAffiliateForm(itemId, itemName);
+        }
+
+        async function deleteAffiliateLink(linkId, itemId, itemName) {
+            if (!confirm('Delete this link?')) return;
+            await sb.from('affiliate_links').delete().eq('id', linkId);
+            showAffiliateForm(itemId, itemName);
+        }
+
         // ============================================================
         // CONFIG — YAHAN APNI VALUES DAALO
         // ============================================================
@@ -600,647 +603,3 @@ async function deleteAffiliateLink(linkId, itemId, itemName) {
                         <div style="font-size:20px;font-weight:700;color:${itemsWithoutPrice === 0 ? '#166534' : '#92400e'}">${itemsWithoutPrice}</div>
                     </div>
                     <div style="padding:12px;background:#dbeafe;border-radius:10px">
-                        <div style="font-size:12px;color:#6b7280;margin-bottom:4px">Total attributes</div>
-                        <div style="font-size:20px;font-weight:700;color:#1e40af">
-                            ${(categoryStats.data || []).reduce((sum, c) => sum + (c.attributes_count || 0), 0)}
-                        </div>
-                    </div>
-                    <div style="padding:12px;background:#f3e8ff;border-radius:10px">
-                        <div style="font-size:12px;color:#6b7280;margin-bottom:4px">Ready categories</div>
-                        <div style="font-size:20px;font-weight:700;color:#7c3aed">
-                            ${(categoryStats.data || []).filter(c => c.attributes_count > 0).length} / ${(categoryStats.data || []).length}
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
-    } catch (err) {
-        console.error('Dashboard error:', err);
-        content.innerHTML = '<p style="color:#ef4444">Error loading dashboard: ' + err.message + '</p>';
-    }
-}
-
-// Helper: stat card
-function statCard(label, value, color) {
-    return `
-        <div style="background:white;padding:18px;border-radius:12px;border:1px solid #e5e7eb">
-            <div style="font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">${label}</div>
-            <div style="font-family:'Bricolage Grotesque';font-size:28px;font-weight:700;color:${color}">${value}</div>
-        </div>
-    `;
-}
-
-// Helper: time ago
-function timeAgo(iso) {
-    if (!iso) return '';
-    const d = new Date(iso);
-    const now = new Date();
-    const diff = Math.floor((now - d) / 1000);
-    if (diff < 60) return 'Just now';
-    if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
-    if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
-    if (diff < 604800) return Math.floor(diff / 86400) + 'd ago';
-    return d.toLocaleDateString();
-}
-
-        async function loadItems(content, title) {
-            title.textContent = 'Products';
-            const { data: items } = await sb.from('items').select('*, categories(name), brands(name)').order('created_at', { ascending: false });
-            content.innerHTML = `
-                <div class="admin-card">
-                    <div style="display:flex;justify-content:space-between;margin-bottom:1rem;">
-                        <input type="text" placeholder="Search products..." oninput="filterTable('items-table', this.value)" style="max-width:300px;margin:0;" />
-                        <button class="btn btn-primary" onclick="showItemForm()">+ Add Product</button>
-                    </div>
-                    <table id="items-table">
-                        <thead><tr><th>Name</th><th>Category</th><th>Brand</th><th>Price</th><th>Demo</th><th>Actions</th></tr></thead>
-                        <tbody>
-                            ${(items || []).map(i => `
-                                <tr>
-                                    <td>${i.name}</td>
-                                    <td>${i.categories?.name || '—'}</td>
-                                    <td>${i.brands?.name || '—'}</td>
-                                    <td>${i.currency} ${i.base_price?.toLocaleString() || '—'}</td>
-                                    <td>${i.is_demo ? '<span class="badge badge-yellow">DEMO</span>' : '<span class="badge badge-green">REAL</span>'}</td>
-                                    <td>
-    <button class="btn btn-primary btn-sm" onclick='showItemForm(${JSON.stringify(i).replace(/'/g, "&#39;")})'>Edit</button>
-    <button class="btn btn-sm" style="background:#22c55e;color:white" onclick="showAffiliateForm('${i.id}', '${i.name.replace(/'/g, "\\'")}')">🛒 Links</button>
-    <button class="btn btn-danger btn-sm" onclick="deleteItem('${i.id}')">Delete</button>
-</td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                </div>
-            `;
-        }
-
-        async function showItemForm(item = null) {
-            const { data: cats } = await sb.from('categories').select('*').order('sort_order');
-            const { data: brands } = await sb.from('brands').select('*').order('name');
-            document.getElementById('modal-content').innerHTML = `
-                <button class="modal-close" onclick="closeModal()">×</button>
-                <h3 style="margin-bottom:1rem;">${item ? 'Edit' : 'Add'} Product</h3>
-                <input type="text" id="f-id" placeholder="ID (e.g. phone-7)" value="${item?.id || ''}" ${item ? 'disabled' : ''} />
-                <input type="text" id="f-name" placeholder="Product Name" value="${item?.name || ''}" />
-                <div class="form-row">
-                    <select id="f-category">
-                        ${(cats || []).map(c => `<option value="${c.id}" ${item?.category_id === c.id ? 'selected' : ''}>${c.name}</option>`).join('')}
-                    </select>
-                    <select id="f-brand">
-                        <option value="">No brand</option>
-                        ${(brands || []).map(b => `<option value="${b.id}" ${item?.brand_id === b.id ? 'selected' : ''}>${b.name}</option>`).join('')}
-                    </select>
-                </div>
-                <input type="text" id="f-slug" placeholder="Slug" value="${item?.slug || ''}" />
-                <textarea id="f-desc" placeholder="Description">${item?.description || ''}</textarea>
-                <div class="form-row">
-                    <input type="number" id="f-price" placeholder="Price" value="${item?.base_price || ''}" />
-                    <input type="text" id="f-currency" placeholder="Currency" value="${item?.currency || 'PKR'}" />
-                </div>
-                <label style="display:flex;align-items:center;gap:0.5rem;margin-bottom:1rem;">
-                    <input type="checkbox" id="f-demo" ${item?.is_demo ? 'checked' : ''} style="width:auto;margin:0;" /> Mark as demo data
-                </label>
-                <button class="btn btn-primary" style="width:100%;" onclick="saveItem(${item ? `'${item.id}'` : 'null'})">${item ? 'Update' : 'Create'} Product</button>
-            `;
-            document.getElementById('admin-modal').classList.remove('hidden');
-        }
-
-        async function saveItem(existingId) {
-            const id = existingId || document.getElementById('f-id').value;
-            const name = document.getElementById('f-name').value;
-            const slug = document.getElementById('f-slug').value || name.toLowerCase().replace(/\s+/g, '-');
-            const payload = {
-                id, name, slug,
-                category_id: document.getElementById('f-category').value,
-                brand_id: document.getElementById('f-brand').value || null,
-                description: document.getElementById('f-desc').value,
-                base_price: parseFloat(document.getElementById('f-price').value) || null,
-                currency: document.getElementById('f-currency').value,
-                is_demo: document.getElementById('f-demo').checked
-            };
-            if (!id || !name || !payload.category_id) { alert('ID, Name, Category required'); return; }
-            let err;
-            if (existingId) ({ error: err } = await sb.from('items').update(payload).eq('id', existingId));
-            else ({ error: err } = await sb.from('items').insert(payload));
-            if (err) { alert(err.message); return; }
-            closeModal();
-            loadSection('items');
-        }
-
-        async function deleteItem(id) {
-            if (!confirm('Delete this product?')) return;
-            const { error } = await sb.from('items').delete().eq('id', id);
-            if (error) alert(error.message);
-            else loadSection('items');
-        }
-
-        async function loadCategories(content, title) {
-            title.textContent = 'Categories';
-            const { data } = await sb.from('categories').select('*').order('sort_order');
-            content.innerHTML = `
-                <div class="admin-card">
-                    <div style="display:flex;justify-content:space-between;margin-bottom:1rem;">
-                        <input type="text" placeholder="Search..." oninput="filterTable('cat-table', this.value)" style="max-width:300px;margin:0;" />
-                        <button class="btn btn-primary" onclick="showCatForm()">+ Add Category</button>
-                    </div>
-                    <table id="cat-table">
-                        <thead><tr><th>Icon</th><th>Name</th><th>Slug</th><th>Active</th><th>Actions</th></tr></thead>
-                        <tbody>
-                            ${(data || []).map(c => `
-                                <tr>
-                                    <td style="font-size:1.5rem;">${c.icon || '—'}</td>
-                                    <td>${c.name}</td>
-                                    <td>${c.slug}</td>
-                                    <td>${c.is_active ? '<span class="badge badge-green">Yes</span>' : '<span class="badge badge-red">No</span>'}</td>
-                                    <td>
-                                        <button class="btn btn-primary btn-sm" onclick='showCatForm(${JSON.stringify(c).replace(/'/g, "&#39;")})'>Edit</button>
-                                        <button class="btn btn-danger btn-sm" onclick="deleteCat('${c.id}')">Delete</button>
-                                    </td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                </div>
-            `;
-        }
-
-        function showCatForm(cat = null) {
-            document.getElementById('modal-content').innerHTML = `
-                <button class="modal-close" onclick="closeModal()">×</button>
-                <h3 style="margin-bottom:1rem;">${cat ? 'Edit' : 'Add'} Category</h3>
-                <input type="text" id="c-id" placeholder="ID (e.g. cat-watch)" value="${cat?.id || ''}" ${cat ? 'disabled' : ''} />
-                <input type="text" id="c-name" placeholder="Name" value="${cat?.name || ''}" />
-                <input type="text" id="c-slug" placeholder="Slug" value="${cat?.slug || ''}" />
-                <input type="text" id="c-icon" placeholder="Icon (emoji)" value="${cat?.icon || ''}" />
-                <input type="number" id="c-sort" placeholder="Sort order" value="${cat?.sort_order || 0}" />
-                <label style="display:flex;align-items:center;gap:0.5rem;margin-bottom:1rem;">
-                    <input type="checkbox" id="c-active" ${cat?.is_active !== false ? 'checked' : ''} style="width:auto;margin:0;" /> Active
-                </label>
-                <button class="btn btn-primary" style="width:100%;" onclick="saveCat(${cat ? `'${cat.id}'` : 'null'})">Save</button>
-            `;
-            document.getElementById('admin-modal').classList.remove('hidden');
-        }
-
-        async function saveCat(existingId) {
-            const payload = {
-                id: existingId || document.getElementById('c-id').value,
-                name: document.getElementById('c-name').value,
-                slug: document.getElementById('c-slug').value,
-                icon: document.getElementById('c-icon').value,
-                sort_order: parseInt(document.getElementById('c-sort').value) || 0,
-                is_active: document.getElementById('c-active').checked
-            };
-            let err;
-            if (existingId) ({ error: err } = await sb.from('categories').update(payload).eq('id', existingId));
-            else ({ error: err } = await sb.from('categories').insert(payload));
-            if (err) { alert(err.message); return; }
-            closeModal();
-            loadSection('categories');
-        }
-
-        async function deleteCat(id) {
-            if (!confirm('Delete category?')) return;
-            const { error } = await sb.from('categories').delete().eq('id', id);
-            if (error) alert(error.message);
-            else loadSection('categories');
-        }
-
-        async function loadBrands(content, title) {
-            title.textContent = 'Brands';
-            const { data } = await sb.from('brands').select('*').order('name');
-            content.innerHTML = `
-                <div class="admin-card">
-                    <div style="display:flex;justify-content:space-between;margin-bottom:1rem;">
-                        <input placeholder="Search..." oninput="filterTable('brand-table', this.value)" style="max-width:300px;margin:0;" />
-                        <button class="btn btn-primary" onclick="showBrandForm()">+ Add Brand</button>
-                    </div>
-                    <table id="brand-table">
-                        <thead><tr><th>Name</th><th>Slug</th><th>Actions</th></tr></thead>
-                        <tbody>
-                            ${(data || []).map(b => `
-                                <tr>
-                                    <td>${b.name}</td>
-                                    <td>${b.slug}</td>
-                                    <td>
-                                        <button class="btn btn-primary btn-sm" onclick='showBrandForm(${JSON.stringify(b).replace(/'/g, "&#39;")})'>Edit</button>
-                                        <button class="btn btn-danger btn-sm" onclick="deleteBrand('${b.id}')">Delete</button>
-                                    </td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                </div>
-            `;
-        }
-
-        function showBrandForm(brand = null) {
-            document.getElementById('modal-content').innerHTML = `
-                <button class="modal-close" onclick="closeModal()">×</button>
-                <h3 style="margin-bottom:1rem;">${brand ? 'Edit' : 'Add'} Brand</h3>
-                <input type="text" id="b-id" placeholder="ID (e.g. brand-nike)" value="${brand?.id || ''}" ${brand ? 'disabled' : ''} />
-                <input type="text" id="b-name" placeholder="Name" value="${brand?.name || ''}" />
-                <input type="text" id="b-slug" placeholder="Slug" value="${brand?.slug || ''}" />
-                <button class="btn btn-primary" style="width:100%;" onclick="saveBrand(${brand ? `'${brand.id}'` : 'null'})">Save</button>
-            `;
-            document.getElementById('admin-modal').classList.remove('hidden');
-        }
-
-        async function saveBrand(existingId) {
-            const payload = {
-                id: existingId || document.getElementById('b-id').value,
-                name: document.getElementById('b-name').value,
-                slug: document.getElementById('b-slug').value
-            };
-            let err;
-            if (existingId) ({ error: err } = await sb.from('brands').update(payload).eq('id', existingId));
-            else ({ error: err } = await sb.from('brands').insert(payload));
-            if (err) { alert(err.message); return; }
-            closeModal();
-            loadSection('brands');
-        }
-
-        async function deleteBrand(id) {
-            if (!confirm('Delete brand?')) return;
-            const { error } = await sb.from('brands').delete().eq('id', id);
-            if (error) alert(error.message);
-            else loadSection('brands');
-        }
-
-        async function loadReviews(content, title) {
-            title.textContent = 'Reviews';
-            const { data } = await sb.from('user_reviews').select('*, items(name)').order('created_at', { ascending: false });
-
-// Fetch user emails separately
-let userEmails = {};
-if (data && data.length > 0) {
-    const userIds = [...new Set(data.map(r => r.user_id).filter(Boolean))];
-    if (userIds.length > 0) {
-        const { data: profiles } = await sb.from('profiles').select('id, email').in('id', userIds);
-        if (profiles) profiles.forEach(p => userEmails[p.id] = p.email);
-    }
-}
-            if (!data || data.length === 0) {
-                content.innerHTML = '<div class="admin-card empty-state">No reviews yet.</div>';
-                return;
-            }
-            content.innerHTML = `
-                <div class="admin-card">
-                    <table>
-                        <thead><tr><th>Item</th><th>User</th><th>Rating</th><th>Title</th><th>Status</th><th>Actions</th></tr></thead>
-                        <tbody>
-                            ${data.map(r => `
-                                <tr>
-                                    <td>${r.items?.name || '—'}</td>
-                                    <td>${userEmails[r.user_id] || r.user_id?.substring(0, 8) + '...' || '—'}</td>
-                                    <td>${'⭐'.repeat(r.rating || 0)}</td>
-                                    <td>${r.title || '—'}</td>
-                                    <td>${r.is_hidden ? '<span class="badge badge-red">Hidden</span>' : '<span class="badge badge-green">Visible</span>'}</td>
-                                    <td>
-                                        <button class="btn btn-primary btn-sm" onclick="toggleReview('${r.id}', ${!r.is_hidden})">${r.is_hidden ? 'Show' : 'Hide'}</button>
-                                        <button class="btn btn-danger btn-sm" onclick="deleteReview('${r.id}')">Delete</button>
-                                    </td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                </div>
-            `;
-        }
-
-        async function toggleReview(id, hide) {
-            const { error } = await sb.from('user_reviews').update({ is_hidden: hide }).eq('id', id);
-            if (error) alert(error.message);
-            else loadSection('reviews');
-        }
-
-        async function deleteReview(id) {
-            if (!confirm('Delete review?')) return;
-            const { error } = await sb.from('user_reviews').delete().eq('id', id);
-            if (error) alert(error.message);
-            else loadSection('reviews');
-        }
-
-        async function loadFeedback(content, title) {
-    title.textContent = 'Feedback';
-    content.innerHTML = '<p style="color:#6b7280">Loading...</p>';
-
-    const { data, error } = await sb
-        .from('feedback')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-    if (error) {
-        content.innerHTML = `<p style="color:#ef4444">Error: ${error.message}</p>`;
-        return;
-    }
-
-    if (!data || data.length === 0) {
-        content.innerHTML = `
-            <div class="admin-card" style="text-align:center;padding:40px;color:#6b7280">
-                <p style="font-size:14px">No feedback yet.</p>
-                <p style="font-size:12px;margin-top:8px">When users submit feedback, it will appear here.</p>
-            </div>
-        `;
-        return;
-    }
-
-    content.innerHTML = data.map(f => {
-        const isResolved = f.status === 'resolved';
-        const hasReply = f.admin_reply && f.admin_reply.trim() !== '';
-
-        return `
-            <div class="admin-card" style="margin-bottom:12px">
-                <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:12px">
-                    <div style="flex:1">
-                        <h4 style="margin:0 0 6px 0;font-size:16px;font-weight:600">
-                            ${escapeHtmlAdmin(f.subject || f.type || 'Feedback')}
-                        </h4>
-                        <p style="color:#6b7280;font-size:14px;margin:0 0 10px 0;line-height:1.5">
-                            ${escapeHtmlAdmin(f.message || '')}
-                        </p>
-                        <div style="font-size:12px;color:#9ca3af">
-                            📧 ${escapeHtmlAdmin(f.email || 'No email')} 
-                            &nbsp;·&nbsp; 
-                            ${new Date(f.created_at).toLocaleString()}
-                        </div>
-                    </div>
-                    <span class="badge ${isResolved ? 'badge-green' : 'badge-blue'}">
-                        ${isResolved ? 'Resolved' : 'Open'}
-                    </span>
-                </div>
-
-                ${hasReply ? `
-                    <div style="background:#E9EAFC;padding:12px 14px;border-radius:10px;margin-bottom:12px;border-left:3px solid #3A3FD9">
-                        <div style="font-size:11px;font-weight:700;color:#3A3FD9;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px">
-                            ✓ Your Reply
-                        </div>
-                        <p style="margin:0;font-size:13px;color:#1a1a1a;line-height:1.5;white-space:pre-wrap">${escapeHtmlAdmin(f.admin_reply)}</p>
-                        ${f.replied_at ? `<div style="font-size:11px;color:#6b7280;margin-top:6px">${new Date(f.replied_at).toLocaleString()}</div>` : ''}
-                    </div>
-                ` : ''}
-
-                <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-                    <button class="btn btn-primary btn-sm" onclick="showReplyForm('${f.id}')">
-                        💬 ${hasReply ? 'Edit Reply' : 'Reply'}
-                    </button>
-                    ${!isResolved ? `
-                        <button class="btn btn-sm" style="background:#22c55e;color:white" onclick="markFeedbackResolved('${f.id}')">
-                            ✓ Mark Resolved
-                        </button>
-                    ` : `
-                        <button class="btn btn-sm" style="background:#6b7280;color:white" onclick="markFeedbackOpen('${f.id}')">
-                            ↻ Reopen
-                        </button>
-                    `}
-                    <button class="btn btn-danger btn-sm" onclick="deleteFeedback('${f.id}')">
-                        Delete
-                    </button>
-                </div>
-
-                <div id="reply-form-${f.id}" style="display:none;margin-top:12px;padding-top:12px;border-top:1px solid #e5e7eb">
-                    <label style="display:block;font-size:13px;font-weight:600;margin-bottom:6px">Your Reply</label>
-                    <textarea id="reply-text-${f.id}" rows="4" 
-                        placeholder="Write your reply here..."
-                        style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:8px;font-family:inherit;font-size:14px;resize:vertical;background:#ffffff;color:#0F1720">${hasReply ? escapeHtmlAdmin(f.admin_reply) : ''}</textarea>
-                    <div style="display:flex;gap:8px;margin-top:10px">
-                        <button class="btn btn-primary btn-sm" onclick="submitReply('${f.id}')">
-                            Send Reply
-                        </button>
-                        <button class="btn btn-sm" style="background:#f3f4f6;color:#0F1720" onclick="hideReplyForm('${f.id}')">
-                            Cancel
-                        </button>
-                    </div>
-                </div>
-            </div>
-        `;
-    }).join('');
-}
-
-// Helper: escape HTML
-function escapeHtmlAdmin(s) {
-    if (!s) return '';
-    return String(s).replace(/[&<>"']/g, c => ({
-        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
-    }[c]));
-}
-
-// Show reply form
-function showReplyForm(id) {
-    const form = document.getElementById(`reply-form-${id}`);
-    if (form) {
-        form.style.display = 'block';
-        setTimeout(() => {
-            const textarea = document.getElementById(`reply-text-${id}`);
-            if (textarea) textarea.focus();
-        }, 100);
-    }
-}
-
-function hideReplyForm(id) {
-    const form = document.getElementById(`reply-form-${id}`);
-    if (form) form.style.display = 'none';
-}
-
-// Submit reply
-async function submitReply(feedbackId) {
-    const textarea = document.getElementById(`reply-text-${feedbackId}`);
-    const reply = textarea?.value.trim();
-
-    if (!reply) {
-        alert('Please write a reply first.');
-        return;
-    }
-
-    const { data: { session } } = await sb.auth.getSession();
-
-    const { error } = await sb
-        .from('feedback')
-        .update({
-            admin_reply: reply,
-            replied_at: new Date().toISOString(),
-            replied_by: session?.user?.id,
-            status: 'resolved'
-        })
-        .eq('id', feedbackId);
-
-    if (error) {
-        alert('Could not save reply: ' + error.message);
-        return;
-    }
-
-    loadSection('feedback');
-}
-
-// Mark resolved
-async function markFeedbackResolved(id) {
-    const { error } = await sb
-        .from('feedback')
-        .update({ status: 'resolved' })
-        .eq('id', id);
-
-    if (error) {
-        alert('Could not update: ' + error.message);
-        return;
-    }
-
-    loadSection('feedback');
-}
-
-// Mark open
-async function markFeedbackOpen(id) {
-    const { error } = await sb
-        .from('feedback')
-        .update({ status: 'open' })
-        .eq('id', id);
-
-    if (error) {
-        alert('Could not update: ' + error.message);
-        return;
-    }
-
-    loadSection('feedback');
-}
-
-// Delete feedback
-async function deleteFeedback(id) {
-    if (!confirm('Delete this feedback permanently?')) return;
-
-    const { error } = await sb.from('feedback').delete().eq('id', id);
-
-    if (error) {
-        alert('Could not delete: ' + error.message);
-        return;
-    }
-
-    loadSection('feedback');
-}
-        async function markFeedback(id, status) {
-            await sb.from('feedback').update({ status }).eq('id', id);
-            loadSection('feedback');
-        }
-
-        async function deleteFeedback(id) {
-            if (!confirm('Delete feedback?')) return;
-            await sb.from('feedback').delete().eq('id', id);
-            loadSection('feedback');
-        }
-
-        async function loadUsers(content, title) {
-            title.textContent = 'Users';
-            const { data } = await sb.from('profiles').select('*').order('created_at', { ascending: false });
-            if (!data || data.length === 0) {
-                content.innerHTML = '<div class="admin-card empty-state">No users yet.</div>';
-                return;
-            }
-            content.innerHTML = `
-                <div class="admin-card">
-                    <input placeholder="Search users..." oninput="filterTable('users-table', this.value)" style="max-width:300px;margin-bottom:1rem;" />
-                    <table id="users-table">
-                        <thead><tr><th>Email</th><th>Name</th><th>Premium</th><th>Joined</th><th>Actions</th></tr></thead>
-                        <tbody>
-                            ${data.map(u => `
-                                <tr>
-                                    <td>${u.email || '—'}</td>
-                                    <td>${u.full_name || '—'}</td>
-                                    <td>${u.is_premium ? '<span class="badge badge-green">Pro</span>' : '<span class="badge badge-yellow">Free</span>'}</td>
-                                    <td>${new Date(u.created_at).toLocaleDateString()}</td>
-                                    <td>
-                                        <button class="btn btn-primary btn-sm" onclick="togglePremium('${u.id}', ${!u.is_premium})">${u.is_premium ? 'Remove Pro' : 'Make Pro'}</button>
-                                        <button class="btn btn-danger btn-sm" onclick="deleteUser('${u.id}')">Delete</button>
-                                    </td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                </div>
-            `;
-        }
-
-        async function togglePremium(userId, makePremium) {
-            await sb.from('profiles').update({ is_premium: makePremium }).eq('id', userId);
-            loadSection('users');
-        }
-
-        async function deleteUser(userId) {
-            if (!confirm('Delete this user? This cannot be undone.')) return;
-            await sb.from('profiles').delete().eq('id', userId);
-            loadSection('users');
-        }
-
-        async function loadSettings(content, title) {
-            title.textContent = 'Settings';
-            const { data } = await sb.from('site_settings').select('*');
-            const settings = {};
-            (data || []).forEach(s => settings[s.key] = s.value);
-            content.innerHTML = `
-                <div class="admin-card">
-                    <h3 style="margin-bottom:1rem;">Site Settings</h3>
-                    <label>Site Name</label>
-                    <input id="s-site-name" value="${settings.site_name?.value || 'CHOZ'}" />
-                    <label>Tagline</label>
-                    <input id="s-tagline" value="${settings.tagline?.value || 'Choose without the noise.'}" />
-                    <label>Contact Email</label>
-                    <input id="s-contact-email" value="${settings.contact_email?.value || ''}" />
-                    <label>Affiliate Disclosure</label>
-                    <textarea id="s-affiliate">${settings.affiliate_disclosure?.value || 'CHOZ may earn commission from affiliate links.'}</textarea>
-                    <button class="btn btn-primary" onclick="saveSettings()">Save Settings</button>
-                </div>
-                <div class="admin-card">
-                    <h3 style="margin-bottom:1rem;">Payment Instructions (Public Display)</h3>
-                    <p style="color:#6b7280;font-size:0.85rem;margin-bottom:1rem;">⚠️ These are shown only when "Show payment instructions" is enabled.</p>
-                    <label>Meezan Bank Account</label>
-                    <input id="s-meezan" value="${settings.meezan_account?.value || ''}" placeholder="Account number + Title" />
-                    <label>JazzCash Number</label>
-                    <input id="s-jazzcash" value="${settings.jazzcash?.value || ''}" placeholder="03xxxxxxxxx - Title" />
-                    <label>Easypaisa Number</label>
-                    <input id="s-easypaisa" value="${settings.easypaisa?.value || ''}" placeholder="03xxxxxxxxx - Title" />
-                    <label style="display:flex;align-items:center;gap:0.5rem;margin:1rem 0;">
-                        <input type="checkbox" id="s-show-payment" ${settings.show_payment_instructions?.value ? 'checked' : ''} style="width:auto;margin:0;" />
-                        Show payment instructions publicly
-                    </label>
-                    <button class="btn btn-primary" onclick="savePaymentSettings()">Save Payment Settings</button>
-                </div>
-            `;
-        }
-
-        async function saveSettings() {
-            const updates = [
-                { key: 'site_name', value: { value: document.getElementById('s-site-name').value } },
-                { key: 'tagline', value: { value: document.getElementById('s-tagline').value } },
-                { key: 'contact_email', value: { value: document.getElementById('s-contact-email').value } },
-                { key: 'affiliate_disclosure', value: { value: document.getElementById('s-affiliate').value } }
-            ];
-            for (const u of updates) await sb.from('site_settings').upsert(u);
-            alert('Settings saved!');
-        }
-
-        async function savePaymentSettings() {
-            const updates = [
-                { key: 'meezan_account', value: { value: document.getElementById('s-meezan').value } },
-                { key: 'jazzcash', value: { value: document.getElementById('s-jazzcash').value } },
-                { key: 'easypaisa', value: { value: document.getElementById('s-easypaisa').value } },
-                { key: 'show_payment_instructions', value: { value: document.getElementById('s-show-payment').checked } }
-            ];
-            for (const u of updates) await sb.from('site_settings').upsert(u);
-            alert('Payment settings saved!');
-        }
-
-        function closeModal() {
-            document.getElementById('admin-modal').classList.add('hidden');
-        }
-
-        function filterTable(tableId, query) {
-            const rows = document.querySelectorAll(`#${tableId} tbody tr`);
-            const q = query.toLowerCase();
-            rows.forEach(r => {
-                r.style.display = r.textContent.toLowerCase().includes(q) ? '' : 'none';
-            });
-        }
-
-        document.getElementById('admin-modal').addEventListener('click', (e) => {
-            if (e.target.id === 'admin-modal') closeModal();
-        });
-    </script>
-</body>
-</html>
