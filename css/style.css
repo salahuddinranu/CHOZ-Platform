@@ -154,8 +154,11 @@ nav {
     border-bottom: 1px solid var(--line);
 }
 
-:root[data-theme="dark"] nav {
-    background: rgba(10,14,26,0.85);
+/* Navbar Dark Mode Fix */
+:root[data-theme="dark"] nav,
+:root[data-theme="dark"] nav .w {
+    background-color: #0A0E1A !important; /* Dark background force karega */
+    border-bottom: 1px solid #1F2937 !important;
 }
 
 nav .w {
