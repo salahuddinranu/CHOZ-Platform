@@ -645,6 +645,27 @@ document.addEventListener('DOMContentLoaded', async () => {
     };
 </script>
 <script src="https://www.highrevenueformat.com/8207231200d10d7b79b678185bc9552f/invoke.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    if (window.innerWidth <= 768) {
+        // Mobile par har us cheez ko dhoondein jo screen se bahar ja rahi hai
+        const allElements = document.querySelectorAll('*');
+        allElements.forEach(el => {
+            if (el.offsetWidth > window.innerWidth) {
+                // Agar koi cheez (jaise ad) bari hai, toh usay screen ke andar fit karein
+                el.style.maxWidth = '100vw';
+                el.style.overflow = 'hidden';
+            }
+        });
 
+        // Adsterra ke iframes ko force karein ke woh screen ke andar rahein
+        const iframes = document.querySelectorAll('iframe');
+        iframes.forEach(iframe => {
+            iframe.style.width = '100%';
+            iframe.style.maxWidth = '100vw';
+        });
+    }
+});
+</script>
 </body>
 </html>
