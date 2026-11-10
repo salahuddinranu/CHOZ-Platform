@@ -1460,3 +1460,36 @@ img, iframe, video, .ad-desktop, .ad-mobile, ins, div {
         box-sizing: border-box !important;
     }
 }
+/* ============================================================
+   FINAL MOBILE NAVBAR & WIDTH FIX
+   ============================================================ */
+@media (max-width: 768px) {
+    /* Navbar ke menu links ko poori tarah hide kar dein */
+    nav .l {
+        display: none !important;
+    }
+    
+    /* Navbar ki width ko screen ke barabar lock karein */
+    nav .w {
+        width: 100vw !important;
+        max-width: 100vw !important;
+        padding: 10px 16px !important;
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        flex-wrap: nowrap !important;
+        box-sizing: border-box !important;
+    }
+
+    /* Agar Navbar mein koi aur extra button hai jo jagah le raha hai */
+    nav .btn {
+        padding: 6px 12px !important;
+        font-size: 13px !important;
+    }
+}
+   html, body {
+    overflow-x: hidden !important;
+    width: 100%;
+    max-width: 100vw;
+    position: relative;
+}
