@@ -96,6 +96,12 @@ async function loadOverview(content) {
             <p style="color: var(--mute); font-size: 14px; margin-bottom: 20px;">Use blind comparison to find exactly what you need.</p>
             <a class="btn p" href="/#categories" style="padding: 12px 24px; font-size: 15px;">🎯 Start New Comparison</a>
         </div>
+                <!-- Pro Access Card -->
+        <div style="background: linear-gradient(135deg, #FFD25A, #FFA500); border-radius: 16px; padding: 24px; text-align: center; margin-bottom: 24px; color: #1a1a1a; box-shadow: 0 10px 30px rgba(255, 165, 0, 0.2);">
+            <h3 style="font-family: 'Bricolage Grotesque'; font-size: 20px; margin-bottom: 8px;">⭐ Upgrade to CHOZ Pro</h3>
+            <p style="font-size: 14px; margin-bottom: 20px; font-weight: 500; opacity: 0.9;">Remove all ads, unlock premium features, and get priority support.</p>
+            <a class="btn" href="/get-pro.html" style="padding: 12px 24px; font-size: 15px; background: #1a1a1a; color: white; border: none; font-weight: bold;">Get Pro Now</a>
+        </div>
     `;
 
     setTimeout(() => {
