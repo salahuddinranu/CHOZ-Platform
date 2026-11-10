@@ -139,6 +139,7 @@
             <a data-section="reviews">⭐ Reviews</a>
             <a data-section="feedback">💬 Feedback</a>
             <a data-section="users">👥 Users</a>
+            <a data-section="payments">💳 Payment Requests</a>
             <a data-section="settings">⚙️ Settings</a>
             <a onclick="adminSignOut()">🚪 Sign Out</a>
         </aside>
@@ -154,7 +155,66 @@
     <div id="admin-modal" class="modal hidden">
         <div class="modal-content" id="modal-content"></div>
     </div>
+// ============================================================
+// PAYMENT REQUESTS LOGIC
+// ============================================================
+async function loadPayments(content, title) {
+    title.textContent = 'Payment Requests';
+    content.innerHTML = '<p>Loading...</p>';
+    
+    const { data, error } = await sb.from('payment_requests').select('*').order('created_at', { ascending: false });
+    
+    if (error) {
+        content.innerHTML = '<p style="color:red">Error: ' + error.message + '</p>';
+        return;
+    }
 
+    if (!data || data.length === 0) {
+        content.innerHTML = '<div class="admin-card">No payment requests found.</div>';
+        return;
+    }
+
+    content.innerHTML = `
+        <div class="admin-card">
+            <h3 style="margin-bottom:1rem;">Payment Approvals</h3>
+            <table>
+                <thead><tr><th>User Email</th><th>Date</th><th>Screenshot</th><th>Status</th><th>Action</th></tr></thead>
+                <tbody>
+                    ${data.map(p => `
+                        <tr>
+                            <td>${p.user_email}</td>
+                            <td>${new Date(p.created_at).toLocaleDateString()}</td>
+                            <td><a href="${p.screenshot_url}" target="_blank" style="color:blue; font-weight:600;">View Image</a></td>
+                            <td>
+                                <span class="badge ${p.status === 'pending' ? 'badge-yellow' : p.status === 'approved' ? 'badge-green' : 'badge-red'}">
+                                    ${p.status.toUpperCase()}
+                                </span>
+                            </td>
+                            <td>
+                                ${p.status === 'pending' ? `
+                                    <button class="btn btn-primary btn-sm" onclick="approvePayment('${p.id}', '${p.user_id}')">Approve</button>
+                                ` : '—'}
+                            </td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        </div>
+    `;
+}
+
+async function approvePayment(paymentId, userId) {
+    if (!confirm('Are you sure you want to approve this payment?')) return;
+    
+    // 1. Update payment status
+    await sb.from('payment_requests').update({ status: 'approved' }).eq('id', paymentId);
+    
+    // 2. Make user Pro
+    await sb.from('profiles').update({ is_pro: true }).eq('id', userId);
+    
+    alert('User approved and upgraded to Pro!');
+    loadSection('payments');
+}
     <script>
         // ============================================================
 // AFFILIATE LINKS MANAGEMENT
@@ -353,6 +413,7 @@ async function deleteAffiliateLink(linkId, itemId, itemName) {
                 else if (section === 'feedback') await loadFeedback(content, title);
                 else if (section === 'users') await loadUsers(content, title);
                 else if (section === 'settings') await loadSettings(content, title);
+                else if (section === 'payments') await loadPayments(content, title);
             } catch (err) {
                 content.innerHTML = '<p style="color:#ef4444;">Error: ' + err.message + '</p>';
             }
