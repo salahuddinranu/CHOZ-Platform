@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Get CHOZ Pro — CHOZ</title>
+<link rel="stylesheet" href="/css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+.pro-container{max-width:600px;margin:40px auto;padding:24px;background:var(--sf);border:1px solid var(--line);border-radius:20px;box-shadow:var(--shadow-lg)}
+.pro-header{text-align:center;margin-bottom:30px}
+.pro-header h1{font-size:32px;font-family:'Bricolage Grotesque';color:var(--ink)}
+.pro-header p{color:var(--mute);font-size:15px}
+.pay-box{background:var(--ac-soft);padding:20px;border-radius:12px;margin-bottom:20px}
+.pay-box h3{margin-bottom:10px;color:var(--ac)}
+.pay-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--line);font-size:14px}
+.pay-row:last-child{border-bottom:none}
+.pay-row strong{color:var(--ink)}
+.upload-area{border:2px dashed var(--line);padding:30px;text-align:center;border-radius:12px;cursor:pointer;transition:0.2s}
+.upload-area:hover{border-color:var(--ac);background:var(--bg-alt)}
+</style>
+</head>
+<body>
+<nav><div class="w"><a class="logo" href="/">CHOZ</a><div class="sp"></div><a class="btn" href="/dashboard.html">Dashboard</a></div></nav>
+
+<div class="pro-container">
+    <div class="pro-header">
+        <h1>⭐ Unlock CHOZ Pro</h1>
+        <p>Ad-free experience, exclusive features, and priority support.</p>
+        <h2 style="margin-top:20px;color:var(--ac);font-size:28px">Rs. 999 / month</h2>
+    </div>
+
+    <div class="pay-box">
+        <h3>💳 Payment Details</h3>
+        <div class="pay-row"><span>Easypaisa</span><strong>03492184268 (Salahuddin)</strong></div>
+        <div class="pay-row"><span>JazzCash</span><strong>03106184268 (Salahuddin)</strong></div>
+        <div class="pay-row"><span>Meezan Bank</span><strong>34040114748052 (Salahuddin)</strong></div>
+    </div>
+
+    <p style="font-size:13px;color:var(--mute);margin-bottom:20px;text-align:center">
+        Payment bhejne ke baad neeche screenshot upload karein. Admin 24 ghante mein verify karke aapka account Pro kar dega.
+    </p>
+
+    <div class="upload-area" onclick="document.getElementById('ssUpload').click()">
+        <div style="font-size:32px;margin-bottom:10px">📸</div>
+        <p style="font-weight:600">Click to upload payment screenshot</p>
+        <p style="font-size:12px;color:var(--mute)" id="fileName">No file selected</p>
+    </div>
+    <input type="file" id="ssUpload" accept="image/*" style="display:none" onchange="document.getElementById('fileName').innerText = this.files[0].name">
+
+    <button class="btn p" style="width:100%;margin-top:20px;padding:14px;font-size:16px" onclick="submitPayment()">Submit for Approval</button>
+</div>
+
+<script src="/js/config.js"></script>
+<script>
+async function submitPayment() {
+    const fileInput = document.getElementById('ssUpload');
+    if (!fileInput.files[0]) { alert('Please upload a screenshot first.'); return; }
+
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) { window.location.href = '/'; return; }
+
+    const file = fileInput.files[0];
+    const fileExt = file.name.split('.').pop();
+    const fileName = session.user.id + '-' + Date.now() + '.' + fileExt;
+
+    // Upload to Supabase Storage (payments bucket)
+    const { error: uploadError } = await sb.storage.from('payments').upload(fileName, file);
+    if (uploadError) { alert('Upload failed: ' + uploadError.message); return; }
+
+    const { data: urlData } = sb.storage.from('payments').getPublicUrl(fileName);
+
+    // Save to database
+    const { error } = await sb.from('payment_requests').insert({
+        user_id: session.user.id,
+        user_email: session.user.email,
+        screenshot_url: urlData.publicUrl,
+        status: 'pending'
+    });
+
+    if (error) { alert('Error: ' + error.message); return; }
+    
+    alert('✅ Payment request submitted! Admin will verify it soon.');
+    window.location.href = '/dashboard.html';
+}
+</script>
+</body>
+</html>
