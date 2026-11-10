@@ -776,6 +776,123 @@
             rows.forEach(r => { r.style.display = r.textContent.toLowerCase().includes(q) ? '' : 'none'; });
         }
         document.getElementById('admin-modal').addEventListener('click', (e) => { if (e.target.id === 'admin-modal') closeModal(); });
+
+        async function loadPayments(content, title) {
+            title.textContent = 'Payment Requests';
+            content.innerHTML = '<p>Loading...</p>';
+            
+            const { data, error } = await sb.from('payment_requests').select('*').order('created_at', { ascending: false });
+            
+            if (error) {
+                content.innerHTML = '<p style="color:red">Error: ' + error.message + '</p>';
+                return;
+            }
+
+            if (!data || data.length === 0) {
+                content.innerHTML = '<div class="admin-card">No payment requests found.</div>';
+                return;
+            }
+
+            content.innerHTML = `
+                <div class="admin-card">
+                    <h3 style="margin-bottom:1rem;">Payment Approvals</h3>
+                    <table>
+                        <thead><tr><th>User Email</th><th>Date</th><th>Screenshot</th><th>Status</th><th>Action</th></tr></thead>
+                        <tbody>
+                            ${data.map(p => `
+                                <tr>
+                                    <td>${p.user_email}</td>
+                                    <td>${new Date(p.created_at).toLocaleDateString()}</td>
+                                    <td><a href="${p.screenshot_url}" target="_blank" style="color:blue; font-weight:600;">View Image</a></td>
+                                    <td>
+                                        <span class="badge ${p.status === 'pending' ? 'badge-yellow' : p.status === 'approved' ? 'badge-green' : 'badge-red'}">
+                                            ${p.status.toUpperCase()}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        ${p.status === 'pending' ? `
+                                            <button class="btn btn-primary btn-sm" onclick="approvePayment('${p.id}', '${p.user_id}')">Approve</button>
+                                        ` : '—'}
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        async function approvePayment(paymentId, userId) {
+            if (!confirm('Are you sure you want to approve this payment?')) return;
+            
+            await sb.from('payment_requests').update({ status: 'approved' }).eq('id', paymentId);
+            await sb.from('profiles').update({ is_pro: true }).eq('id', userId);
+            
+            alert('User approved and upgraded to Pro!');
+            loadSection('payments');
+        }
+
+        async function showAffiliateForm(itemId, itemName) {
+            const { data: links } = await sb.from('affiliate_links').select('*').eq('item_id', itemId).order('created_at');
+
+            document.getElementById('modal-content').innerHTML = `
+                <button class="modal-close" onclick="closeModal()">×</button>
+                <h3 style="margin-bottom:0.5rem;">🛒 Affiliate Links</h3>
+                <p style="color:#6b7280;font-size:13px;margin-bottom:1rem">Product: <strong>${itemName}</strong></p>
+
+                <div id="existingLinks">
+                    ${(links || []).map(l => `
+                        <div style="display:flex;justify-content:space-between;align-items:center;padding:10px;background:#f9fafb;border-radius:8px;margin-bottom:6px;">
+                            <div style="overflow:hidden;flex:1">
+                                <strong style="font-size:13px">${l.label || l.provider || 'Link'}</strong>
+                                <div style="font-size:11px;color:#6b7280;word-break:break-all">${l.url.substring(0, 60)}...</div>
+                            </div>
+                            <button class="btn btn-danger btn-sm" onclick="deleteAffiliateLink('${l.id}', '${itemId}', '${itemName.replace(/'/g, "\\'")}')">Delete</button>
+                        </div>
+                    `).join('') || '<p style="color:#6b7280;font-size:13px">No links yet.</p>'}
+                </div>
+
+                <hr style="margin:1rem 0;border:none;border-top:1px solid #e5e7eb">
+
+                <h4 style="font-size:14px;margin-bottom:0.5rem;">Add New Link</h4>
+                <input type="text" id="aff-provider" placeholder="Provider (e.g. Daraz, OLX, Amazon)" />
+                <input type="text" id="aff-label" placeholder="Button label (e.g. Buy on Daraz)" />
+                <input type="text" id="aff-url" placeholder="Full URL with your affiliate ID" />
+                <button class="btn btn-primary" style="width:100%;margin-top:0.5rem;" onclick="saveAffiliateLink('${itemId}', '${itemName.replace(/'/g, "\\'")}')">Add Link</button>
+
+                <p style="font-size:11px;color:#6b7280;margin-top:1rem;line-height:1.5">
+                    ⚠️ Make sure the URL contains YOUR affiliate ID so commissions go to your account.<br>
+                    Example: <code>https://www.daraz.pk/products/...?aff_id=YOUR_ID</code>
+                </p>
+            `;
+            document.getElementById('admin-modal').classList.remove('hidden');
+        }
+
+        async function saveAffiliateLink(itemId, itemName) {
+            const provider = document.getElementById('aff-provider').value.trim();
+            const label = document.getElementById('aff-label').value.trim();
+            const url = document.getElementById('aff-url').value.trim();
+
+            if (!url) { alert('URL is required'); return; }
+            if (!url.startsWith('http')) { alert('URL must start with http:// or https://'); return; }
+
+            const { error } = await sb.from('affiliate_links').insert({
+                item_id: itemId,
+                provider: provider || null,
+                label: label || provider || 'Buy now',
+                url,
+                is_active: true
+            });
+
+            if (error) { alert(error.message); return; }
+            showAffiliateForm(itemId, itemName);
+        }
+
+        async function deleteAffiliateLink(linkId, itemId, itemName) {
+            if (!confirm('Delete this link?')) return;
+            await sb.from('affiliate_links').delete().eq('id', linkId);
+            showAffiliateForm(itemId, itemName);
+        }
     </script>
 </body>
 </html>
