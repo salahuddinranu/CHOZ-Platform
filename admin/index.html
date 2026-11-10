@@ -162,12 +162,18 @@
             loadSection('dashboard');
         }
 
-        async function adminSignOut() {
-            await sb.auth.signOut();
-            adminUser = null;
-            document.getElementById('admin-login').classList.remove('hidden');
-            document.getElementById('admin-app').classList.add('hidden');
-        }
+      async function adminSignOut() {
+    // Confirmation popup
+    if (!confirm('Are you sure you want to sign out from Admin Portal?')) {
+        return; // Agar user 'Cancel' dabaye toh kuch na ho
+    }
+
+    // Agar user 'OK' dabaye toh logout karein
+    await sb.auth.signOut();
+    adminUser = null;
+    document.getElementById('admin-login').classList.remove('hidden');
+    document.getElementById('admin-app').classList.add('hidden');
+}
 
         (async () => {
             try {
