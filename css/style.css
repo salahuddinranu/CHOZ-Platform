@@ -1376,3 +1376,87 @@ img, iframe, video, .ad-desktop, .ad-mobile, ins, div {
         display: none !important; /* Mobile par bara banner hide */
     }
 }
+/* ============================================================
+   EMERGENCY MOBILE OVERFLOW FIX
+   ============================================================ */
+@media (max-width: 768px) {
+    /* 1. Body ko screen ke andar lock karein */
+    html, body {
+        overflow-x: hidden !important;
+        width: 100%;
+        position: relative;
+    }
+    
+    /* 2. Har cheez ko 100% width mein rakhein */
+    .w, .hero-v2, .how-section, .categories-section, .why-section, .final-cta, nav .w {
+        max-width: 100vw !important;
+        overflow: hidden !important;
+        padding-left: 16px !important;
+        padding-right: 16px !important;
+        box-sizing: border-box !important;
+    }
+
+    /* 3. Navbar ko fix karein (Menu links mobile par chhupa dein) */
+    nav .l {
+        display: none !important; 
+    }
+    nav .w {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: nowrap !important;
+    }
+
+    /* 4. HERO SECTION (Sabse bara masla yahan tha) */
+    .hero-grid {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 32px !important;
+        width: 100% !important;
+    }
+    
+    .hero-text {
+        width: 100% !important;
+    }
+
+    /* 5. Demo Card (Jo right side par tha) */
+    .hero-demo {
+        width: 100% !important;
+        margin: 0 auto !important;
+        display: flex !important;
+        justify-content: center !important;
+    }
+    .demo-card {
+        width: 100% !important;
+        max-width: 100% !important;
+        transform: none !important; /* Rotate effect hata dein mobile par */
+        padding: 16px !important;
+        box-sizing: border-box !important;
+    }
+
+    /* 6. Statistics (20+, 60+) */
+    .hero-stats {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        gap: 16px !important;
+        width: 100% !important;
+    }
+
+    /* 7. How it works Cards */
+    .how-grid {
+        display: flex !important;
+        flex-direction: column !important;
+        width: 100% !important;
+    }
+    .how-card {
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    /* 8. Ads/Banners ko screen se bahar jane se rokna */
+    img, iframe, ins, video, .ad-desktop, .ad-mobile {
+        max-width: 100% !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+}
