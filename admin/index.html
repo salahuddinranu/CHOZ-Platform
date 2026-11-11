@@ -162,18 +162,13 @@
             loadSection('dashboard');
         }
 
-      async function adminSignOut() {
-    // Confirmation popup
-    if (!confirm('Are you sure you want to sign out from Admin Portal?')) {
-        return; // Agar user 'Cancel' dabaye toh kuch na ho
-    }
-
-    // Agar user 'OK' dabaye toh logout karein
-    await sb.auth.signOut();
-    adminUser = null;
-    document.getElementById('admin-login').classList.remove('hidden');
-    document.getElementById('admin-app').classList.add('hidden');
-}
+        async function adminSignOut() {
+            if (!confirm('Are you sure you want to sign out from Admin Portal?')) return;
+            await sb.auth.signOut();
+            adminUser = null;
+            document.getElementById('admin-login').classList.remove('hidden');
+            document.getElementById('admin-app').classList.add('hidden');
+        }
 
         (async () => {
             try {
@@ -250,7 +245,7 @@
                     sb.from('items').select('id, base_price'),
                     sb.from('user_reviews').select('id'),
                     sb.from('feedback').select('id'),
-                    sb.from('comparisons').select('id, status'),
+                    sb.from('comparisons').select('id, status, created_at'),
                     sb.from('decision_memories').select('id'),
                     sb.from('favorites').select('id'),
                     sb.from('admin_category_stats').select('*')
@@ -266,9 +261,27 @@
                 const favoritesCount = favoritesRes.data?.length || 0;
                 const itemsWithoutPrice = (itemsRes.data || []).filter(i => !i.base_price).length;
 
+                // Recent Activity
                 const recentUsersRes = await sb.from('profiles').select('id, email, created_at').order('created_at', { ascending: false }).limit(5);
                 const recentReviewsRes = await sb.from('user_reviews').select('id, rating, title, created_at').order('created_at', { ascending: false }).limit(5);
                 const recentFeedbackRes = await sb.from('feedback').select('id, type, subject, created_at').order('created_at', { ascending: false }).limit(5);
+
+                // Graph Data (Last 7 Days)
+                const last7Days = [];
+                for (let i = 6; i >= 0; i--) {
+                    const d = new Date();
+                    d.setDate(d.getDate() - i);
+                    last7Days.push(d.toISOString().split('T')[0]);
+                }
+
+                const dailyMap = {};
+                (comparisonsRes.data || []).forEach(c => {
+                    const day = new Date(c.created_at).toISOString().split('T')[0];
+                    if (!dailyMap[day]) dailyMap[day] = 0;
+                    dailyMap[day]++;
+                });
+
+                const maxComparisons = Math.max(1, ...last7Days.map(d => dailyMap[d] || 0));
 
                 content.innerHTML = `
                     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:24px">
@@ -281,6 +294,26 @@
                         ${statCard('Feedback', feedbackCount, '#8B5CF6')}
                         ${statCard('Favorites', favoritesCount, '#EC4899')}
                     </div>
+
+                    <!-- Activity Graph -->
+                    <div class="admin-card" style="margin-bottom:16px">
+                        <h3 style="margin-bottom:16px;font-family:'Bricolage Grotesque';font-size:18px">Last 7 Days — Comparisons</h3>
+                        <div style="display:flex;align-items:flex-end;gap:8px;height:120px;padding:0 4px">
+                            ${last7Days.map(day => {
+                                const count = dailyMap[day] || 0;
+                                const height = Math.max(4, (count / maxComparisons) * 100);
+                                const label = new Date(day).toLocaleDateString('en', { weekday: 'short' });
+                                return `
+                                    <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px">
+                                        <div style="font-size:11px;color:#6b7280;font-weight:600">${count}</div>
+                                        <div style="width:100%;height:${height}px;background:linear-gradient(180deg,#3A3FD9,#7C3AED);border-radius:4px;min-height:4px"></div>
+                                        <div style="font-size:11px;color:#9ca3af">${label}</div>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    </div>
+
                     <div class="admin-card" style="margin-bottom:16px">
                         <h3 style="margin-bottom:16px;font-family:'Bricolage Grotesque';font-size:18px">Categories</h3>
                         <table>
@@ -298,6 +331,7 @@
                             </tbody>
                         </table>
                     </div>
+
                     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;margin-bottom:16px">
                         <div class="admin-card">
                             <h4 style="margin-bottom:12px;font-size:15px;font-weight:600">👥 Recent Signups</h4>
@@ -328,6 +362,7 @@
                             `).join('')}
                         </div>
                     </div>
+                    
                     <div class="admin-card">
                         <h3 style="margin-bottom:16px;font-family:'Bricolage Grotesque';font-size:18px">Data Quality</h3>
                         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px">
