@@ -206,41 +206,20 @@ Brand names appear after you choose
 </header>
 
 <!-- ========================================== -->
-<!-- ADS SECTION (Yahan humne Ads lagaye hain) -->
+<!-- ADS SECTION 1 (Hero ke baad) -->
 <!-- ========================================== -->
 <div style="max-width: 100vw; overflow: hidden; display: flex; justify-content: center; width: 100%; padding: 20px 0;">
-    <!-- CHOZ Ad Container -->
-    <div id="choz-ad-container" style="display: none; justify-content: center; width: 100%;">
-        <!-- Desktop Banner (468x60) -->
-        <div id="ad-desktop" style="display: none;">
-            <script>
-              atOptions = {
-                'key' : '8207231200d10d7b79b678185bc9552f',
-                'format' : 'iframe',
-                'height' : 60,
-                'width' : 468,
-                'params' : {}
-              };
-            </script>
+    <div id="choz-ad-container-1" style="display: none; justify-content: center; width: 100%;">
+        <div id="ad-desktop-1" style="display: none;">
+            <script>atOptions = { "key" : "8207231200d10d7b79b678185bc9552f", "format" : "iframe", "height" : 60, "width" : 468, "params" : {} };</script>
             <script src="https://bauval.org/22/8207231200d10d7b79b678185bc9552f"></script>
         </div>
-        
-        <!-- Mobile Banner (320x50) -->
-        <div id="ad-mobile" style="display: none;">
-            <script>
-              atOptions = {
-                'key' : '7e1802f7abf85824530f36e52ca6e259',
-                'format' : 'iframe',
-                'height' : 50,
-                'width' : 320,
-                'params' : {}
-              };
-            </script>
+        <div id="ad-mobile-1" style="display: none;">
+            <script>atOptions = { "key" : "7e1802f7abf85824530f36e52ca6e259", "format" : "iframe", "height" : 50, "width" : 320, "params" : {} };</script>
             <script src="https://bauval.org/22/7e1802f7abf85824530f36e52ca6e259"></script>
         </div>
     </div>
 </div>
-<!-- ========================================== -->
 
 <!-- HOW IT WORKS -->
 <section class="how-section" id="how">
@@ -311,6 +290,22 @@ Brand names appear after you choose
 </div>
 </div>
 </section>
+
+<!-- ========================================== -->
+<!-- ADS SECTION 2 (Pulse ke baad) -->
+<!-- ========================================== -->
+<div style="max-width: 100vw; overflow: hidden; display: flex; justify-content: center; width: 100%; padding: 20px 0;">
+    <div id="choz-ad-container-2" style="display: none; justify-content: center; width: 100%;">
+        <div id="ad-desktop-2" style="display: none;">
+            <script>atOptions = { "key" : "8207231200d10d7b79b678185bc9552f", "format" : "iframe", "height" : 60, "width" : 468, "params" : {} };</script>
+            <script src="https://bauval.org/22/8207231200d10d7b79b678185bc9552f"></script>
+        </div>
+        <div id="ad-mobile-2" style="display: none;">
+            <script>atOptions = { "key" : "7e1802f7abf85824530f36e52ca6e259", "format" : "iframe", "height" : 50, "width" : 320, "params" : {} };</script>
+            <script src="https://bauval.org/22/7e1802f7abf85824530f36e52ca6e259"></script>
+        </div>
+    </div>
+</div>
 
 <!-- WHY CHOZ -->
 <section class="why-section" id="why">
@@ -405,6 +400,22 @@ Browse categories
 </div>
 </div>
 </section>
+
+<!-- ========================================== -->
+<!-- ADS SECTION 3 (Footer ke upar) -->
+<!-- ========================================== -->
+<div style="max-width: 100vw; overflow: hidden; display: flex; justify-content: center; width: 100%; padding: 20px 0; margin-bottom: 20px;">
+    <div id="choz-ad-container-3" style="display: none; justify-content: center; width: 100%;">
+        <div id="ad-desktop-3" style="display: none;">
+            <script>atOptions = { "key" : "8207231200d10d7b79b678185bc9552f", "format" : "iframe", "height" : 60, "width" : 468, "params" : {} };</script>
+            <script src="https://bauval.org/22/8207231200d10d7b79b678185bc9552f"></script>
+        </div>
+        <div id="ad-mobile-3" style="display: none;">
+            <script>atOptions = { "key" : "7e1802f7abf85824530f36e52ca6e259", "format" : "iframe", "height" : 50, "width" : 320, "params" : {} };</script>
+            <script src="https://bauval.org/22/7e1802f7abf85824530f36e52ca6e259"></script>
+        </div>
+    </div>
+</div>
 
 <!-- FOOTER -->
 <footer class="footer-v2">
@@ -664,21 +675,20 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 </script>
 
-<!-- Adsterra Loading Logic (Free/Pro Check) -->
+<!-- Adsterra Loading Logic (Free/Pro Check for 3 Ads) -->
 <script>
     (async function() {
         if (typeof sb === 'undefined') return;
         
-        const wrapper = document.getElementById('choz-ad-container');
-        const desktopAd = document.getElementById('ad-desktop');
-        const mobileAd = document.getElementById('ad-mobile');
+        const ads = [
+            { wrap: 'choz-ad-container-1', desk: 'ad-desktop-1', mob: 'ad-mobile-1' },
+            { wrap: 'choz-ad-container-2', desk: 'ad-desktop-2', mob: 'ad-mobile-2' },
+            { wrap: 'choz-ad-container-3', desk: 'ad-desktop-3', mob: 'ad-mobile-3' }
+        ];
         
-        if (!wrapper) return;
-
         let showAd = true;
 
         const { data: { session } } = await sb.auth.getSession();
-        
         if (session) {
             const { data } = await sb.from('profiles').select('is_pro').eq('id', session.user.id).maybeSingle();
             if (data && data.is_pro === true) {
@@ -687,12 +697,20 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
         if (showAd) {
-            wrapper.style.display = 'flex';
-            if (window.innerWidth > 768) {
-                if(desktopAd) desktopAd.style.display = 'block';
-            } else {
-                if(mobileAd) mobileAd.style.display = 'block';
-            }
+            ads.forEach(ad => {
+                const wrapEl = document.getElementById(ad.wrap);
+                if (wrapEl) {
+                    wrapEl.style.display = 'flex';
+                    
+                    if (window.innerWidth > 768) {
+                        const deskEl = document.getElementById(ad.desk);
+                        if (deskEl) deskEl.style.display = 'block';
+                    } else {
+                        const mobEl = document.getElementById(ad.mob);
+                        if (mobEl) mobEl.style.display = 'block';
+                    }
+                }
+            });
         }
     })();
 </script>
