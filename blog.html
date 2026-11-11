@@ -21,6 +21,15 @@
     .blog-card p { color: var(--mute); font-size: 15px; line-height: 1.6; margin: 0; }
     .blog-card .read-more { color: var(--ac); font-weight: 600; font-size: 14px; margin-top: 12px; display: inline-block; }
 </style>
+    <script>
+    // Theme Apply Logic
+    const savedTheme = localStorage.getItem('choz-theme');
+    if (savedTheme) {
+        document.documentElement.setAttribute('data-theme', savedTheme);
+    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.documentElement.setAttribute('data-theme', 'dark');
+    }
+</script>
 </head>
 <body>
 
