@@ -238,13 +238,60 @@ async function loadChoiceProfile(content) {
 // CHOZ PULSE
 // ============================================================
 async function loadPulseDashboard(content) {
-    content.innerHTML = '<div class="loading">Loading...</div>';
-    const { data: trends } = await sb.from('pulse_category_trends').select('*').limit(5);
-    if (!trends || trends.length === 0) {
-        content.innerHTML = '<div class="empty"><h3>No trends yet</h3><p>Community data will appear here soon.</p></div>';
-        return;
+    content.innerHTML = '<div class="loading">Loading community trends...</div>';
+
+    try {
+        // Data fetch karein
+        const { data: trends, error } = await sb
+            .from('pulse_category_trends')
+            .select('*')
+            .order('total_comparisons', { ascending: false });
+
+        if (error) {
+            content.innerHTML = '<div class="empty"><h3>Could not load</h3><p style="color:#6b7280;font-size:13px">' + error.message + '</p></div>';
+            return;
+        }
+
+        const activeTrends = (trends || []).filter(t => t.total_comparisons > 0);
+
+        // Agar data khali hai
+        if (activeTrends.length === 0) {
+            content.innerHTML = `
+                <div style="background:var(--sf);border:1px solid var(--line);border-radius:16px;padding:40px 24px;text-align:center">
+                    <h3 style="font-family:'Bricolage Grotesque';font-size:20px;margin-bottom:8px">No community data yet</h3>
+                    <p style="color:var(--mute);font-size:14px;max-width:400px;margin:0 auto 20px">Complete a few comparisons and community trends will appear here.</p>
+                    <a class="btn p" href="/#categories">Start comparing →</a>
+                </div>
+            `;
+            return;
+        }
+
+        // Agar data mil gaya (Yeh UI waisa hi hai jaisa aapko chahiye)
+        content.innerHTML = `
+            <div style="background:var(--sf);border:1px solid var(--line);border-radius:16px;padding:24px;margin-bottom:16px">
+                <h2 style="font-family:'Bricolage Grotesque';font-size:22px;margin-bottom:8px">CHOZ Pulse</h2>
+                <p style="color:var(--mute);font-size:14px;margin-bottom:20px">Anonymous aggregate trends from the CHOZ community. No individual user data is shown.</p>
+
+                ${activeTrends.slice(0, 10).map(t => `
+                    <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 0;border-top:1px solid var(--line)">
+                        <div style="display:flex;align-items:center;gap:12px">
+                            <span style="font-size:24px">${t.category_icon || '📦'}</span>
+                            <div>
+                                <div style="font-weight:600;font-size:15px">${t.category_name || 'Category'}</div>
+                                <div style="font-size:12px;color:var(--mute);margin-top:2px">${t.unique_users || 0} unique users</div>
+                            </div>
+                        </div>
+                        <div style="text-align:right">
+                            <div style="font-family:'Bricolage Grotesque';font-size:22px;font-weight:700;color:var(--ac)">${t.total_comparisons}</div>
+                            <div style="font-size:11px;color:var(--mute)">comparisons</div>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+    } catch (err) {
+        content.innerHTML = '<div class="empty"><h3>Error</h3><p style="color:#6b7280">' + err.message + '</p></div>';
     }
-    content.innerHTML = '<div style="background:var(--sf);border:1px solid var(--line);border-radius:16px;padding:24px"><h3>CHOZ Pulse</h3><p>Trends are loading...</p></div>';
 }
 
 // ============================================================
