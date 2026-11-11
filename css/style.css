@@ -1440,3 +1440,20 @@ kbd {
 @media (prefers-reduced-motion: reduce) {
     * { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
 }
+/* ============================================================
+   DASHBOARD NAVBAR DARK MODE FIX
+   ============================================================ */
+:root[data-theme="dark"] nav,
+:root[data-theme="dark"] nav .w {
+    background-color: #0A0E1A !important;
+    border-bottom: 1px solid #1F2937 !important;
+}
+
+/* Agar dark mode auto detect ho raha hai (bina toggle ke) */
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) nav,
+    :root:not([data-theme="light"]) nav .w {
+        background-color: #0A0E1A !important;
+        border-bottom: 1px solid #1F2937 !important;
+    }
+}
