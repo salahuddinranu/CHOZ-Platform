@@ -569,7 +569,17 @@ function renderReveal(item, label) {
                 <p style="font-size:14px">You selected this option from ${currentComparison.options.length} anonymous choices.</p>
             `}
         </div>
-
+        // Ad in Comparison Result
+        '<div id="result-ad-container" style="display: none; margin: 24px 0; justify-content: center; width: 100%;">' +
+            '<div id="result-ad-desktop" style="display: none;">' +
+                '<script>atOptions = { "key" : "8207231200d10d7b79b678185bc9552f", "format" : "iframe", "height" : 60, "width" : 468, "params" : {} };<\/script>' +
+                '<script src="https://bauval.org/22/8207231200d10d7b79b678185bc9552f"><\/script>' +
+            '</div>' +
+            '<div id="result-ad-mobile" style="display: none;">' +
+                '<script>atOptions = { "key" : "7e1802f7abf85824530f36e52ca6e259", "format" : "iframe", "height" : 50, "width" : 320, "params" : {} };<\/script>' +
+                '<script src="https://bauval.org/22/7e1802f7abf85824530f36e52ca6e259"><\/script>' +
+            '</div>' +
+        '</div>' +
         <div class="reveal-actions">
         <!-- Adsterra Banner (Result Page) -->
 <div style="text-align:center; margin: 20px 0; min-height: 90px;">
@@ -658,6 +668,27 @@ function renderReveal(item, label) {
         setTimeout(() => {
             if (typeof loadItemReviews === 'function') {
                 loadItemReviews(item.id, item.name);
+                    // Show Ad if user is Free
+    setTimeout(async () => {
+        if (typeof sb === 'undefined') return;
+        const adWrap = document.getElementById('result-ad-container');
+        if (!adWrap) return;
+        
+        let showAd = true;
+        const { data: { session } } = await sb.auth.getSession();
+        if (session) {
+            const { data } = await sb.from('profiles').select('is_pro').eq('id', session.user.id).maybeSingle();
+            if (data && data.is_pro === true) showAd = false;
+        }
+        if (showAd) {
+            adWrap.style.display = 'flex';
+            if (window.innerWidth > 768) {
+                document.getElementById('result-ad-desktop').style.display = 'block';
+            } else {
+                document.getElementById('result-ad-mobile').style.display = 'block';
+            }
+        }
+    }, 500);
             }
         }, 100);
     }
