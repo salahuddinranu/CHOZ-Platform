@@ -1,5 +1,5 @@
 // ============================================================
-// CHOZ BLIND COMPARISON ENGINE — v3 with Custom Option + Toast
+// CHOZ BLIND COMPARISON ENGINE — v4 Final Fixed
 // ============================================================
 
 let currentComparison = {
@@ -29,7 +29,6 @@ async function startComparison(categoryId) {
     currentComparison.sessionToken = null;
 
     try {
-        // Server-side session start (anti-cheat)
         const { data, error } = await sb.rpc('start_comparison_session', {
             p_category_id: categoryId
         });
@@ -50,7 +49,6 @@ async function startComparison(categoryId) {
         }));
         currentComparison.labels = currentComparison.options.map(o => o.label);
 
-        // Fetch attribute definitions
         const { data: attrDefs } = await sb
             .from('attribute_definitions')
             .select('*')
@@ -65,15 +63,12 @@ async function startComparison(categoryId) {
     }
 }
 
-// ============================================================
-// BROWSE CATEGORY — Redirect to browse page
-// ============================================================
 function browseCategory(categoryId) {
     window.location.href = `/category.html?id=${encodeURIComponent(categoryId)}`;
 }
 
 // ============================================================
-// STEP 1: RENDER OPTIONS (with Custom Option Button)
+// STEP 1: RENDER OPTIONS
 // ============================================================
 function renderComparisonModal() {
     const modal = document.getElementById('compModal');
@@ -271,7 +266,7 @@ function saveCustomOption() {
 }
 
 // ============================================================
-// STEP 2: RENDER PRIORITIES (checkbox based)
+// STEP 2: RENDER PRIORITIES
 // ============================================================
 function renderPrioritiesStep() {
     const content = document.getElementById('compContent');
@@ -459,7 +454,6 @@ async function lockChoice() {
     const chosenItem = currentComparison.options[currentComparison.choice];
     const chosenLabel = currentComparison.labels[currentComparison.choice];
 
-    // Custom option — no server lock needed
     if (chosenItem.is_custom) {
         currentComparison.step = 'revealed';
         renderReveal({
@@ -476,7 +470,6 @@ async function lockChoice() {
     }
 
     try {
-        // Send to server — server validates + freezes
         const { error } = await sb.rpc('lock_comparison_choice', {
             p_session_token: currentComparison.sessionToken,
             p_chosen_label: chosenLabel,
@@ -485,7 +478,6 @@ async function lockChoice() {
 
         if (error) throw error;
 
-        // Save comparison record
         const { data: { session } } = await sb.auth.getSession();
         if (session) {
             await sb.from('comparisons').insert({
@@ -497,7 +489,6 @@ async function lockChoice() {
             });
         }
 
-        // Server returns reveal (server decides what to show)
         const { data: revealData, error: revealErr } = await sb.rpc('reveal_comparison_choice', {
             p_session_token: currentComparison.sessionToken
         });
@@ -569,92 +560,43 @@ function renderReveal(item, label) {
                 <p style="font-size:14px">You selected this option from ${currentComparison.options.length} anonymous choices.</p>
             `}
         </div>
-        // Ad in Comparison Result
-        '<div id="result-ad-container" style="display: none; margin: 24px 0; justify-content: center; width: 100%;">' +
-            '<div id="result-ad-desktop" style="display: none;">' +
-                '<script>atOptions = { "key" : "8207231200d10d7b79b678185bc9552f", "format" : "iframe", "height" : 60, "width" : 468, "params" : {} };<\/script>' +
-                '<script src="https://bauval.org/22/8207231200d10d7b79b678185bc9552f"><\/script>' +
-            '</div>' +
-            '<div id="result-ad-mobile" style="display: none;">' +
-                '<script>atOptions = { "key" : "7e1802f7abf85824530f36e52ca6e259", "format" : "iframe", "height" : 50, "width" : 320, "params" : {} };<\/script>' +
-                '<script src="https://bauval.org/22/7e1802f7abf85824530f36e52ca6e259"><\/script>' +
-            '</div>' +
-        '</div>' +
+
+        <!-- Ad in Comparison Result -->
+        <div id="result-ad-container" style="display: none; margin: 24px 0; justify-content: center; width: 100%;">
+            <div id="result-ad-desktop" style="display: none;">
+                <script>
+                  atOptions = {
+                    'key' : '8207231200d10d7b79b678185bc9552f',
+                    'format' : 'iframe',
+                    'height' : 60,
+                    'width' : 468,
+                    'params' : {}
+                  };
+                <\/script>
+                <script src="https://bauval.org/22/8207231200d10d7b79b678185bc9552f"><\/script>
+            </div>
+            <div id="result-ad-mobile" style="display: none;">
+                <script>
+                  atOptions = {
+                    'key' : '7e1802f7abf85824530f36e52ca6e259',
+                    'format' : 'iframe',
+                    'height' : 50,
+                    'width' : 320,
+                    'params' : {}
+                  };
+                <\/script>
+                <script src="https://bauval.org/22/7e1802f7abf85824530f36e52ca6e259"><\/script>
+            </div>
+        </div>
+
         <div class="reveal-actions">
-        <!-- Adsterra Banner (Result Page) -->
-<div style="text-align:center; margin: 20px 0; min-height: 90px;">
-  <script type="text/javascript">
-    atOptions = {
-      'key' : '<script>
-  atOptions = {
-    'key' : '7e1802f7abf85824530f36e52ca6e259',
-    'format' : 'iframe',
-    'height' : 50,
-    'width' : 320,
-    'params' : {}
-  };
-</script>
-<script src="https://bauval.org/22/7e1802f7abf85824530f36e52ca6e259"></script>',
-      'format' : 'iframe',
-      'height' : 90,
-      'width' : 728,
-      'params' : {}
-    };
-    document.write('<scr' + 'ipt type="text/javascript" src="http' + (location.protocol === 'https:' ? 's' : '') + '://www.highrevenueformat.com/YAHAN_APNA_KEY/invoke.js"></scr' + 'ipt>');
-  </script>
-</div>
-            '<button class="btn p" style="background: #3A3FD9; color: white; padding: 12px 20px; font-size: 15px; font-weight: bold; border-radius: 10px; display: flex; align-items: center; gap: 8px; margin: 0 auto;" onclick="saveDecision(\'' + item.id + '\')">💾 Save to Memory</button>' +
+            <button class="btn p" style="background: #3A3FD9; color: white; padding: 12px 20px; font-size: 15px; font-weight: bold; border-radius: 10px; display: flex; align-items: center; gap: 8px; margin: 0 auto;" onclick="saveDecision('${item.id}')">💾 Save to Memory</button>
             ${!isCustom ? `
                 <button class="btn" onclick="bookmarkComparison('${item.id}', \`${item.name.replace(/`/g, '\\`')}\`)">🔖 Bookmark</button>
                 <button class="btn" onclick="openReviewModal('${item.id}', \`${item.name.replace(/`/g, '\\`')}\`)">⭐ Write Review</button>
             ` : ''}
             <button class="btn" onclick="shareResult()">🔗 Share</button>
             <button class="btn" onclick="showWhereToBuy('${item.id}', \`${item.name.replace(/`/g, '\\`')}\`, '${currentComparison.categoryId}')">🛒 Where to Buy</button>
-            <!-- Desktop Banner (728x90) -->
-<div class="ad-desktop" style="text-align:center; margin: 20px 0;">
-  <script type="text/javascript">
-    atOptions = {
-      'key' : '<script>
-  atOptions = {
-    'key' : '0e47a386ba29c695f0bf252504b64fe7',
-    'format' : 'iframe',
-    'height' : 90,
-    'width' : 728,
-    'params' : {}
-  };
-</script>
-<script src="https://bauval.org/22/0e47a386ba29c695f0bf252504b64fe7"></script>',
-      'format' : 'iframe',
-      'height' : 90,
-      'width' : 728,
-      'params' : {}
-    };
-    document.write('<scr' + 'ipt type="text/javascript" src="http' + (location.protocol === 'https:' ? 's' : '') + '://www.highrevenueformat.com/YAHAN_DESKTOP_KEY/invoke.js"></scr' + 'ipt>');
-  </script>
-</div>
-
-<!-- Mobile Banner (320x50) -->
-<div class="ad-mobile" style="text-align:center; margin: 20px 0; display: none;">
-  <script type="text/javascript">
-    atOptions = {
-      'key' : '<script>
-  atOptions = {
-    'key' : '7e1802f7abf85824530f36e52ca6e259',
-    'format' : 'iframe',
-    'height' : 50,
-    'width' : 320,
-    'params' : {}
-  };
-</script>
-<script src="https://bauval.org/22/7e1802f7abf85824530f36e52ca6e259"></script>',
-      'format' : 'iframe',
-      'height' : 50,
-      'width' : 320,
-      'params' : {}
-    };
-    document.write('<scr' + 'ipt type="text/javascript" src="http' + (location.protocol === 'https:' ? 's' : '') + '://www.highrevenueformat.com/YAHAN_MOBILE_KEY/invoke.js"></scr' + 'ipt>');
-  </script>
-</div>
             <button class="btn" onclick="closeCompModal()">Close</button>
         </div>
 
@@ -668,7 +610,11 @@ function renderReveal(item, label) {
         setTimeout(() => {
             if (typeof loadItemReviews === 'function') {
                 loadItemReviews(item.id, item.name);
-                    // Show Ad if user is Free
+            }
+        }, 100);
+    }
+
+    // Ad Visibility Logic
     setTimeout(async () => {
         if (typeof sb === 'undefined') return;
         const adWrap = document.getElementById('result-ad-container');
@@ -689,9 +635,6 @@ function renderReveal(item, label) {
             }
         }
     }, 500);
-            }
-        }, 100);
-    }
 }
 
 // ============================================================
@@ -1487,6 +1430,34 @@ function renderRevealFromServer(item, label) {
             `}
         </div>
 
+        <!-- Ad in Comparison Result -->
+        <div id="result-ad-container" style="display: none; margin: 24px 0; justify-content: center; width: 100%;">
+            <div id="result-ad-desktop" style="display: none;">
+                <script>
+                  atOptions = {
+                    'key' : '8207231200d10d7b79b678185bc9552f',
+                    'format' : 'iframe',
+                    'height' : 60,
+                    'width' : 468,
+                    'params' : {}
+                  };
+                <\/script>
+                <script src="https://bauval.org/22/8207231200d10d7b79b678185bc9552f"><\/script>
+            </div>
+            <div id="result-ad-mobile" style="display: none;">
+                <script>
+                  atOptions = {
+                    'key' : '7e1802f7abf85824530f36e52ca6e259',
+                    'format' : 'iframe',
+                    'height' : 50,
+                    'width' : 320,
+                    'params' : {}
+                  };
+                <\/script>
+                <script src="https://bauval.org/22/7e1802f7abf85824530f36e52ca6e259"><\/script>
+            </div>
+        </div>
+
         <div class="reveal-actions">
             <button class="btn p" onclick="saveDecision('${item.id}')">💾 Save to Memory</button>
             <button class="btn" onclick="bookmarkComparison('${item.id}', \`${item.name.replace(/`/g, '\\`')}\`)">🔖 Bookmark</button>
@@ -1509,4 +1480,26 @@ function renderRevealFromServer(item, label) {
             loadItemReviews(item.id, item.name);
         }
     }, 100);
+
+    // Ad Visibility Logic
+    setTimeout(async () => {
+        if (typeof sb === 'undefined') return;
+        const adWrap = document.getElementById('result-ad-container');
+        if (!adWrap) return;
+        
+        let showAd = true;
+        const { data: { session } } = await sb.auth.getSession();
+        if (session) {
+            const { data } = await sb.from('profiles').select('is_pro').eq('id', session.user.id).maybeSingle();
+            if (data && data.is_pro === true) showAd = false;
+        }
+        if (showAd) {
+            adWrap.style.display = 'flex';
+            if (window.innerWidth > 768) {
+                document.getElementById('result-ad-desktop').style.display = 'block';
+            } else {
+                document.getElementById('result-ad-mobile').style.display = 'block';
+            }
+        }
+    }, 500);
 }
