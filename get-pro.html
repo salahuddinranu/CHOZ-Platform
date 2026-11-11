@@ -79,7 +79,19 @@ async function submitPayment() {
     });
 
     if (error) { alert('Error: ' + error.message); return; }
-    
+    // Email alert bhejne ke liye
+try {
+    await fetch('/api/send-payment-alert', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            userEmail: session.user.email,
+            amount: 'Rs. 999'
+        })
+    });
+} catch (e) {
+    console.log('Email alert failed:', e);
+}
     alert('✅ Payment request submitted! Admin will verify it soon.');
     window.location.href = '/dashboard.html';
 }
