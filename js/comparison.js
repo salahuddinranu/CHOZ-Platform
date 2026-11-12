@@ -80,10 +80,10 @@ function renderComparisonModal() {
             <h3>Blind Comparison</h3>
             <span class="badge">Step 1 of 3: Pick an option</span>
         </div>
-        <p style="color:var(--mute);font-size:14px;margin-bottom:16px;line-height:1.6">
-            <strong style="color:var(--ink)">Brand names are hidden.</strong><br>
-            Review the specs and pick the option that feels right to you.
-        </p>
+          <p style="color:var(--mute);font-size:14px;margin-bottom:16px;line-height:1.6">
+       <strong style="color:var(--ink)">👇 Pick the option that looks best to you.</strong><br>
+       The brand name and price are hidden. Just look at the specs — battery, camera, engine, whatever you care about.
+   </p>
         <div class="options-grid" id="optionsGrid">
             ${options.map((item, i) => {
                 const attrs = (item.item_attributes || []).slice(0, 6);
