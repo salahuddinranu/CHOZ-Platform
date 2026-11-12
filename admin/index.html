@@ -210,6 +210,7 @@
                 else if (section === 'reviews') await loadReviews(content, title);
                 else if (section === 'feedback') await loadFeedback(content, title);
                 else if (section === 'users') await loadUsers(content, title);
+                    else if (section === 'visitors') await loadVisitors(content, title);
                 else if (section === 'settings') await loadSettings(content, title);
                 else if (section === 'payments') await loadPayments(content, title);
             } catch (err) {
@@ -725,33 +726,38 @@
             loadSection('feedback');
         }
 
-        async function loadUsers(content, title) {
-            title.textContent = 'Users';
-            const { data } = await sb.from('profiles').select('*').order('created_at', { ascending: false });
-            if (!data || data.length === 0) { content.innerHTML = '<div class="admin-card empty-state">No users yet.</div>'; return; }
-            content.innerHTML = `
-                <div class="admin-card">
-                    <input placeholder="Search users..." oninput="filterTable('users-table', this.value)" style="max-width:300px;margin-bottom:1rem;" />
-                    <table id="users-table">
-                        <thead><tr><th>Email</th><th>Name</th><th>Status</th><th>Joined</th><th>Actions</th></tr></thead>
-                        <tbody>
-                            ${data.map(u => `
-                                <tr>
-                                    <td>${u.email || '—'}</td>
-                                    <td>${u.full_name || '—'}</td>
-                                    <td>${u.is_pro ? '<span class="badge badge-green">PRO</span>' : '<span class="badge badge-yellow">FREE</span>'}</td>
-                                    <td>${new Date(u.created_at).toLocaleDateString()}</td>
-                                    <td>
-                                        <button class="btn ${u.is_pro ? 'btn-danger' : 'btn-primary'} btn-sm" onclick="toggleProStatus('${u.id}', ${!u.is_pro})">${u.is_pro ? 'Remove Pro' : 'Make Pro'}</button>
-                                        <button class="btn btn-danger btn-sm" onclick="deleteUser('${u.id}')">Delete</button>
-                                    </td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                </div>
-            `;
-        }
+       async function loadUsers(content, title) {
+    title.textContent = 'Users';
+    const { data } = await sb.from('profiles').select('*').order('created_at', { ascending: false });
+    
+    if (!data || data.length === 0) { 
+        content.innerHTML = '<div class="admin-card empty-state">No users yet.</div>'; 
+        return; 
+    }
+    
+    content.innerHTML = `
+        <div class="admin-card">
+            <input placeholder="Search users..." oninput="filterTable('users-table', this.value)" style="max-width:300px;margin-bottom:1rem;" />
+            <table id="users-table">
+                <thead><tr><th>Email</th><th>Name</th><th>Status</th><th>Joined</th><th>Actions</th></tr></thead>
+                <tbody>
+                    ${data.map(u => `
+                        <tr>
+                            <td>${u.email || '—'}</td>
+                            <td>${u.full_name || '—'}</td>
+                            <td>${u.is_pro ? '<span class="badge badge-green">PRO</span>' : '<span class="badge badge-yellow">FREE</span>'}</td>
+                            <td>${new Date(u.created_at).toLocaleDateString()}</td>
+                            <td>
+                                <button class="btn ${u.is_pro ? 'btn-danger' : 'btn-primary'} btn-sm" onclick="toggleProStatus('${u.id}', ${!u.is_pro})">${u.is_pro ? 'Remove Pro' : 'Make Pro'}</button>
+                                <button class="btn btn-danger btn-sm" onclick="deleteUser('${u.id}')">Delete</button>
+                            </td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        </div>
+    `;
+}
 
         async function toggleProStatus(userId, makePro) {
             await sb.from('profiles').update({ is_pro: makePro }).eq('id', userId);
@@ -933,6 +939,41 @@
             await sb.from('affiliate_links').delete().eq('id', linkId);
             showAffiliateForm(itemId, itemName);
         }
+        async function loadVisitors(content, title) {
+    title.textContent = 'Website Visitors';
+    content.innerHTML = '<p>Loading visitor logs...</p>';
+    
+    const { data, error } = await sb.from('visitor_logs').select('*').order('created_at', { ascending: false }).limit(100);
+    
+    if (error) {
+        content.innerHTML = '<p style="color:red">Error: ' + error.message + '</p>';
+        return;
+    }
+    
+    if (!data || data.length === 0) {
+        content.innerHTML = '<div class="admin-card">No visitors tracked yet.</div>';
+        return;
+    }
+
+    content.innerHTML = `
+        <div class="admin-card">
+            <h3 style="margin-bottom:1rem;">Recent Visitors (Last 100)</h3>
+            <table>
+                <thead><tr><th>IP Address</th><th>Page</th><th>Device/Browser</th><th>Time</th></tr></thead>
+                <tbody>
+                    ${data.map(v => `
+                        <tr>
+                            <td><strong>${v.ip_address || 'Unknown'}</strong></td>
+                            <td>${v.page_visited || '/'}</td>
+                            <td style="font-size:11px;color:#6b7280;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${v.user_agent || 'Unknown'}</td>
+                            <td>${new Date(v.created_at).toLocaleString()}</td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        </div>
+    `;
+}
     </script>
 </body>
 </html>
