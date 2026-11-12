@@ -1037,72 +1037,100 @@ async function showWhereToBuy(itemId, itemName, categoryId) {
 
     section.innerHTML = '<p style="text-align:center;color:var(--mute);font-size:14px;padding:16px">Loading buy options...</p>';
 
-    const isCustom = String(itemId).startsWith('custom-');
+    try {
+        const isCustom = String(itemId).startsWith('custom-');
 
-    let adminLinks = null;
-    if (!isCustom) {
-        const { data } = await sb
-            .from('affiliate_links')
-            .select('*')
-            .eq('item_id', itemId)
-            .eq('is_active', true)
-            .order('created_at');
-        adminLinks = data;
-    }
+        // 1. Admin ke banaye hue links check karein (Agar hain toh)
+        let adminLinks = null;
+        if (!isCustom) {
+            const { data } = await sb
+                .from('affiliate_links')
+                .select('*')
+                .eq('item_id', itemId)
+                .eq('is_active', true);
+            adminLinks = data;
+        }
 
-    let html = `
-        <div style="background:var(--sf);border:1px solid var(--line);border-radius:14px;padding:20px">
-            <h4 style="font-family:'Bricolage Grotesque';font-size:17px;margin-bottom:6px">🛒 Where to Buy</h4>
-            <p style="color:var(--mute);font-size:12px;margin-bottom:16px">
-                Find this product on trusted platforms.
-            </p>
-    `;
+        let html = `
+            <div style="background:var(--sf);border:1px solid var(--line);border-radius:14px;padding:20px">
+                <h4 style="font-family:'Bricolage Grotesque';font-size:17px;margin-bottom:6px">🛒 Where to Buy</h4>
+                <p style="color:var(--mute);font-size:12px;margin-bottom:16px">
+                    Find this exact product on trusted platforms.
+                </p>
+        `;
 
-    if (adminLinks && adminLinks.length > 0) {
-        html += `<p style="color:var(--mute);font-size:13px;margin-bottom:12px;padding:10px;background:var(--ac-soft);border-radius:8px">
-            ⓘ Some links below are affiliate links. We may earn a commission — this never affects your comparison result.
-        </p>`;
-        html += `<div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">`;
-        adminLinks.forEach(l => {
-            const safeLabel = (l.label || l.provider || 'Open store').replace(/'/g, "\\'");
+        // Agar Admin ne specific links dale hain
+        if (adminLinks && adminLinks.length > 0) {
+            html += `<p style="color:var(--mute);font-size:13px;margin-bottom:12px;padding:10px;background:var(--ac-soft);border-radius:8px">
+                ⓘ These are direct links to the product. We may earn a commission.
+            </p>`;
+            html += `<div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">`;
+            adminLinks.forEach(l => {
+                html += `
+                    <a href="${l.url}" target="_blank" rel="noopener noreferrer nofollow sponsored"
+                       style="display:flex;justify-content:space-between;align-items:center;padding:14px 18px;background:var(--ac-soft);color:var(--ink);border-radius:10px;text-decoration:none;font-weight:500">
+                        <span>${l.label || l.provider || 'Buy Now'}</span>
+                        <span style="color:var(--ac);font-size:13px">Visit →</span>
+                    </a>
+                `;
+            });
+            html += `</div>`;
+        }
+
+        // 2. Automatic Search Links (Agar admin links nahi hain)
+        // Hum product ke naam aur category ke hisaab se search URL banayenge
+        const q = encodeURIComponent(itemName);
+        let providers = [];
+
+        if (categoryId === 'cat-phone' || categoryId === 'cat-laptop' || categoryId === 'cat-tablet' || categoryId === 'cat-smartwatch') {
+            providers = [
+                { name: 'Daraz', icon: '🛍️', url: `https://www.daraz.pk/catalog/?q=${q}` },
+                { name: 'PriceOye', icon: '💰', url: `https://priceoye.pk/search?q=${q}` },
+                { name: 'OLX', icon: '📦', url: `https://www.olx.com.pk/items/q-${q}` }
+            ];
+        } else if (categoryId === 'cat-bike' || categoryId === 'cat-car') {
+            providers = [
+                { name: 'PakWheels', icon: '🏍️', url: `https://www.pakwheels.com/used-bikes/search/all/${q}` },
+                { name: 'OLX', icon: '📦', url: `https://www.olx.com.pk/items/q-${q}` }
+            ];
+        } else if (categoryId === 'cat-hotel') {
+            providers = [
+                { name: 'Booking.com', icon: '🏨', url: `https://www.booking.com/searchresults.html?ss=${q}` },
+                { name: 'Agoda', icon: '🏨', url: `https://www.agoda.com/search?q=${q}` }
+            ];
+        } else {
+            // Default (Google Shopping for everything else)
+            providers = [
+                { name: 'Google Shopping', icon: '🔍', url: `https://www.google.com/search?tbm=shop&q=${q}` },
+                { name: 'Daraz', icon: '🛍️', url: `https://www.daraz.pk/catalog/?q=${q}` }
+            ];
+        }
+
+        html += `<div style="display:flex;flex-direction:column;gap:8px">`;
+        providers.forEach(p => {
             html += `
-                <a href="${l.url}" target="_blank" rel="noopener noreferrer nofollow sponsored"
-                   onclick="trackAffiliateClick('${l.id}', '${itemId}')"
-                   style="display:flex;justify-content:space-between;align-items:center;padding:14px 18px;background:var(--ac-soft);color:var(--ink);border-radius:10px;text-decoration:none;font-weight:500">
-                    <span>${safeLabel}</span>
-                    <span style="color:var(--ac);font-size:13px">Visit →</span>
+                <a href="${p.url}" target="_blank" rel="noopener noreferrer"
+                   style="display:flex;justify-content:space-between;align-items:center;padding:14px 18px;background:var(--sf);border:1px solid var(--line);color:var(--ink);border-radius:10px;text-decoration:none;font-weight:500">
+                    <span>${p.icon} Search on ${p.name}</span>
+                    <span style="color:var(--ac);font-size:13px">Open →</span>
                 </a>
             `;
         });
         html += `</div>`;
+
+        html += `<p style="color:var(--mute);font-size:12px;margin-top:14px;font-style:italic;line-height:1.5">
+            CHOZ does not sell products directly. These links open search results on external platforms.
+        </p>`;
+
+        html += `</div>`;
+        section.innerHTML = html;
+
+    } catch (err) {
+        console.error('Where to Buy Error:', err);
+        section.innerHTML = `<p style="color:red;text-align:center;padding:16px">Could not load buy options. Please try again.</p>`;
     }
-
-    const providers = SEARCH_PROVIDERS[categoryId] || [
-        { name: 'Google Shopping', icon: '🔍', url: q => `https://www.google.com/search?tbm=shop&q=${q}` },
-        { name: 'Daraz', icon: '🛍️', url: q => `https://www.daraz.pk/catalog/?q=${q}` },
-        { name: 'OLX Pakistan', icon: '📦', url: q => `https://www.olx.com.pk/items/q-${q.replace(/%20/g, '-')}` }
-    ];
-
-    const q = encodeURIComponent(itemName);
-    html += `<div style="display:flex;flex-direction:column;gap:8px">`;
-    providers.forEach(p => {
-        html += `
-            <a href="${p.url(q)}" target="_blank" rel="noopener noreferrer"
-               style="display:flex;justify-content:space-between;align-items:center;padding:14px 18px;background:var(--sf);border:1px solid var(--line);color:var(--ink);border-radius:10px;text-decoration:none;font-weight:500">
-                <span>${p.icon} Search on ${p.name}</span>
-                <span style="color:var(--ac);font-size:13px">Open →</span>
-            </a>
-        `;
-    });
-    html += `</div>`;
-
-    html += `<p style="color:var(--mute);font-size:12px;margin-top:14px;font-style:italic;line-height:1.5">
-        CHOZ does not sell products directly. These links open search results on external platforms.
-    </p>`;
-
-    html += `</div>`;
-    section.innerHTML = html;
 }
+
 
 async function trackAffiliateClick(linkId, itemId) {
     try {
