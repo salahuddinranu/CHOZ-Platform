@@ -834,3 +834,34 @@ window.handleAuthSubmit = async function() {
         originalHandleAuthSubmit();
     }
 };
+// ============================================================
+// HIDE "CREATE ACCOUNT" FOR LOGGED IN USERS
+// ============================================================
+function updateHeroCTA() {
+    // "Create account" wale button ko dhoondein
+    const createAccountBtn = document.querySelector('.btn-hero.ghost');
+    const browseBtn = document.getElementById('startBtn2'); // Browse categories button
+    
+    if (!createAccountBtn) return;
+
+    // Check karein ke user login hai ya nahi
+    sb.auth.getSession().then(({ data: { session } }) => {
+        if (session) {
+            // Agar user login hai, toh button change kar dein
+            createAccountBtn.textContent = 'Go to Dashboard';
+            createAccountBtn.onclick = () => window.location.href = '/dashboard.html';
+            
+            // Browse button ko bhi thora better kar dein (optional)
+            if (browseBtn) {
+                browseBtn.textContent = 'Start Comparing';
+            }
+        } else {
+            // Agar user login nahi hai, toh purana behaviour rakhein
+            createAccountBtn.textContent = 'Create account';
+            createAccountBtn.onclick = () => openAuth();
+        }
+    });
+}
+
+// Page load hone par check chalayein
+document.addEventListener('DOMContentLoaded', updateHeroCTA);
