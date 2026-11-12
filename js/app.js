@@ -5,24 +5,61 @@
 // ============================================================
 // THEME TOGGLE
 // ============================================================
+// ============================================================
+// ADVANCED THEME LOGIC (Light, Dark, System Default)
+// ============================================================
 const themeBtn = document.getElementById('themeBtn');
+const themeMenu = document.getElementById('themeMenu');
 
-function getTheme() {
-    const stored = document.documentElement.getAttribute('data-theme');
-    if (stored) return stored;
-    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+function setTheme(mode) {
+    // Save user choice
+    localStorage.setItem('choz-theme', mode);
+    
+    // Apply theme
+    if (mode === 'system') {
+        document.documentElement.removeAttribute('data-theme');
+        if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            if (themeBtn) themeBtn.textContent = '🌙';
+        } else {
+            if (themeBtn) themeBtn.textContent = '☀️';
+        }
+    } else {
+        document.documentElement.setAttribute('data-theme', mode);
+        if (themeBtn) themeBtn.textContent = mode === 'dark' ? '🌙' : '☀️';
+    }
+    
+    if (themeMenu) themeMenu.style.display = 'none';
 }
 
-function updateThemeBtn() {
-    if (themeBtn) themeBtn.textContent = getTheme() === 'dark' ? '☀️' : '🌙';
+function initTheme() {
+    const savedTheme = localStorage.getItem('choz-theme') || 'system';
+    setTheme(savedTheme);
 }
 
-if (themeBtn) {
-    themeBtn.onclick = () => {
-        const next = getTheme() === 'dark' ? 'light' : 'dark';
-        document.documentElement.setAttribute('data-theme', next);
-        localStorage.setItem('choz-theme', next);
-        updateThemeBtn();
+// Button Par Click (Menu Open/Close)
+if (themeBtn && themeMenu) {
+    themeBtn.onclick = (e) => {
+        e.stopPropagation();
+        themeMenu.style.display = themeMenu.style.display === 'block' ? 'none' : 'block';
+    };
+
+    document.addEventListener('click', (e) => {
+        if (themeMenu && !themeMenu.contains(e.target) && e.target !== themeBtn) {
+            themeMenu.style.display = 'none';
+        }
+    });
+}
+
+// System Theme Change Detect Karein
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+    const currentMode = localStorage.getItem('choz-theme') || 'system';
+    if (currentMode === 'system') {
+        if (themeBtn) themeBtn.textContent = e.matches ? '🌙' : '☀️';
+    }
+});
+
+// Start Theme
+document.addEventListener('DOMContentLoaded', initTheme);
     };
 }
 
