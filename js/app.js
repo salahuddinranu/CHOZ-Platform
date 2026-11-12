@@ -3,19 +3,14 @@
 // ============================================================
 
 // ============================================================
-// THEME TOGGLE
-// ============================================================
-// ============================================================
 // ADVANCED THEME LOGIC (Light, Dark, System Default)
 // ============================================================
 const themeBtn = document.getElementById('themeBtn');
 const themeMenu = document.getElementById('themeMenu');
 
 function setTheme(mode) {
-    // Save user choice
     localStorage.setItem('choz-theme', mode);
     
-    // Apply theme
     if (mode === 'system') {
         document.documentElement.removeAttribute('data-theme');
         if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
@@ -36,7 +31,6 @@ function initTheme() {
     setTheme(savedTheme);
 }
 
-// Button Par Click (Menu Open/Close)
 if (themeBtn && themeMenu) {
     themeBtn.onclick = (e) => {
         e.stopPropagation();
@@ -50,7 +44,6 @@ if (themeBtn && themeMenu) {
     });
 }
 
-// System Theme Change Detect Karein
 window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
     const currentMode = localStorage.getItem('choz-theme') || 'system';
     if (currentMode === 'system') {
@@ -58,14 +51,7 @@ window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e =
     }
 });
 
-// Start Theme
 document.addEventListener('DOMContentLoaded', initTheme);
-    };
-}
-
-const savedTheme = localStorage.getItem('choz-theme');
-if (savedTheme) document.documentElement.setAttribute('data-theme', savedTheme);
-updateThemeBtn();
 
 // ============================================================
 // AUTH STATE
@@ -198,7 +184,6 @@ async function handleAuthSubmit() {
             errEl.style.color = '#22c55e';
             errEl.textContent = 'Account created! Signing you in...';
 
-            // Auto sign in after signup
             const { error: signInErr } = await sb.auth.signInWithPassword({ email, password });
             if (!signInErr) {
                 closeAuth();
@@ -214,7 +199,6 @@ async function handleAuthSubmit() {
         }
     } catch (err) {
         errEl.style.color = '#ef4444';
-
         let msg = err.message || 'Something went wrong.';
         const lowerMsg = msg.toLowerCase();
 
@@ -619,7 +603,6 @@ function showOnboardStep(step) {
 function finishOnboarding() {
     localStorage.setItem('choz-onboarded', '1');
     document.getElementById('onboardModal').classList.add('hidden');
-    // Support both IDs
     const target = document.getElementById('categories') || document.getElementById('cats');
     if (target) target.scrollIntoView({ behavior: 'smooth' });
 }
@@ -712,11 +695,9 @@ if ('serviceWorker' in navigator) {
 // EVENT LISTENERS
 // ============================================================
 document.addEventListener('DOMContentLoaded', () => {
-    // Auth modal close
     const closeBtn = document.getElementById('closeAuth');
     if (closeBtn) closeBtn.onclick = closeAuth;
 
-    // Forgot password link
     const forgotLink = document.getElementById('forgotPwdLink');
     if (forgotLink) forgotLink.onclick = handleForgotPassword;
 
@@ -727,11 +708,9 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Auth switch
     const switchBtn = document.getElementById('authSwitch');
     if (switchBtn) switchBtn.onclick = toggleAuthMode;
 
-    // Password strength
     const pwdInput = document.getElementById('authPass');
     if (pwdInput) {
         pwdInput.addEventListener('input', () => {
@@ -739,15 +718,12 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Auth submit
     const submitBtn = document.getElementById('authSubmit');
     if (submitBtn) submitBtn.onclick = handleAuthSubmit;
 
-    // Google login
     const googleBtn = document.getElementById('googleBtn');
     if (googleBtn) googleBtn.onclick = handleGoogleLogin;
 
-    // Hero demo reveal
     const revealBtn = document.getElementById('revealBtn');
     if (revealBtn) {
         revealBtn.onclick = function() {
@@ -758,7 +734,6 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
 
-    // Start comparison button — FIXED
     const startBtn = document.getElementById('startBtn');
     if (startBtn) {
         startBtn.onclick = () => {
@@ -772,25 +747,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-// ============================================================
-// INITIALIZE
-// ============================================================
-// ============================================================
-// INITIALIZE (ZAROORI FIX)
-// ============================================================
-document.addEventListener('DOMContentLoaded', () => {
-    // Thora intezar karein taake Supabase session load ho jaye
-    setTimeout(() => {
-        checkAuth();
-        initNotifications();
-        initCookieBanner();
-        initOnboarding();
-        
-        // Categories aur Pulse ko load karein
-        if (typeof loadCategories === 'function') loadCategories();
-        if (typeof loadPulse === 'function') loadPulse();
-    }, 500); 
-});
 // ============================================================
 // ADMIN / CREATOR LOGIN LOGIC
 // ============================================================
@@ -810,10 +766,10 @@ window.toggleAdminMode = function() {
         authSubmit.textContent = 'Login as Creator';
         btn.textContent = '← Back to normal user login';
         btn.style.color = 'var(--ac)';
-        if (googleBtn) googleBtn.style.display = 'none'; // Admin ke liye Google login hide
-        if (termsLabel) termsLabel.style.display = 'none'; // Terms hide
-        if (switchText) switchText.parentElement.style.display = 'none'; // Signup hide
-        authMode = 'signin'; // Admin hamesha signin hi karega
+        if (googleBtn) googleBtn.style.display = 'none';
+        if (termsLabel) termsLabel.style.display = 'none';
+        if (switchText) switchText.parentElement.style.display = 'none';
+        authMode = 'signin';
     } else {
         authTitle.textContent = authMode === 'signin' ? 'Sign in' : 'Sign up';
         authSubmit.textContent = authMode === 'signin' ? 'Sign in' : 'Sign up';
@@ -825,7 +781,6 @@ window.toggleAdminMode = function() {
     }
 };
 
-// Jab auth successful ho, toh check karein ke user Admin hai ya nahi
 async function checkIfUserIsAdmin(userId) {
     const { data, error } = await sb
         .from('admin_users')
@@ -837,11 +792,9 @@ async function checkIfUserIsAdmin(userId) {
     return false;
 }
 
-// Auth submit function ko modify karein
 const originalHandleAuthSubmit = handleAuthSubmit;
 window.handleAuthSubmit = async function() {
     if (isAdminMode) {
-        // Validation
         const email = document.getElementById('authEmail').value.trim();
         const password = document.getElementById('authPass').value;
         const errEl = document.getElementById('authError');
@@ -859,17 +812,15 @@ window.handleAuthSubmit = async function() {
             const { data, error } = await sb.auth.signInWithPassword({ email, password });
             if (error) throw error;
 
-            // Check if admin
             const isAdmin = await checkIfUserIsAdmin(data.user.id);
             if (!isAdmin) {
                 await sb.auth.signOut();
                 throw new Error('Access Denied. You are not the Creator.');
             }
 
-            // Agar Admin hai toh direct Admin Portal par bhejein
             closeAuth();
             toastSuccess('Welcome back, Creator!');
-            window.location.href = '/admin/index.html'; // Admin portal ka path
+            window.location.href = '/admin/index.html';
 
         } catch (err) {
             errEl.textContent = err.message;
@@ -877,45 +828,63 @@ window.handleAuthSubmit = async function() {
             submitBtn.textContent = 'Login as Creator';
         }
     } else {
-        // Normal user ke liye purana function chalayein
         originalHandleAuthSubmit();
     }
 };
+
 // ============================================================
 // HIDE "CREATE ACCOUNT" FOR LOGGED IN USERS
 // ============================================================
 function updateHeroCTA() {
-    // "Create account" wale button ko dhoondein
     const createAccountBtn = document.querySelector('.btn-hero.ghost');
-    const browseBtn = document.getElementById('startBtn2'); // Browse categories button
+    const browseBtn = document.getElementById('startBtn2');
     
     if (!createAccountBtn) return;
 
-    // Check karein ke user login hai ya nahi
     sb.auth.getSession().then(({ data: { session } }) => {
         if (session) {
-            // Agar user login hai, toh button change kar dein
             createAccountBtn.textContent = 'Go to Dashboard';
             createAccountBtn.onclick = () => window.location.href = '/dashboard.html';
-            
-            // Browse button ko bhi thora better kar dein (optional)
-            if (browseBtn) {
-                browseBtn.textContent = 'Start Comparing';
-            }
+            if (browseBtn) browseBtn.textContent = 'Start Comparing';
         } else {
-            // Agar user login nahi hai, toh purana behaviour rakhein
             createAccountBtn.textContent = 'Create account';
             createAccountBtn.onclick = () => openAuth();
         }
     });
 }
 
-// Page load hone par check chalayein
-document.addEventListener('DOMContentLoaded', updateHeroCTA);
-// Quick Guide Show Logic
+// ============================================================
+// INITIALIZE (100% FIX WITH 1 SECOND DELAY)
+// ============================================================
 document.addEventListener('DOMContentLoaded', () => {
-    if (!localStorage.getItem('choz-guide-seen')) {
-        const guide = document.getElementById('quick-guide');
-        if (guide) guide.style.display = 'block';
-    }
+    // Theme start
+    initTheme();
+
+    // Thora intezar karein taake comparison.js poori tarah load ho jaye
+    setTimeout(() => {
+        checkAuth();
+        initNotifications();
+        initCookieBanner();
+        initOnboarding();
+        updateHeroCTA();
+
+        // Quick Guide
+        if (!localStorage.getItem('choz-guide-seen')) {
+            const guide = document.getElementById('quick-guide');
+            if (guide) guide.style.display = 'block';
+        }
+        
+        // Categories aur Pulse ko load karein
+        if (typeof loadCategories === 'function') {
+            loadCategories();
+        } else {
+            console.error("loadCategories function not found!");
+        }
+
+        if (typeof loadPulse === 'function') {
+            loadPulse();
+        } else {
+            console.error("loadPulse function not found!");
+        }
+    }, 1000); // 1 second ka delay
 });
