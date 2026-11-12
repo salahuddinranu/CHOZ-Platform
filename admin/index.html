@@ -94,7 +94,7 @@
             <a data-section="users">👥 Users</a>
             <a data-section="payments">💳 Payment Requests</a>
             <a data-section="settings">⚙️ Settings</a>
-                        <a href="/dashboard.html" style="background: #3A3FD9; color: white; margin-bottom: 8px; font-weight: 600;">⬅️ Back to Dashboard</a>
+            <a href="/dashboard.html" style="background: #3A3FD9; color: white; margin-bottom: 8px; font-weight: 600;">⬅️ Back to Dashboard</a>
             <a onclick="adminSignOut()">🚪 Sign Out</a>
         </aside>
         <main class="admin-main">
@@ -262,12 +262,10 @@
                 const favoritesCount = favoritesRes.data?.length || 0;
                 const itemsWithoutPrice = (itemsRes.data || []).filter(i => !i.base_price).length;
 
-                // Recent Activity
                 const recentUsersRes = await sb.from('profiles').select('id, email, created_at').order('created_at', { ascending: false }).limit(5);
                 const recentReviewsRes = await sb.from('user_reviews').select('id, rating, title, created_at').order('created_at', { ascending: false }).limit(5);
                 const recentFeedbackRes = await sb.from('feedback').select('id, type, subject, created_at').order('created_at', { ascending: false }).limit(5);
 
-                // Graph Data (Last 7 Days)
                 const last7Days = [];
                 for (let i = 6; i >= 0; i--) {
                     const d = new Date();
@@ -296,7 +294,6 @@
                         ${statCard('Favorites', favoritesCount, '#EC4899')}
                     </div>
 
-                    <!-- Activity Graph -->
                     <div class="admin-card" style="margin-bottom:16px">
                         <h3 style="margin-bottom:16px;font-family:'Bricolage Grotesque';font-size:18px">Last 7 Days — Comparisons</h3>
                         <div style="display:flex;align-items:flex-end;gap:8px;height:120px;padding:0 4px">
