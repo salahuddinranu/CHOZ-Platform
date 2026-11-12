@@ -1743,3 +1743,38 @@ kbd {
         transform: none !important; /* Mobile par tilt band */
     }
 }
+/* ============================================================
+   MOBILE ADS REDIRECT & OVERFLOW FIX
+   ============================================================ */
+@media (max-width: 768px) {
+    /* Har ad container ko screen ke andar rakhein */
+    div[id^="choz-ad-container"],
+    div[id^="result-ad-container"],
+    div[id^="product-ad-container"] {
+        max-width: 100vw !important;
+        overflow: hidden !important;
+        display: flex !important;
+        justify-content: center !important;
+    }
+
+    /* Adsterra ke iframes ko force karein ke woh screen se bahar na jayein */
+    iframe {
+        max-width: 100vw !important;
+        width: 100% !important;
+        overflow: hidden !important;
+        box-sizing: border-box !important;
+    }
+
+    /* Mobile par desktop wale bade ads (468x60) ko chhupa dein */
+    #ad-desktop-1, #ad-desktop-2, #ad-desktop-3, 
+    #result-ad-desktop, #product-ad-desktop {
+        display: none !important;
+    }
+
+    /* Mobile wale chote ads (320x50) ko show karein */
+    #ad-mobile-1, #ad-mobile-2, #ad-mobile-3, 
+    #result-ad-mobile, #product-ad-mobile {
+        display: block !important;
+        margin: 0 auto !important;
+    }
+}
