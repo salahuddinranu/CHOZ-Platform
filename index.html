@@ -57,6 +57,12 @@
     <div class="bg-glow"></div>
 </div>
 
+<!-- Quick Guide Banner (Sirf naye users ke liye) -->
+<div id="quick-guide" style="display: none; background: var(--ac-soft); border-bottom: 1px solid var(--line); padding: 12px 20px; text-align: center; font-size: 14px; color: var(--ac);">
+    <strong>New here?</strong> CHOZ helps you choose between products without brand bias.
+    <button onclick="document.getElementById('quick-guide').style.display='none'; localStorage.setItem('choz-guide-seen', 'true');" style="background: var(--ac); color: white; border: none; padding: 4px 12px; border-radius: 6px; margin-left: 10px; cursor: pointer; font-size: 12px;">Got it</button>
+</div>
+
 <!-- NAVBAR -->
 <nav><div class="w">
 <a class="logo" href="/" aria-label="CHOZ Home">
@@ -120,12 +126,15 @@ Choose without<br>
 the <span class="highlight">noise</span>.
 </h1>
 
-<p class="hero-sub">
-Compare options without brand bias.<br>
-Set what <strong>you</strong> care about — then let the choice be yours.
-</p>
+   <p class="hero-sub">
+   <strong>Confused between two phones or bikes?</strong><br>
+   Compare them <strong>blind</strong> — without seeing brand names or prices. Set your priorities, pick the best option, and only then reveal the brand.
+   </p>
 
 <div class="hero-actions">
+     <p style="font-size: 13px; color: var(--mute); margin-top: -20px; margin-bottom: 20px;">
+   👇 Start by picking a category below. It takes 30 seconds.
+   </p>
 <button class="btn-hero primary" id="startBtn">
 Start comparing
 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
@@ -316,8 +325,9 @@ Brand names appear after you choose
 <div class="eyebrow">Why CHOZ</div>
 <h2>Decision clarity,<br>not marketing.</h2>
 <p>
-Traditional comparison sites are built on ads and affiliate commissions. 
-CHOZ is built on one thing: <strong>helping you decide based on your own priorities</strong>.
+Most comparison sites show you ads and sponsored results. CHOZ does the opposite.<br>
+<strong>We hide the brand name and price until you've made your choice.</strong><br>
+This way, you pick based on what actually matters to you — not on marketing.
 </p>
 
 <div class="trust-badges">
@@ -760,6 +770,34 @@ document.addEventListener("DOMContentLoaded", function() {
             deferredPrompt = null;
         }
     });
+
+    // Quick Guide Logic
+    document.addEventListener('DOMContentLoaded', () => {
+        if (!localStorage.getItem('choz-guide-seen')) {
+            const guide = document.getElementById('quick-guide');
+            if (guide) guide.style.display = 'block';
+        }
+    });
+
+    // Hero CTA Logic (Logged in users)
+    function updateHeroCTA() {
+        const createAccountBtn = document.querySelector('.btn-hero.ghost');
+        const browseBtn = document.getElementById('startBtn2');
+        
+        if (!createAccountBtn) return;
+
+        sb.auth.getSession().then(({ data: { session } }) => {
+            if (session) {
+                createAccountBtn.textContent = 'Go to Dashboard';
+                createAccountBtn.onclick = () => window.location.href = '/dashboard.html';
+                if (browseBtn) browseBtn.textContent = 'Start Comparing';
+            } else {
+                createAccountBtn.textContent = 'Create account';
+                createAccountBtn.onclick = () => openAuth();
+            }
+        });
+    }
+    document.addEventListener('DOMContentLoaded', updateHeroCTA);
 </script>
 </body>
 </html>
