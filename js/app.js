@@ -888,6 +888,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }, 1000); // 1 second ka delay
 });
+
 // ============================================================
 // VISITOR TRACKING
 // ============================================================
@@ -916,6 +917,7 @@ document.addEventListener('DOMContentLoaded', () => {
         trackVisitor();
     }
 });
+
 // ============================================================
 // 3D TILT EFFECT FOR HERO ELEMENT
 // ============================================================
@@ -943,6 +945,7 @@ if (card3d && wrap3d && window.innerWidth > 900) {
         setTimeout(() => { card3d.style.transition = 'transform 0.1s ease-out'; }, 500);
     });
 }
+
 // ============================================================
 // PREVENT MALICIOUS REDIRECTS FROM ADS
 // ============================================================
