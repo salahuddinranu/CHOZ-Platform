@@ -888,3 +888,31 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }, 1000); // 1 second ka delay
 });
+// ============================================================
+// VISITOR TRACKING
+// ============================================================
+async function trackVisitor() {
+    try {
+        const page = window.location.pathname;
+        const userAgent = navigator.userAgent;
+        
+        // IP address fetch karein (Free API se)
+        const ipRes = await fetch('https://api.ipify.org?format=json');
+        const ipData = await ipRes.json();
+        
+        await sb.from('visitor_logs').insert({
+            ip_address: ipData.ip,
+            user_agent: userAgent,
+            page_visited: page
+        });
+    } catch (err) {
+        console.log('Visitor tracking failed:', err);
+    }
+}
+
+// Jab page load ho toh track karein (sirf home page par)
+document.addEventListener('DOMContentLoaded', () => {
+    if (window.location.pathname === '/' || window.location.pathname === '/index.html') {
+        trackVisitor();
+    }
+});
