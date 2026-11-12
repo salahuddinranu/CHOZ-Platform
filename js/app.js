@@ -865,3 +865,10 @@ function updateHeroCTA() {
 
 // Page load hone par check chalayein
 document.addEventListener('DOMContentLoaded', updateHeroCTA);
+// Quick Guide Show Logic
+document.addEventListener('DOMContentLoaded', () => {
+    if (!localStorage.getItem('choz-guide-seen')) {
+        const guide = document.getElementById('quick-guide');
+        if (guide) guide.style.display = 'block';
+    }
+});
