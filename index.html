@@ -57,7 +57,7 @@
     <div class="bg-glow"></div>
 </div>
 
-<!-- Quick Guide Banner (Sirf naye users ke liye) -->
+<!-- Quick Guide Banner -->
 <div id="quick-guide" style="display: none; background: var(--ac-soft); border-bottom: 1px solid var(--line); padding: 12px 20px; text-align: center; font-size: 14px; color: var(--ac);">
     <strong>New here?</strong> CHOZ helps you choose between products without brand bias.
     <button onclick="document.getElementById('quick-guide').style.display='none'; localStorage.setItem('choz-guide-seen', 'true');" style="background: var(--ac); color: white; border: none; padding: 4px 12px; border-radius: 6px; margin-left: 10px; cursor: pointer; font-size: 12px;">Got it</button>
@@ -120,9 +120,9 @@
 <!-- HERO -->
 <header class="hero-v2">
 <div class="w">
-<div class="hero-grid" style="display: flex; flex-direction: column; gap: 32px; width: 100%; max-width: 100vw; overflow: hidden;">
+<div class="hero-grid">
 
-<div class="hero-text" style="width: 100%; max-width: 100vw;">
+<div class="hero-text">
 <div class="eyebrow">
 <span class="eyebrow-dot"></span>
 Blind Decision Platform
@@ -159,62 +159,37 @@ See how it works
 </div>
 </div>
 
-<div class="hero-demo" style="width: 100%; max-width: 100vw; overflow: hidden;">
-<div class="demo-card" id="heroCard">
+<!-- Right: 3D Interactive Element -->
+<div class="hero-3d-wrap" id="hero3d">
+    <div class="glass-card-3d">
+        <div class="glow-orb"></div>
+        
+        <!-- Top UI -->
+        <div class="dash-header">
+            <div class="dash-title">Live Comparison</div>
+            <div class="dash-dot"></div>
+        </div>
 
-<div class="demo-header">
-<div class="demo-pill">
-<span class="pulse-dot"></span>
-Live Demo
-</div>
-<span class="demo-tag">Blind mode</span>
-</div>
+        <!-- Fake Graph/Bars -->
+        <div class="dash-chart">
+            <div class="bar" style="height: 40%;"></div>
+            <div class="bar" style="height: 70%;"></div>
+            <div class="bar" style="height: 55%;"></div>
+            <div class="bar active" style="height: 90%;"></div>
+            <div class="bar" style="height: 65%;"></div>
+        </div>
 
-<div class="demo-priorities">
-<span class="pri-pill">Battery</span>
-<span class="pri-pill">Camera</span>
-<span class="pri-pill">Price</span>
-</div>
-
-<div class="demo-options">
-<div class="demo-option">
-<div class="opt-letter">A</div>
-<div class="opt-details">
-<div class="opt-name"><span class="rd">Demo Nova One</span></div>
-<div class="opt-specs">5000 mAh • 50 MP</div>
-</div>
-<div class="opt-price">₨ 300k</div>
-</div>
-
-<div class="demo-option">
-<div class="opt-letter">B</div>
-<div class="opt-details">
-<div class="opt-name"><span class="rd">Demo Orbit Pro</span></div>
-<div class="opt-specs">4500 mAh • 48 MP</div>
-</div>
-<div class="opt-price">₨ 450k</div>
-</div>
-
-<div class="demo-option">
-<div class="opt-letter">C</div>
-<div class="opt-details">
-<div class="opt-name"><span class="rd">Demo Apex Max</span></div>
-<div class="opt-specs">4200 mAh • 50 MP</div>
-</div>
-<div class="opt-price">₨ 600k</div>
-</div>
-</div>
-
-<button class="btn-demo-reveal" id="revealBtn">
-<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-Lock choice & reveal
-</button>
-
-<div class="demo-hint">
-Brand names appear after you choose
-</div>
-
-</div>
+        <!-- Floating Badges -->
+        <div class="float-badge badge-1">⚡ 99% Match</div>
+        <div class="float-badge badge-2">🔒 Brand Hidden</div>
+        
+        <div class="dash-footer">
+            <div class="user-pill">
+                <div class="avatar-dot"></div>
+                <span>Analyzing 60+ options...</span>
+            </div>
+        </div>
+    </div>
 </div>
 
 </div>
@@ -246,7 +221,7 @@ Brand names appear after you choose
 <p class="section-sub">No noise. No bias. Just your decision.</p>
 </div>
 
-<div class="how-grid" style="display: flex; flex-direction: column; gap: 16px; width: 100%; max-width: 100vw; overflow: hidden;">
+<div class="how-grid">
 <div class="how-card">
 <div class="how-number">01</div>
 <div class="how-icon">🎯</div>
@@ -805,6 +780,32 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     }
     document.addEventListener('DOMContentLoaded', updateHeroCTA);
+
+    // 3D TILT EFFECT FOR HERO ELEMENT
+    const card3d = document.querySelector('.glass-card-3d');
+    const wrap3d = document.getElementById('hero3d');
+
+    if (card3d && wrap3d && window.innerWidth > 900) {
+        wrap3d.addEventListener('mousemove', (e) => {
+            const rect = wrap3d.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            const centerX = rect.width / 2;
+            const centerY = rect.height / 2;
+            
+            const rotateX = ((y - centerY) / centerY) * -15; // Max 15 degree tilt
+            const rotateY = ((x - centerX) / centerX) * 15;
+            
+            card3d.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(1.02)`;
+        });
+
+        wrap3d.addEventListener('mouseleave', () => {
+            card3d.style.transform = `rotateX(0) rotateY(0) scale(1)`;
+            card3d.style.transition = 'transform 0.5s ease';
+            setTimeout(() => { card3d.style.transition = 'transform 0.1s ease-out'; }, 500);
+        });
+    }
 </script>
 </body>
 </html>
