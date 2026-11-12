@@ -775,12 +775,22 @@ document.addEventListener('DOMContentLoaded', () => {
 // ============================================================
 // INITIALIZE
 // ============================================================
-checkAuth();
-initNotifications();
-initCookieBanner();
-initOnboarding();
-loadCategories();
-loadPulse();
+// ============================================================
+// INITIALIZE (ZAROORI FIX)
+// ============================================================
+document.addEventListener('DOMContentLoaded', () => {
+    // Thora intezar karein taake Supabase session load ho jaye
+    setTimeout(() => {
+        checkAuth();
+        initNotifications();
+        initCookieBanner();
+        initOnboarding();
+        
+        // Categories aur Pulse ko load karein
+        if (typeof loadCategories === 'function') loadCategories();
+        if (typeof loadPulse === 'function') loadPulse();
+    }, 500); 
+});
 // ============================================================
 // ADMIN / CREATOR LOGIN LOGIC
 // ============================================================
