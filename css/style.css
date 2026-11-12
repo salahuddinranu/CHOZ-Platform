@@ -24,22 +24,21 @@
     --shadow-lg: 0 20px 50px rgba(10,15,28,0.1);
 }
 
-@media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) {
-        --bg: #0A0E1A;
-        --bg-alt: #131826;
-        --sf: #141A2A;
-        --ink: #F1F5F9;
-        --ink-soft: #E2E8F0;
-        --mute: #94A3B8;
-        --mute-soft: #64748B;
-        --line: #1F2937;
-        --line-soft: #1A2233;
-        --ac: #8B8FFF;
-        --ac-hover: #A5A8FF;
-        --ac-soft: #1E1F3D;
-        --shadow-lg: 0 20px 50px rgba(0,0,0,0.4);
-    }
+/* Default Theme (System Default) -> Hamesha Dark Mode */
+:root {
+    --bg: #0A0E1A;
+    --bg-alt: #131826;
+    --sf: #141A2A;
+    --ink: #F1F5F9;
+    --ink-soft: #E2E8F0;
+    --mute: #94A3B8;
+    --mute-soft: #64748B;
+    --line: #1F2937;
+    --line-soft: #1A2233;
+    --ac: #8B8FFF;
+    --ac-hover: #A5A8FF;
+    --ac-soft: #1E1F3D;
+    --shadow-lg: 0 20px 50px rgba(0,0,0,0.4);
 }
 
 :root[data-theme="dark"] {
