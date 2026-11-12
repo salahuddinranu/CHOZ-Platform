@@ -106,5 +106,53 @@
 <script src="/js/config.js"></script>
 <script src="/js/dashboard.js"></script>
 <script src="/js/dashboard-actions.js"></script>
+
+<!-- Theme Logic for Dashboard -->
+<script>
+    const themeBtn = document.getElementById('themeBtn');
+    const themeMenu = document.getElementById('themeMenu');
+
+    window.setTheme = function(mode) {
+        localStorage.setItem('choz-theme', mode);
+        if (mode === 'system') {
+            document.documentElement.removeAttribute('data-theme');
+            if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                if (themeBtn) themeBtn.textContent = '🌙';
+            } else {
+                if (themeBtn) themeBtn.textContent = '☀️';
+            }
+        } else {
+            document.documentElement.setAttribute('data-theme', mode);
+            if (themeBtn) themeBtn.textContent = mode === 'dark' ? '🌙' : '☀️';
+        }
+        if (themeMenu) themeMenu.style.display = 'none';
+    };
+
+    function initTheme() {
+        const savedTheme = localStorage.getItem('choz-theme') || 'system';
+        window.setTheme(savedTheme);
+    }
+
+    if (themeBtn && themeMenu) {
+        themeBtn.onclick = (e) => {
+            e.stopPropagation();
+            themeMenu.style.display = themeMenu.style.display === 'block' ? 'none' : 'block';
+        };
+        document.addEventListener('click', (e) => {
+            if (themeMenu && !themeMenu.contains(e.target) && e.target !== themeBtn) {
+                themeMenu.style.display = 'none';
+            }
+        });
+    }
+
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+        const currentMode = localStorage.getItem('choz-theme') || 'system';
+        if (currentMode === 'system') {
+            if (themeBtn) themeBtn.textContent = e.matches ? '🌙' : '☀️';
+        }
+    });
+
+    document.addEventListener('DOMContentLoaded', initTheme);
+</script>
 </body>
 </html>
