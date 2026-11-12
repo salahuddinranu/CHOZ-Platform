@@ -94,7 +94,14 @@
 <circle cx="376" cy="256" r="14" fill="#FFD25A"/>
 </svg>CHOZ</a>
 <div class="sp"></div>
-<button class="btn btn-icon" id="themeBtn" aria-label="Theme">🌙</button>
+<div class="theme-dropdown" style="position: relative; display: inline-block;">
+    <button class="btn btn-icon" id="themeBtn" aria-label="Toggle theme" style="padding: 9px 11px;">🌙</button>
+    <div id="themeMenu" style="display: none; position: absolute; top: 100%; right: 0; background: var(--sf); border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); z-index: 1000; width: 150px; margin-top: 5px; overflow: hidden;">
+        <button onclick="setTheme('light')" style="width: 100%; text-align: left; padding: 10px 14px; background: none; border: none; color: var(--ink); cursor: pointer; font-size: 13px;">☀️ Light</button>
+        <button onclick="setTheme('dark')" style="width: 100%; text-align: left; padding: 10px 14px; background: none; border: none; color: var(--ink); cursor: pointer; font-size: 13px;">🌙 Dark</button>
+        <button onclick="setTheme('system')" style="width: 100%; text-align: left; padding: 10px 14px; background: none; border: none; color: var(--ink); cursor: pointer; font-size: 13px;">💻 System Default</button>
+    </div>
+</div>
 <a class="btn" href="/">← Home</a>
 </div></nav>
 
