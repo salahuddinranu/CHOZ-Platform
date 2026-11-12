@@ -916,3 +916,30 @@ document.addEventListener('DOMContentLoaded', () => {
         trackVisitor();
     }
 });
+// ============================================================
+// 3D TILT EFFECT FOR HERO ELEMENT
+// ============================================================
+const card3d = document.querySelector('.glass-card-3d');
+const wrap3d = document.getElementById('hero3d');
+
+if (card3d && wrap3d && window.innerWidth > 900) {
+    wrap3d.addEventListener('mousemove', (e) => {
+        const rect = wrap3d.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        
+        const centerX = rect.width / 2;
+        const centerY = rect.height / 2;
+        
+        const rotateX = ((y - centerY) / centerY) * -15; // Max 15 degree tilt
+        const rotateY = ((x - centerX) / centerX) * 15;
+        
+        card3d.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(1.02)`;
+    });
+
+    wrap3d.addEventListener('mouseleave', () => {
+        card3d.style.transform = `rotateX(0) rotateY(0) scale(1)`;
+        card3d.style.transition = 'transform 0.5s ease';
+        setTimeout(() => { card3d.style.transition = 'transform 0.1s ease-out'; }, 500);
+    });
+}
