@@ -943,3 +943,24 @@ if (card3d && wrap3d && window.innerWidth > 900) {
         setTimeout(() => { card3d.style.transition = 'transform 0.1s ease-out'; }, 500);
     });
 }
+// ============================================================
+// PREVENT MALICIOUS REDIRECTS FROM ADS
+// ============================================================
+(function() {
+    // Backup original window.open
+    const originalOpen = window.open;
+    
+    // Override window.open to only allow safe URLs
+    window.open = function(url, target, features) {
+        // Agar URL Adsterra ya kisi ad network ka hai, toh block karein
+        if (url && (url.includes('profitableratecpmnetwork') || 
+                    url.includes('effectivegatecpm') || 
+                    url.includes('highrevenueformat') ||
+                    url.includes('bauval.org'))) {
+            console.warn('Blocked ad redirect:', url);
+            return null; // Redirect block
+        }
+        // Baqi links (Daraz, OLX) allow karein
+        return originalOpen.call(window, url, target, features);
+    };
+})();
