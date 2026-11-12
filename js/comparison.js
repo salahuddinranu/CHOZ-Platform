@@ -63,10 +63,6 @@ async function startComparison(categoryId) {
     }
 }
 
-function browseCategory(categoryId) {
-    window.location.href = `/category.html?id=${encodeURIComponent(categoryId)}`;
-}
-
 // ============================================================
 // STEP 1: RENDER OPTIONS
 // ============================================================
@@ -171,7 +167,7 @@ function showCustomOptionForm() {
         </p>
 
         <label style="display:block;font-size:13px;font-weight:600;margin-bottom:6px">Name <span style="color:#ef4444">*</span></label>
-        <input type="text" id="customName" placeholder="e.g. My Current Phone" maxlength="80"
+        <input type="text" id="customName" placeholder="e.g. Mera Purana Phone" maxlength="80"
                style="width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font-family:inherit;font-size:14px;margin-bottom:14px">
 
         <label style="display:block;font-size:13px;font-weight:600;margin-bottom:6px">Price (optional)</label>
@@ -181,7 +177,7 @@ function showCustomOptionForm() {
         <div style="border-top:1px solid var(--line);padding-top:16px;margin-bottom:8px">
             <strong style="font-size:13px;color:var(--ink)">Specifications</strong>
             <p style="font-size:12px;color:var(--mute);margin-top:4px;margin-bottom:12px">
-                Fill in what you know. Empty fields will be skipped.
+                Agar pata hai toh likhein, warna khali chhor dein. Yeh sab optional hain.
             </p>
         </div>
 
@@ -191,14 +187,14 @@ function showCustomOptionForm() {
             ` : attrsArray.map(a => `
                 <div style="margin-bottom:12px">
                     <label style="display:block;font-size:13px;font-weight:600;margin-bottom:6px">
-                        ${a.name}${a.unit ? ' <span style="color:var(--mute);font-weight:400">(' + a.unit + ')</span>' : ''}
+                        ${a.name}${a.unit ? ' (' + a.unit + ')' : ''} <span style="color:var(--mute);font-weight:400;font-size:11px">(optional)</span>
                     </label>
                     <input type="text" class="custom-attr-input"
                            data-attr-id="${a.id}"
                            data-attr-name="${a.name}"
                            data-attr-unit="${a.unit || ''}"
                            data-attr-type="${a.data_type}"
-                           placeholder="Enter value"
+                           placeholder="Agar pata hai toh likhein"
                            style="width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font-family:inherit;font-size:14px">
                 </div>
             `).join('')}
