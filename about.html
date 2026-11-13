@@ -29,9 +29,13 @@
   gtag('config', 'G-8X6MPBHLEJ');
 </script>
 <script>
+    // Theme Apply Logic
     const savedTheme = localStorage.getItem('choz-theme');
-    if (savedTheme) document.documentElement.setAttribute('data-theme', savedTheme);
-    else if (window.matchMedia('(prefers-color-scheme: dark)').matches) document.documentElement.setAttribute('data-theme', 'dark');
+    if (savedTheme) {
+        document.documentElement.setAttribute('data-theme', savedTheme);
+    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.documentElement.setAttribute('data-theme', 'dark');
+    }
 </script>
 </head>
 <body>
@@ -45,45 +49,15 @@
 <h1>About CHOZ</h1>
 <p class="lead">A blind decision platform built on a simple belief: you should choose based on what matters to you — not on brand names, logos, or marketing noise.</p>
 
-<div class="credit"><strong>Web owned and created by Salahuddin Ranu.</strong></div>
+<div class="credit">
+<strong>Web owned and created by Salahuddin Ranu.</strong>
+</div>
 
 <h2>Our Mission</h2>
 <p>CHOZ exists to remove noise from decisions. When you compare products, services, or options, brand influence often crowds out your actual priorities. We hide brands until you have made your choice — based on what you truly care about.</p>
 
 <h2>How It Works</h2>
 <p>You pick a category, view anonymous options, set your priorities, and lock your choice. Only then do we reveal the brand. Afterwards, CHOZ shows you a transparent "Why I Chose" explanation based on the data you saw.</p>
-
-<!-- WHY CHOZ SECTION (From Index) -->
-<section class="why-section" id="why" style="padding: 60px 0;">
-<div class="w">
-<div class="why-grid">
-<div class="why-left">
-<div class="eyebrow">Why CHOZ</div>
-<h2>Decision clarity,<br>not marketing.</h2>
-<p>Most comparison sites show you ads and sponsored results. CHOZ does the opposite.<br><strong>We hide the brand name and price until you've made your choice.</strong><br>This way, you pick based on what actually matters to you — not on marketing.</p>
-<div class="trust-badges">
-<div class="trust-item"><div class="trust-icon">🔒</div><div><strong>No hidden favorites</strong><p>Results come from published scoring. Money never changes outcomes.</p></div></div>
-<div class="trust-item"><div class="trust-icon">👁️</div><div><strong>Brands hidden until reveal</strong><p>No logos, no names — until you lock your choice.</p></div></div>
-<div class="trust-item"><div class="trust-icon">📊</div><div><strong>Transparent explanations</strong><p>"Why I Chose This" — based on actual stored data.</p></div></div>
-<div class="trust-item"><div class="trust-icon">🗑️</div><div><strong>Delete anytime</strong><p>Your data, your control. Delete account in one click.</p></div></div>
-</div>
-</div>
-<div class="why-right">
-<div class="quote-card">
-<div class="quote-mark">"</div>
-<div class="quote-text">I stopped picking phones based on logos. For the first time, I chose based on <strong>what I actually use every day</strong>.</div>
-<div class="quote-author"><div class="author-avatar">S</div><div><strong>Salahuddin Ranu.</strong><span>Creator, CHOZ</span></div></div>
-</div>
-<div class="feature-mini">
-<div class="fm-item"><span>✅</span> Decision Memory</div>
-<div class="fm-item"><span>✅</span> Choice Profile</div>
-<div class="fm-item"><span>✅</span> Share cards</div>
-<div class="fm-item"><span>✅</span> Community Pulse</div>
-</div>
-</div>
-</div>
-</div>
-</section>
 
 <h2>What We Believe</h2>
 <div class="values">
@@ -98,11 +72,18 @@
 
 <h2>Contact</h2>
 <p>Have feedback or a partnership idea? Reach out via the <a href="/contact.html" style="color:var(--ac)">Contact page</a>.</p>
+
 </div>
 
 <footer><div class="w">
 <div><span class="logo">CHOZ</span><br>"Choose without the noise."<br>Web owned and created by Salahuddin Ranu.</div>
-<div class="ln"><a href="/privacy.html">Privacy</a><a href="/terms.html">Terms</a><a href="/contact.html">Contact</a><a href="/about.html">About</a><a href="/faq.html">FAQ</a></div>
+<div class="ln">
+<a href="/privacy.html">Privacy</a>
+<a href="/terms.html">Terms</a>
+<a href="/contact.html">Contact</a>
+<a href="/about.html">About</a>
+<a href="/faq.html">FAQ</a>
+</div>
 </div></footer>
 </body>
 </html>
