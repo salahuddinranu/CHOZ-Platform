@@ -100,6 +100,7 @@
 <a href="#how">How it works</a>
 <a href="#categories">Categories</a>
 <a href="/blog.html">Blog</a>
+<a href="#why">Why CHOZ</a>
 <a href="/about.html">About</a>
 </div>
 <div class="sp"></div>
@@ -126,6 +127,17 @@
 <button class="btn" id="authBtn">Sign in</button>
 <button class="btn p" id="dashBtn" style="display:none">Dashboard</button>
 </div></nav>
+
+<!-- NOTIFICATION DROPDOWN -->
+<div id="notifDropdown" style="display:none;position:fixed;top:70px;right:20px;width:340px;max-width:calc(100vw - 40px);background:var(--sf);border:1px solid var(--line);border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,0.12);z-index:200;max-height:480px;overflow-y:auto">
+    <div style="padding:16px 20px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center">
+        <strong style="font-size:14px;font-family:'Bricolage Grotesque'">Notifications</strong>
+        <button onclick="markAllNotifsRead()" style="background:none;border:none;color:var(--ac);font-size:12px;cursor:pointer;font-weight:500">Mark all read</button>
+    </div>
+    <div id="notifList" style="padding:8px">
+        <p style="text-align:center;color:var(--mute);font-size:13px;padding:32px 16px">Loading...</p>
+    </div>
+</div>
 
 <!-- HERO -->
 <header class="hero-v2">
@@ -204,6 +216,56 @@ Compare them <strong>blind</strong> — without seeing brand names or prices. Se
 </div>
 </section>
 
+<!-- PULSE -->
+<section class="pulse-section" id="pulse">
+<div class="w">
+<div class="section-header"><div class="eyebrow">Community</div><h2>What the community is choosing</h2><p class="section-sub">Anonymous trends from real CHOZ comparisons.</p></div>
+<div id="pulseGrid" class="pulse-grid">
+<p style="color:var(--mute);text-align:center;grid-column:1/-1;padding:40px">Loading community trends...</p>
+</div>
+</div>
+</section>
+
+<!-- ADS SECTION 2 -->
+<div style="max-width: 100vw; overflow: hidden; display: flex; justify-content: center; width: 100%; padding: 20px 0;">
+    <div id="choz-ad-container-2" style="display: none; justify-content: center; width: 100%;">
+        <div id="ad-desktop-2" style="display: none;"><script>atOptions = { "key" : "8207231200d10d7b79b678185bc9552f", "format" : "iframe", "height" : 60, "width" : 468, "params" : {} };</script><script src="https://bauval.org/22/8207231200d10d7b79b678185bc9552f"></script></div>
+        <div id="ad-mobile-2" style="display: none;"><script>atOptions = { "key" : "7e1802f7abf85824530f36e52ca6e259", "format" : "iframe", "height" : 50, "width" : 320, "params" : {} };</script><script src="https://bauval.org/22/7e1802f7abf85824530f36e52ca6e259"></script></div>
+    </div>
+</div>
+
+<!-- WHY CHOZ -->
+<section class="why-section" id="why">
+<div class="w">
+<div class="why-grid">
+<div class="why-left">
+<div class="eyebrow">Why CHOZ</div>
+<h2>Decision clarity,<br>not marketing.</h2>
+<p>Most comparison sites show you ads and sponsored results. CHOZ does the opposite.<br><strong>We hide the brand name and price until you've made your choice.</strong><br>This way, you pick based on what actually matters to you — not on marketing.</p>
+<div class="trust-badges">
+<div class="trust-item"><div class="trust-icon">🔒</div><div><strong>No hidden favorites</strong><p>Results come from published scoring. Money never changes outcomes.</p></div></div>
+<div class="trust-item"><div class="trust-icon">👁️</div><div><strong>Brands hidden until reveal</strong><p>No logos, no names — until you lock your choice.</p></div></div>
+<div class="trust-item"><div class="trust-icon">📊</div><div><strong>Transparent explanations</strong><p>"Why I Chose This" — based on actual stored data.</p></div></div>
+<div class="trust-item"><div class="trust-icon">🗑️</div><div><strong>Delete anytime</strong><p>Your data, your control. Delete account in one click.</p></div></div>
+</div>
+</div>
+<div class="why-right">
+<div class="quote-card">
+<div class="quote-mark">"</div>
+<div class="quote-text">I stopped picking phones based on logos. For the first time, I chose based on <strong>what I actually use every day</strong>.</div>
+<div class="quote-author"><div class="author-avatar">S</div><div><strong>Salahuddin Ranu.</strong><span>Creator, CHOZ</span></div></div>
+</div>
+<div class="feature-mini">
+<div class="fm-item"><span>✅</span> Decision Memory</div>
+<div class="fm-item"><span>✅</span> Choice Profile</div>
+<div class="fm-item"><span>✅</span> Share cards</div>
+<div class="fm-item"><span>✅</span> Community Pulse</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+
 <!-- CTA -->
 <section class="final-cta">
 <div class="w">
@@ -238,7 +300,7 @@ Compare them <strong>blind</strong> — without seeing brand names or prices. Se
 <p class="footer-credit">Web owned and created by Salahuddin Ranu.</p>
 </div>
 <div class="footer-links">
-<div><strong>Product</strong><a href="#how">How it works</a><a href="#categories">Categories</a><a href="/blog.html">Blog</a></div>
+<div><strong>Product</strong><a href="#how">How it works</a><a href="#categories">Categories</a><a href="/blog.html">Blog</a><a href="#pulse">Community Pulse</a></div>
 <div><strong>Company</strong><a href="/about.html">About</a><a href="/faq.html">FAQ</a><a href="/contact.html">Contact</a></div>
 <div><strong>Legal</strong><a href="/privacy.html">Privacy</a><a href="/terms.html">Terms</a><a href="#" onclick="resetCookieConsent();return false;">Cookies</a></div>
 </div>
