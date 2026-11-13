@@ -49,6 +49,33 @@
   gtag('js', new Date());
   gtag('config', 'G-8X6MPBHLEJ');
 </script>
+
+<!-- Mobile Ads Fix CSS -->
+<style>
+@media (max-width: 768px) {
+    /* Mobile par desktop wale bade ads ko hide karein */
+    #ad-desktop-1, #ad-desktop-2, #ad-desktop-3, 
+    #result-ad-desktop, #product-ad-desktop {
+        display: none !important;
+    }
+
+    /* Mobile wale chote ads ko center karein aur lock karein */
+    #ad-mobile-1, #ad-mobile-2, #ad-mobile-3, 
+    #result-ad-mobile, #product-ad-mobile {
+        display: block !important;
+        margin: 0 auto !important;
+        max-width: 100vw !important;
+        overflow: hidden !important;
+    }
+
+    /* Adsterra ke iframe ko screen se bahar jane se rokna */
+    iframe {
+        max-width: 100vw !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+}
+</style>
 </head>
 <body>
 <!-- Background Animation -->
@@ -667,28 +694,50 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 </script>
 
-<!-- Adsterra Loading Logic (Free/Pro Check for 3 Ads) -->
+<!-- Adsterra Loading Logic (STRICT PRO CHECK FOR MOBILE & DESKTOP) -->
 <script>
     (async function() {
+        // 1. Ensure Supabase is loaded
         if (typeof sb === 'undefined') return;
         
-        const ads = [
-            { wrap: 'choz-ad-container-1', desk: 'ad-desktop-1', mob: 'ad-mobile-1' },
-            { wrap: 'choz-ad-container-2', desk: 'ad-desktop-2', mob: 'ad-mobile-2' },
-            { wrap: 'choz-ad-container-3', desk: 'ad-desktop-3', mob: 'ad-mobile-3' }
-        ];
-        
-        let showAd = true;
-
-        const { data: { session } } = await sb.auth.getSession();
-        if (session) {
-            const { data } = await sb.from('profiles').select('is_pro').eq('id', session.user.id).maybeSingle();
-            if (data && data.is_pro === true) {
-                showAd = false; 
+        try {
+            // 2. Fetch user session
+            const { data: { session } } = await sb.auth.getSession();
+            
+            // 3. Default: Show ads for guests (no session)
+            let showAd = true;
+            
+            // 4. If user is logged in, check Pro status
+            if (session) {
+                const { data: profile } = await sb
+                    .from('profiles')
+                    .select('is_pro')
+                    .eq('id', session.user.id)
+                    .maybeSingle();
+                
+                // If Pro, disable ads
+                if (profile && profile.is_pro === true) {
+                    showAd = false;
+                }
             }
-        }
 
-        if (showAd) {
+            // 5. Agar Pro hai, toh ad containers ko poori tarah hide karein
+            if (!showAd) {
+                const allAdWraps = document.querySelectorAll('[id^="choz-ad-container"], [id^="result-ad-container"], [id^="product-ad-container"]');
+                allAdWraps.forEach(wrap => {
+                    wrap.style.display = 'none';
+                    wrap.innerHTML = ''; // Content bhi hata dein taake koi iframe load na ho
+                });
+                return; // Function yahin ruk jaye, aage ad scripts load na hon
+            }
+
+            // 6. Agar Free user hai, toh ads show karein (Desktop & Mobile)
+            const ads = [
+                { wrap: 'choz-ad-container-1', desk: 'ad-desktop-1', mob: 'ad-mobile-1' },
+                { wrap: 'choz-ad-container-2', desk: 'ad-desktop-2', mob: 'ad-mobile-2' },
+                { wrap: 'choz-ad-container-3', desk: 'ad-desktop-3', mob: 'ad-mobile-3' }
+            ];
+
             ads.forEach(ad => {
                 const wrapEl = document.getElementById(ad.wrap);
                 if (wrapEl) {
@@ -703,6 +752,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                     }
                 }
             });
+
+        } catch (err) {
+            console.log('Ad loading error:', err);
         }
     })();
 </script>
