@@ -1856,3 +1856,22 @@ kbd {
         box-sizing: border-box !important;
     }
 }
+/* ============================================================
+   MOBILE BANNER FIX (FOR 300x250)
+   ============================================================ */
+@media (max-width: 768px) {
+    #ad-desktop-4, #result-ad-desktop, #product-ad-desktop {
+        display: none !important;
+    }
+    #ad-mobile-4, #result-ad-mobile, #product-ad-mobile {
+        display: block !important;
+        margin: 0 auto !important;
+        max-width: 100vw !important;
+        overflow: hidden !important;
+    }
+    iframe {
+        max-width: 100vw !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+}
